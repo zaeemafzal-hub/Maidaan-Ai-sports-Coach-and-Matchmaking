@@ -11,8 +11,12 @@ const supabaseAnonKey =
 
 export const isSupabaseConfigured = Boolean(
   process.env.EXPO_PUBLIC_SUPABASE_URL &&
+    !process.env.EXPO_PUBLIC_SUPABASE_URL.includes('placeholder') &&
+    !process.env.EXPO_PUBLIC_SUPABASE_URL.includes('your-project-ref') &&
     (process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-      process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY)
+      process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY) &&
+    !process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.includes('your_') &&
+    !process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY?.includes('your_')
 );
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {

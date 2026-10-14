@@ -4,6 +4,9 @@ import { supabase } from '../lib/supabase';
 import { ChatMessage } from './chatService';
 
 const getSocketUrl = (): string => {
+  if (typeof window !== 'undefined' && window.location) {
+    return window.location.origin;
+  }
   if (process.env.EXPO_PUBLIC_API_URL) {
     return process.env.EXPO_PUBLIC_API_URL.replace(/\/+$/, '');
   }

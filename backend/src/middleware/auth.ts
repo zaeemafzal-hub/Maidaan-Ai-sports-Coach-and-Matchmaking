@@ -45,7 +45,7 @@ export async function verifyAuthToken(token: string): Promise<AuthenticatedConte
       }
     } else if (isServerSupabaseConfigured) {
       // Official Supabase server-side token verification
-      const { data, error } = await supabaseAdmin.auth.getUser(token);
+      const { data, error } = await (supabaseAdmin.auth as any).getUser(token);
 
       if (error || !data?.user) {
         return null;

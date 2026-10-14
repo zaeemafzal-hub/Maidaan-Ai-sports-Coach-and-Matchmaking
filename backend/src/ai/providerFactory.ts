@@ -35,8 +35,8 @@ export function setMockAIProvider(provider: AIProvider | null): void {
 
 /**
  * Resolves the configured AI provider.
+ * Uses NVIDIA NIM as the designated AI provider.
  * In test mode (NODE_ENV=test), returns injected mock provider or default MockTestAIProvider.
- * In development and production, strictly instantiates the configured provider (NVIDIA NIM).
  */
 export function getAIProvider(): AIProvider {
   const isTestMode = process.env.NODE_ENV === 'test';
@@ -48,38 +48,13 @@ export function getAIProvider(): AIProvider {
     return new MockTestAIProvider();
   }
 
-  const providerType = (process.env.AI_PROVIDER || 'nvidia').toLowerCase().trim();
-
-  if (providerType === 'nvidia') {
-    const apiKey = process.env.NVIDIA_API_KEY;
-    const model = process.env.NVIDIA_MODEL;
-    const baseUrl = process.env.NVIDIA_BASE_URL;
-
-    if (!apiKey || !apiKey.trim()) {
-      const cfgError: any = new Error('NVIDIA AI provider is not configured. Missing NVIDIA_API_KEY environment variable.');
-      cfgError.status = 502;
-      throw cfgError;
-    }
-
-    if (!model || !model.trim()) {
-      const cfgError: any = new Error('NVIDIA AI provider is not configured. Missing NVIDIA_MODEL environment variable.');
-      cfgError.status = 502;
-      throw cfgError;
-    }
-
-    if (!activeNvidiaProvider) {
-      activeNvidiaProvider = new NvidiaNimProvider({
-        apiKey,
-        model,
-        baseUrl,
-      });
-    }
-
-    return activeNvidiaProvider;
+  if (!activeNvidiaProvider) {
+    activeNvidiaProvider = new NvidiaNimProvider({
+      apiKey: process.env.NVIDIA_API_KEY,
+      model: process.env.NVIDIA_MODEL || 'meta/llama-3.1-70b-instruct',
+      baseUrl: process.env.NVIDIA_BASE_URL || 'https://integrate.api.nvidia.com/v1',
+    });
   }
 
-  // Fail safely on unsupported provider types without fake fallback
-  const unsupportedError: any = new Error(`Unsupported AI_PROVIDER: "${providerType}". Supported provider is 'nvidia'.`);
-  unsupportedError.status = 502;
-  throw unsupportedError;
+  return activeNvidiaProvider;
 }

@@ -27,7 +27,7 @@ export function initSocketServer(httpServer: HttpServer): Server {
   });
 
   // Socket authentication middleware using trusted Supabase token verification
-  io.use(async (socket: Socket, next) => {
+  io.use(async (socket: Socket, next: (err?: Error) => void) => {
     try {
       const token =
         socket.handshake.auth?.token ||

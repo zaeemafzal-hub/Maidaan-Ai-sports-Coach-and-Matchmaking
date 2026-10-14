@@ -1,9 +1,19 @@
 import { spawn } from 'child_process';
+import fs from 'fs';
+import path from 'path';
 
 console.log('[DevRunner] Starting Maidaan independent dev services...');
 
+const rootDir = process.cwd();
+const backendDistServer = path.join(rootDir, 'backend/dist/server.js');
+
 // 1. Start Express backend independently on port 5000
-const backend = spawn('node', ['backend/dist/server.js'], {
+const backendCmd = fs.existsSync(backendDistServer)
+  ? { command: 'node', args: ['backend/dist/server.js'] }
+  : { command: 'npx', args: ['--prefix', 'backend', 'tsx', 'backend/src/server.ts'] };
+
+const backend = spawn(backendCmd.command, backendCmd.args, {
+  cwd: rootDir,
   stdio: 'inherit',
   env: {
     ...process.env,
@@ -17,7 +27,8 @@ backend.on('error', (err) => {
 });
 
 // 2. Start Expo Metro independently on port 3000
-const mobile = spawn('npx', ['--prefix', 'mobile', 'expo', 'start', '--web', '--port', '3000'], {
+const mobile = spawn('npm', ['start', '--', '--web', '--port', '3000'], {
+  cwd: path.join(rootDir, 'mobile'),
   stdio: 'inherit',
   env: {
     ...process.env,
@@ -41,11 +52,13 @@ const cleanup = (code) => {
 
 process.on('SIGINT', () => cleanup(0));
 process.on('SIGTERM', () => cleanup(0));
+
 backend.on('exit', (code) => {
   if (code !== 0 && code !== null) {
     console.warn(`[DevRunner] Backend exited with code ${code}`);
   }
 });
+
 mobile.on('exit', (code) => {
   cleanup(code);
 });

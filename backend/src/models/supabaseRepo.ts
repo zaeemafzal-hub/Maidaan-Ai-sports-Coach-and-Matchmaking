@@ -502,7 +502,7 @@ export const SupabaseRepo = {
   // 1. PUBLIC.PROFILES
   // =========================================================================
   async getProfile(userId: string): Promise<ProfileRecord | null> {
-    const isTestMode = process.env.NODE_ENV === 'test';
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -538,7 +538,7 @@ export const SupabaseRepo = {
       updated_at: now,
     };
 
-    const isTestMode = process.env.NODE_ENV === 'test';
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -561,7 +561,7 @@ export const SupabaseRepo = {
 
   async setOnboardingCompleted(userId: string, completed: boolean): Promise<ProfileRecord | null> {
     const now = new Date().toISOString();
-    const isTestMode = process.env.NODE_ENV === 'test';
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -591,7 +591,7 @@ export const SupabaseRepo = {
   // 2. PUBLIC.PLAYER_PROFILES
   // =========================================================================
   async getPlayerProfile(userId: string): Promise<PlayerProfileRecord | null> {
-    const isTestMode = process.env.NODE_ENV === 'test';
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -628,7 +628,7 @@ export const SupabaseRepo = {
       updated_at: now,
     };
 
-    const isTestMode = process.env.NODE_ENV === 'test';
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -653,7 +653,7 @@ export const SupabaseRepo = {
   // 3. PUBLIC.CAPTAIN_PROFILES
   // =========================================================================
   async getCaptainProfile(userId: string): Promise<CaptainProfileRecord | null> {
-    const isTestMode = process.env.NODE_ENV === 'test';
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -690,7 +690,7 @@ export const SupabaseRepo = {
       updated_at: now,
     };
 
-    const isTestMode = process.env.NODE_ENV === 'test';
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -715,7 +715,7 @@ export const SupabaseRepo = {
   // 4. PUBLIC.HUB_OWNER_PROFILES
   // =========================================================================
   async getHubOwnerProfile(userId: string): Promise<HubOwnerProfileRecord | null> {
-    const isTestMode = process.env.NODE_ENV === 'test';
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -743,7 +743,7 @@ export const SupabaseRepo = {
     courtCount: number;
   }): Promise<HubOwnerProfileRecord> {
     const now = new Date().toISOString();
-    const isTestMode = process.env.NODE_ENV === 'test';
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -824,7 +824,7 @@ export const SupabaseRepo = {
       updated_at: now,
     };
 
-    const isTestMode = process.env.NODE_ENV === 'test';
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
     if (!isTestMode && !isServerSupabaseConfigured) {
       throw new Error('Supabase live configuration is required in non-test mode.');
     }
@@ -852,7 +852,7 @@ export const SupabaseRepo = {
     area?: string;
     skillLevel?: SkillLevel;
   }): Promise<MatchOutput[]> {
-    const isTestMode = process.env.NODE_ENV === 'test';
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
     if (!isTestMode && !isServerSupabaseConfigured) {
       throw new Error('Supabase live configuration is required in non-test mode.');
     }
@@ -881,7 +881,7 @@ export const SupabaseRepo = {
         throw new Error(error.message || 'Failed to retrieve matches from Supabase database.');
       }
       if (data) {
-        return Promise.all(data.map((m) => enrichMatch(m as MatchDbRecord)));
+        return Promise.all(data.map((m: MatchDbRecord) => enrichMatch(m)));
       }
       return [];
     }
@@ -902,7 +902,7 @@ export const SupabaseRepo = {
   },
 
   async getMatchById(id: string): Promise<MatchOutput | null> {
-    const isTestMode = process.env.NODE_ENV === 'test';
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
     if (!isTestMode && !isServerSupabaseConfigured) {
       throw new Error('Supabase live configuration is required in non-test mode.');
     }
@@ -930,7 +930,7 @@ export const SupabaseRepo = {
   },
 
   async getCaptainMatches(captainId: string): Promise<MatchOutput[]> {
-    const isTestMode = process.env.NODE_ENV === 'test';
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
     if (!isTestMode && !isServerSupabaseConfigured) {
       throw new Error('Supabase live configuration is required in non-test mode.');
     }
@@ -947,7 +947,7 @@ export const SupabaseRepo = {
         throw new Error(error.message || 'Failed to query captain matches from Supabase database.');
       }
       if (data) {
-        return Promise.all(data.map((m) => enrichMatch(m as MatchDbRecord)));
+        return Promise.all(data.map((m: MatchDbRecord) => enrichMatch(m)));
       }
       return [];
     }
@@ -1121,10 +1121,10 @@ export const SupabaseRepo = {
       }
     } else if (isServerSupabaseConfigured) {
       try {
-        const { data: usersData } = await supabaseAdmin.auth.admin.listUsers();
-        let adminUser = usersData?.users?.find(u => u.email === 'admin@maidaan.pk');
+        const { data: usersData } = await (supabaseAdmin.auth as any).admin.listUsers();
+        let adminUser = usersData?.users?.find((u: any) => u.email === 'admin@maidaan.pk');
         if (!adminUser) {
-          const { data: created, error } = await supabaseAdmin.auth.admin.createUser({
+          const { data: created, error } = await (supabaseAdmin.auth as any).admin.createUser({
             email: 'admin@maidaan.pk',
             password: 'AdminPassword123!',
             email_confirm: true,
@@ -1155,7 +1155,7 @@ export const SupabaseRepo = {
   // 6. PUBLIC.JOIN_REQUESTS & PUBLIC.MATCH_PARTICIPANTS (Phase 3)
   // =========================================================================
   async getJoinRequestById(requestId: string): Promise<JoinRequestDbRecord | null> {
-    const isTestMode = process.env.NODE_ENV === 'test';
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
     if (!isTestMode && !isServerSupabaseConfigured) {
       throw new Error('Supabase live configuration is required in non-test mode.');
     }
@@ -1178,7 +1178,7 @@ export const SupabaseRepo = {
   },
 
   async isMatchParticipant(matchId: string, playerId: string): Promise<boolean> {
-    const isTestMode = process.env.NODE_ENV === 'test';
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
     if (!isTestMode && !isServerSupabaseConfigured) {
       throw new Error('Supabase live configuration is required in non-test mode.');
     }
@@ -1207,7 +1207,7 @@ export const SupabaseRepo = {
   },
 
   async getPlayerActiveRequestForMatch(matchId: string, playerId: string): Promise<JoinRequestDbRecord | null> {
-    const isTestMode = process.env.NODE_ENV === 'test';
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
     if (!isTestMode && !isServerSupabaseConfigured) {
       throw new Error('Supabase live configuration is required in non-test mode.');
     }
@@ -1253,7 +1253,7 @@ export const SupabaseRepo = {
       updated_at: now,
     };
 
-    const isTestMode = process.env.NODE_ENV === 'test';
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
     if (!isTestMode && !isServerSupabaseConfigured) {
       throw new Error('Supabase live configuration is required in non-test mode.');
     }
@@ -1293,7 +1293,7 @@ export const SupabaseRepo = {
   },
 
   async getPlayerJoinRequests(playerId: string): Promise<JoinRequestOutput[]> {
-    const isTestMode = process.env.NODE_ENV === 'test';
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
     if (!isTestMode && !isServerSupabaseConfigured) {
       throw new Error('Supabase live configuration is required in non-test mode.');
     }
@@ -1356,7 +1356,7 @@ export const SupabaseRepo = {
   },
 
   async getMatchJoinRequests(matchId: string): Promise<MatchRequestWithPlayerOutput[]> {
-    const isTestMode = process.env.NODE_ENV === 'test';
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
     if (!isTestMode && !isServerSupabaseConfigured) {
       throw new Error('Supabase live configuration is required in non-test mode.');
     }
@@ -1426,7 +1426,7 @@ export const SupabaseRepo = {
     captainId: string
   ): Promise<{ success: boolean; code?: string; error?: string; request?: JoinRequestOutput }> {
     const now = new Date().toISOString();
-    const isTestMode = process.env.NODE_ENV === 'test';
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
     if (!isTestMode && !isServerSupabaseConfigured) {
       throw new Error('Supabase live configuration is required in non-test mode.');
     }
@@ -1525,7 +1525,7 @@ export const SupabaseRepo = {
     matchStatus?: 'OPEN' | 'FULL' | 'UPCOMING';
   }> {
     const now = new Date().toISOString();
-    const isTestMode = process.env.NODE_ENV === 'test';
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
     if (!isTestMode && !isServerSupabaseConfigured) {
       throw new Error('Supabase live configuration is required in non-test mode.');
     }
@@ -1657,7 +1657,7 @@ export const SupabaseRepo = {
       created_at: now,
     };
 
-    const isTestMode = process.env.NODE_ENV === 'test';
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
     if (!isTestMode && !isServerSupabaseConfigured) {
       throw new Error('Supabase live configuration is required in non-test mode.');
     }
@@ -1702,7 +1702,7 @@ export const SupabaseRepo = {
   },
 
   async getUserNotifications(userId: string): Promise<NotificationOutput[]> {
-    const isTestMode = process.env.NODE_ENV === 'test';
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
     if (!isTestMode && !isServerSupabaseConfigured) {
       throw new Error('Supabase live configuration is required in non-test mode.');
     }
@@ -1757,7 +1757,7 @@ export const SupabaseRepo = {
     notificationId: string,
     userId: string
   ): Promise<{ success: boolean; code?: string; error?: string; notification?: NotificationOutput }> {
-    const isTestMode = process.env.NODE_ENV === 'test';
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
     if (!isTestMode && !isServerSupabaseConfigured) {
       throw new Error('Supabase live configuration is required in non-test mode.');
     }
@@ -1835,7 +1835,7 @@ export const SupabaseRepo = {
   },
 
   async markAllNotificationsAsRead(userId: string): Promise<{ success: boolean; updatedCount: number }> {
-    const isTestMode = process.env.NODE_ENV === 'test';
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
     if (!isTestMode && !isServerSupabaseConfigured) {
       throw new Error('Supabase live configuration is required in non-test mode.');
     }
@@ -1876,7 +1876,7 @@ export const SupabaseRepo = {
   // =========================================================================
 
   async isChatRoomMember(roomId: string, userId: string): Promise<boolean> {
-    const isTestMode = process.env.NODE_ENV === 'test';
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -1903,7 +1903,7 @@ export const SupabaseRepo = {
   },
 
   async getChatRoomById(roomId: string, viewerUserId?: string): Promise<ChatRoomOutput | null> {
-    const isTestMode = process.env.NODE_ENV === 'test';
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -2015,7 +2015,7 @@ export const SupabaseRepo = {
   },
 
   async getUserChatRooms(userId: string): Promise<ChatRoomOutput[]> {
-    const isTestMode = process.env.NODE_ENV === 'test';
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -2073,7 +2073,7 @@ export const SupabaseRepo = {
       throw new Error('Cannot create direct chat room with oneself.');
     }
 
-    const isTestMode = process.env.NODE_ENV === 'test';
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -2149,7 +2149,7 @@ export const SupabaseRepo = {
     if (!match) return;
 
     const now = new Date().toISOString();
-    const isTestMode = process.env.NODE_ENV === 'test';
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
 
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
@@ -2231,7 +2231,7 @@ export const SupabaseRepo = {
   },
 
   async findOrCreateGroupRoom(matchId: string): Promise<{ room: ChatRoomOutput; created: boolean }> {
-    const isTestMode = process.env.NODE_ENV === 'test';
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -2307,7 +2307,7 @@ export const SupabaseRepo = {
   },
 
   async getRoomMessages(roomId: string, limit = 100): Promise<ChatMessageOutput[]> {
-    const isTestMode = process.env.NODE_ENV === 'test';
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -2363,7 +2363,7 @@ export const SupabaseRepo = {
     const now = new Date().toISOString();
     const trimmedBody = input.body.trim();
 
-    const isTestMode = process.env.NODE_ENV === 'test';
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -2439,7 +2439,7 @@ export const SupabaseRepo = {
   // =========================================================================
 
   async getHubCourtsByOwner(hubOwnerId: string): Promise<HubCourtOutput[]> {
-    const isTestMode = process.env.NODE_ENV === 'test';
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -2463,7 +2463,7 @@ export const SupabaseRepo = {
   },
 
   async getHubCourtById(id: string): Promise<HubCourtOutput | null> {
-    const isTestMode = process.env.NODE_ENV === 'test';
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -2486,7 +2486,7 @@ export const SupabaseRepo = {
 
   async getHubCourtByOwnerAndName(hubOwnerId: string, name: string): Promise<HubCourtOutput | null> {
     const trimmed = name.trim().toLowerCase();
-    const isTestMode = process.env.NODE_ENV === 'test';
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -2528,7 +2528,7 @@ export const SupabaseRepo = {
       updated_at: now,
     };
 
-    const isTestMode = process.env.NODE_ENV === 'test';
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -2585,7 +2585,7 @@ export const SupabaseRepo = {
     }
   ): Promise<HubCourtOutput> {
     const now = new Date().toISOString();
-    const isTestMode = process.env.NODE_ENV === 'test';
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -2625,7 +2625,7 @@ export const SupabaseRepo = {
 
   async deleteHubCourt(id: string, hubOwnerId: string): Promise<boolean> {
     const now = new Date().toISOString();
-    const isTestMode = process.env.NODE_ENV === 'test';
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -2677,7 +2677,7 @@ export const SupabaseRepo = {
   async getPendingHubVerificationRequestByOwner(
     hubOwnerId: string
   ): Promise<HubVerificationRequestDbRecord | null> {
-    const isTestMode = process.env.NODE_ENV === 'test';
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -2718,7 +2718,7 @@ export const SupabaseRepo = {
       updated_at: now,
     };
 
-    const isTestMode = process.env.NODE_ENV === 'test';
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -2742,7 +2742,7 @@ export const SupabaseRepo = {
   async getHubVerificationRequests(filter?: {
     status?: HubVerificationStatus;
   }): Promise<AdminHubVerificationOutput[]> {
-    const isTestMode = process.env.NODE_ENV === 'test';
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -2784,7 +2784,7 @@ export const SupabaseRepo = {
   async getHubVerificationRequestById(
     id: string
   ): Promise<AdminHubVerificationOutput | null> {
-    const isTestMode = process.env.NODE_ENV === 'test';
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -2812,7 +2812,7 @@ export const SupabaseRepo = {
     adminNote?: string | null;
   }): Promise<AdminHubVerificationOutput> {
     const now = new Date().toISOString();
-    const isTestMode = process.env.NODE_ENV === 'test';
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
 
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
@@ -2898,7 +2898,7 @@ export const SupabaseRepo = {
       resolved_at: null,
     };
 
-    const isTestMode = process.env.NODE_ENV === 'test';
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -2923,7 +2923,7 @@ export const SupabaseRepo = {
     status?: ReportStatus;
     category?: ReportCategory;
   }): Promise<AdminReportOutput[]> {
-    const isTestMode = process.env.NODE_ENV === 'test';
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -2969,7 +2969,7 @@ export const SupabaseRepo = {
   },
 
   async getReportById(id: string): Promise<AdminReportOutput | null> {
-    const isTestMode = process.env.NODE_ENV === 'test';
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -3006,7 +3006,7 @@ export const SupabaseRepo = {
       targetStatus = 'FOLLOW_UP';
     }
 
-    const isTestMode = process.env.NODE_ENV === 'test';
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');

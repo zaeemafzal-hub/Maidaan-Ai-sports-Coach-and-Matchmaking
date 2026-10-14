@@ -8,6 +8,9 @@ export interface ApiResponse<T = unknown> {
 }
 
 const getBaseUrl = (): string => {
+  if (typeof window !== 'undefined' && window.location) {
+    return '';
+  }
   if (process.env.EXPO_PUBLIC_API_URL) {
     return process.env.EXPO_PUBLIC_API_URL.replace(/\/+$/, '');
   }
