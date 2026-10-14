@@ -54,16 +54,21 @@ export default function RequestSentScreen() {
   const [request, setRequest] = useState<JoinRequest | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const isMountedRef = React.useRef(true);
 
   const loadData = useCallback(async () => {
     try {
-      setIsLoading(true);
-      setError(null);
+      if (isMountedRef.current) {
+        setIsLoading(true);
+        setError(null);
+      }
 
       // Load match details if matchId available
       if (matchId) {
         const matchData = await matchService.getMatchById(matchId);
-        setMatch(matchData);
+        if (isMountedRef.current) {
+          setMatch(matchData);
+        }
       }
 
       // Load player's join requests to resolve current status
@@ -76,18 +81,28 @@ export default function RequestSentScreen() {
         matchedRequest = myRequests.find((r) => r.matchId === matchId);
       }
 
-      setRequest(matchedRequest || null);
+      if (isMountedRef.current) {
+        setRequest(matchedRequest || null);
+      }
     } catch (err: any) {
-      console.warn('[RequestSentScreen] Failed to load request status:', err);
-      setError('Unable to load latest request status. Please check your connection.');
+      if (isMountedRef.current) {
+        console.warn('[RequestSentScreen] Failed to load request status:', err);
+        setError('Unable to load latest request status. Please check your connection.');
+      }
     } finally {
-      setIsLoading(false);
+      if (isMountedRef.current) {
+        setIsLoading(false);
+      }
     }
   }, [matchId, requestId]);
 
   useFocusEffect(
     useCallback(() => {
+      isMountedRef.current = true;
       loadData();
+      return () => {
+        isMountedRef.current = false;
+      };
     }, [loadData])
   );
 

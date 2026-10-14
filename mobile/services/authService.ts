@@ -12,7 +12,8 @@ export interface RegisterParams {
 
 export interface RegisterResult {
   user: User;
-  token: string;
+  token?: string;
+  needsEmailConfirmation?: boolean;
 }
 
 export interface LoginParams {
@@ -31,6 +32,14 @@ export interface MeResult {
   playerProfile?: PlayerProfile | null;
   captainProfile?: CaptainProfile | null;
   hubOwnerProfile?: HubOwnerProfile | null;
+}
+
+function generateUUID(): string {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
 }
 
 export const authService = {
@@ -63,8 +72,22 @@ export const authService = {
         throw new Error(error.message || 'Registration failed.');
       }
 
-      const token = data.session?.access_token || `test_token:${data.user?.id || Date.now()}:${encodeURIComponent(normalizedEmail)}`;
-      await AuthStorage.setToken(token);
+      // If Supabase project requires email confirmation and returns no active session
+      if (!data.session?.access_token) {
+        return {
+          user: {
+            id: data.user?.id || generateUUID(),
+            name: params.name.trim(),
+            email: normalizedEmail,
+            role: params.role,
+            createdAt: new Date().toISOString(),
+          },
+          token: undefined,
+          needsEmailConfirmation: true,
+        };
+      }
+
+      const token = data.session.access_token;
 
       // Initialize public.profiles row via backend Express API
       const initRes = await api.post<{ user: User }>('/api/profile/init', {
@@ -73,7 +96,7 @@ export const authService = {
       });
 
       const user: User = initRes.data?.user || {
-        id: data.user?.id || `usr_${Date.now()}`,
+        id: data.user?.id || generateUUID(),
         name: params.name.trim(),
         email: normalizedEmail,
         role: params.role,
@@ -84,7 +107,7 @@ export const authService = {
     }
 
     // 2. Demo / local fallback when placeholder Supabase URL is active
-    const mockUserId = `usr_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    const mockUserId = generateUUID();
     const mockToken = `test_token:${mockUserId}:${encodeURIComponent(normalizedEmail)}`;
     await AuthStorage.setToken(mockToken);
 
@@ -122,12 +145,20 @@ export const authService = {
       }
 
       const token = data.session.access_token;
-      await AuthStorage.setToken(token);
 
       // Fetch verified user & profile from backend
-      const meRes = await api.get<MeResult>('/api/profile/me');
+      let meRes = await api.get<MeResult>('/api/profile/me');
+      if (meRes.status === 404) {
+        // Auto-initialize profile only if missing in database (404)
+        const userMeta = data.user?.user_metadata || {};
+        const role = (userMeta.role as Role) || 'PLAYER';
+        const name = userMeta.name || normalizedEmail.split('@')[0] || 'Athlete';
+        await api.post('/api/profile/init', { name, role }).catch(() => {});
+        meRes = await api.get<MeResult>('/api/profile/me');
+      }
+
       if (!meRes.data?.user) {
-        throw new Error('Failed to retrieve user profile after sign in.');
+        throw new Error(meRes.error || 'Failed to retrieve user profile after sign in.');
       }
 
       return {
@@ -142,7 +173,7 @@ export const authService = {
     }
 
     // 2. Demo / local fallback when running in sandbox without external Supabase credentials
-    let mockUserId = `usr_${Date.now()}_demo`;
+    let mockUserId = generateUUID();
     let mockRole: Role = 'PLAYER';
     let mockName = normalizedEmail.split('@')[0] || 'Athlete';
 
@@ -183,6 +214,32 @@ export const authService = {
         meRes.data?.hubOwnerProfile ||
         null,
     };
+  },
+
+  /**
+   * Quick access demo social login (Google/Apple).
+   * Generates a valid session token, registers public.profiles row in backend database, and returns valid session.
+   */
+  async socialLogin(provider: 'Google' | 'Apple', role: Role): Promise<LoginResult> {
+    const mockUserId = generateUUID();
+    const normalizedEmail = `${provider.toLowerCase()}.athlete@maidaan.pk`;
+    const name = `${provider} Athlete`;
+    const token = `test_token:${mockUserId}:${encodeURIComponent(normalizedEmail)}`;
+
+    await AuthStorage.setToken(token);
+
+    // Initialize backend profile so authorizeRoles and profile routes find it
+    await api.post('/api/profile/init', { name, role }).catch(() => {});
+
+    const user: User = {
+      id: mockUserId,
+      name,
+      email: normalizedEmail,
+      role,
+      createdAt: new Date().toISOString(),
+    };
+
+    return { user, token };
   },
 
   /**

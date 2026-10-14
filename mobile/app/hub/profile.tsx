@@ -47,10 +47,12 @@ export default function HubProfileScreen() {
   const [realCourtCount, setRealCourtCount] = useState<number | null>(null);
   const [notification, setNotification] = useState<string | null>(null);
 
+  const isMountedRef = React.useRef(true);
+
   const loadData = useCallback(async () => {
     try {
       const meData = await authService.me();
-      if (meData.hubOwnerProfile) {
+      if (isMountedRef.current && meData.hubOwnerProfile) {
         setHubOwnerProfile(meData.hubOwnerProfile);
       }
     } catch {
@@ -59,7 +61,9 @@ export default function HubProfileScreen() {
 
     try {
       const courts = await hubCourtService.getCourts();
-      setRealCourtCount(courts.length);
+      if (isMountedRef.current) {
+        setRealCourtCount(courts.length);
+      }
     } catch {
       // Keep store / profile count
     }
@@ -67,7 +71,11 @@ export default function HubProfileScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      isMountedRef.current = true;
       loadData();
+      return () => {
+        isMountedRef.current = false;
+      };
     }, [loadData])
   );
 

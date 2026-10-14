@@ -61,12 +61,16 @@ export default function ForgotPasswordScreen() {
   };
 
   const handleBack = () => {
-    router.back();
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(auth)/login');
+    }
   };
 
   return (
     <SafeAreaView className="flex-1 bg-warm-white" edges={['top', 'bottom']}>
-      <ArenaHeader title="MAIDAAN" subtitle="ACCOUNT RECOVERY" showBack />
+      <ArenaHeader title="MAIDAAN" subtitle="ACCOUNT RECOVERY" showBack fallbackRoute="/(auth)/login" />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}

@@ -3,7 +3,30 @@ const { withNativeWind } = require("nativewind/metro");
 const path = require("path");
 const http = require("http");
 
-const config = getDefaultConfig(__dirname);
+const projectRoot = __dirname;
+const workspaceRoot = path.resolve(projectRoot, "..");
+
+const config = getDefaultConfig(projectRoot);
+
+config.watchFolders = [workspaceRoot];
+config.resolver.nodeModulesPaths = [
+  path.resolve(projectRoot, "node_modules"),
+  path.resolve(workspaceRoot, "node_modules"),
+];
+
+const fs = require("fs");
+const cssInteropPath = [
+  path.resolve(projectRoot, "node_modules/react-native-css-interop"),
+  path.resolve(workspaceRoot, "node_modules/nativewind/node_modules/react-native-css-interop"),
+  path.resolve(workspaceRoot, "node_modules/react-native-css-interop"),
+].find((p) => fs.existsSync(p));
+
+if (cssInteropPath) {
+  config.resolver.extraNodeModules = {
+    ...config.resolver.extraNodeModules,
+    "react-native-css-interop": cssInteropPath,
+  };
+}
 
 // Forward /api and /socket.io requests from web preview to Express backend on port 5000
 config.server = {

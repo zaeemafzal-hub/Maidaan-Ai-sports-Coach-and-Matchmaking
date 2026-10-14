@@ -462,7 +462,14 @@ export default function VoiceCoachScreen() {
         subtitle="TRAINING DESK // VOICE SESSION"
         locationBadge="TACTICAL AUDIO DESK"
         showBack={true}
-        onBack={() => router.back()}
+        fallbackRoute="/(tabs)/coach"
+        onBack={() => {
+          if (router.canGoBack()) {
+            router.back();
+          } else {
+            router.replace('/(tabs)/coach');
+          }
+        }}
         rightAction={
           <Pressable
             onPress={() => router.replace('/(tabs)/coach')}

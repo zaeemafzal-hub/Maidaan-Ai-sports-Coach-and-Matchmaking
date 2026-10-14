@@ -70,19 +70,27 @@ export default function JoinRequestsScreen() {
     match?: MatchSlotItem;
   } | null>(null);
 
+  const isMountedRef = React.useRef(true);
+
   // Load real captain fixtures and their requests
   const loadData = useCallback(async () => {
     try {
-      setIsLoading(true);
-      setError(null);
-      setActionError(null);
+      if (isMountedRef.current) {
+        setIsLoading(true);
+        setError(null);
+        setActionError(null);
+      }
 
       // 1. Fetch captain-owned fixtures from backend
       const fixtures = await matchService.getCaptainMatches();
-      setOwnedFixtures(fixtures);
+      if (isMountedRef.current) {
+        setOwnedFixtures(fixtures);
+      }
 
       if (fixtures.length === 0) {
-        setRequests([]);
+        if (isMountedRef.current) {
+          setRequests([]);
+        }
         return;
       }
 
@@ -90,25 +98,37 @@ export default function JoinRequestsScreen() {
       // If route specified matchId, fetch for that match, else fetch for all owned matches
       if (routeMatchId) {
         const matchRequests = await joinRequestService.getMatchJoinRequests(routeMatchId);
-        setRequests(matchRequests);
+        if (isMountedRef.current) {
+          setRequests(matchRequests);
+        }
       } else {
         const allRequestsPromises = fixtures.map((f) =>
           joinRequestService.getMatchJoinRequests(f.id).catch(() => [])
         );
         const results = await Promise.all(allRequestsPromises);
-        setRequests(results.flat());
+        if (isMountedRef.current) {
+          setRequests(results.flat());
+        }
       }
     } catch (err: any) {
-      console.warn('[JoinRequestsScreen] Error loading captain requests:', err);
-      setError('Unable to load join requests from server. Please check your connection.');
+      if (isMountedRef.current) {
+        console.warn('[JoinRequestsScreen] Error loading captain requests:', err);
+        setError('Unable to load join requests from server. Please check your connection.');
+      }
     } finally {
-      setIsLoading(false);
+      if (isMountedRef.current) {
+        setIsLoading(false);
+      }
     }
   }, [routeMatchId]);
 
   useFocusEffect(
     useCallback(() => {
+      isMountedRef.current = true;
       loadData();
+      return () => {
+        isMountedRef.current = false;
+      };
     }, [loadData])
   );
 
@@ -278,7 +298,14 @@ export default function JoinRequestsScreen() {
         title="MAIDAAN"
         subtitle="CAPTAIN DESK // MATCH OPERATIONS"
         showBack
-        onBack={() => router.back()}
+        fallbackRoute="/captain/dashboard"
+        onBack={() => {
+          if (router.canGoBack()) {
+            router.back();
+          } else {
+            router.replace('/captain/dashboard');
+          }
+        }}
         rightAction={<ArenaBadge label="SCREEN 18" variant="stone" size="sm" />}
       />
 

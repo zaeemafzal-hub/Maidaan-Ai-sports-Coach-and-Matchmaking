@@ -8,6 +8,7 @@ import {
   Image,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -76,14 +77,30 @@ export default function CaptainSetupScreen() {
     selectedRole,
     setCaptainProfile,
     setOnboardingCompleted,
+    isInitialized,
+    isLoading,
   } = useAuthStore();
 
-  const currentRole = currentUser?.role || selectedRole || 'TEAM_CAPTAIN';
+  const currentRole = currentUser?.role || selectedRole;
+
   useEffect(() => {
-    if (currentRole !== 'TEAM_CAPTAIN') {
-      router.replace('/(auth)/role-selection');
+    if (!isInitialized || isLoading) return;
+
+    if (!currentUser) {
+      router.replace('/(auth)/login');
+      return;
     }
-  }, [currentRole]);
+
+    if (currentRole && currentRole !== 'TEAM_CAPTAIN') {
+      if (currentRole === 'PLAYER') {
+        router.replace('/onboarding/player-setup');
+      } else if (currentRole === 'HUB_OWNER') {
+        router.replace('/onboarding/hub-setup');
+      } else {
+        router.replace('/(auth)/role-selection');
+      }
+    }
+  }, [isInitialized, isLoading, currentUser, currentRole]);
 
   // Approved Form Fields
   const [teamName, setTeamName] = useState('');
@@ -152,6 +169,17 @@ export default function CaptainSetupScreen() {
     setTimeout(() => setEditNotice(null), 3500);
   };
 
+  if (!isInitialized || isLoading) {
+    return (
+      <SafeAreaView className="flex-1 bg-warm-white items-center justify-center">
+        <ActivityIndicator size="large" color="#3D4438" />
+        <Text className="text-stone-muted text-xs font-bold uppercase tracking-widest mt-3">
+          Restoring Arena Session...
+        </Text>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView className="flex-1 bg-warm-white" edges={['top', 'bottom']}>
       {/* Concrete Arena Match-Day Header */}
@@ -159,6 +187,7 @@ export default function CaptainSetupScreen() {
         title="MAIDAAN"
         subtitle="MATCH-DAY ROSTER // STEP 01 OF 01"
         showBack
+        fallbackRoute="/(auth)/role-selection"
       />
 
       <KeyboardAvoidingView

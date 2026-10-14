@@ -27,6 +27,7 @@ export default function CreateAccountScreen() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
 
   const [errors, setErrors] = useState<{
     fullName?: string;
@@ -94,6 +95,11 @@ export default function CreateAccountScreen() {
         role: selectedRole,
       });
 
+      if (result.needsEmailConfirmation) {
+        setShowConfirmation(true);
+        return;
+      }
+
       setCurrentUser(result.user);
 
       switch (selectedRole) {
@@ -123,12 +129,56 @@ export default function CreateAccountScreen() {
     router.push('/(auth)/login');
   };
 
+  if (showConfirmation) {
+    return (
+      <SafeAreaView className="flex-1 bg-warm-white" edges={['top', 'bottom']}>
+        <ArenaHeader
+          title="MAIDAAN"
+          subtitle="ACCOUNT VERIFICATION"
+          showBack
+          fallbackRoute="/(auth)/role-selection"
+          onBack={() => setShowConfirmation(false)}
+        />
+        <View className="flex-1 px-6 justify-center items-center">
+          <View className="w-16 h-16 rounded-2xl bg-olive/15 border-2 border-olive items-center justify-center mb-5">
+            <Ionicons name="mail-unread" size={32} color="#3D4438" />
+          </View>
+          <Text className="text-rust text-xs font-black uppercase tracking-widest mb-1.5">
+            EMAIL CONFIRMATION REQUIRED
+          </Text>
+          <Text className="text-graphite text-2xl font-black uppercase text-center mb-2 tracking-tight">
+            Check Your Inbox
+          </Text>
+          <Text className="text-stone-muted text-sm text-center font-medium leading-relaxed mb-4 max-w-xs">
+            We have dispatched a verification link to:
+          </Text>
+          <View className="px-4 py-2 bg-stone-light border border-stone rounded-lg mb-6">
+            <Text className="text-graphite text-xs font-black uppercase tracking-wider">
+              {email}
+            </Text>
+          </View>
+          <Text className="text-stone-muted text-xs text-center font-medium leading-relaxed mb-8 max-w-xs">
+            Please confirm your email address by clicking the link, then log in to complete your athlete roster setup.
+          </Text>
+          <View className="w-full max-w-xs">
+            <PrimaryButton
+              title="PROCEED TO LOG IN"
+              onPress={handleLogin}
+              variant="primary"
+            />
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView className="flex-1 bg-warm-white" edges={['top', 'bottom']}>
       <ArenaHeader
         title="MAIDAAN"
         subtitle="REGISTRATION"
         showBack
+        fallbackRoute="/(auth)/role-selection"
         rightAction={
           <Pressable onPress={handleLogin} className="py-1 px-2.5">
             <Text className="text-olive text-xs font-black uppercase tracking-wider">

@@ -6,6 +6,7 @@ import {
   ScrollView,
   Modal,
   Image,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -72,14 +73,30 @@ export default function PlayerSetupScreen() {
     selectedRole,
     setPlayerProfile,
     setOnboardingCompleted,
+    isInitialized,
+    isLoading,
   } = useAuthStore();
 
-  const currentRole = currentUser?.role || selectedRole || 'PLAYER';
+  const currentRole = currentUser?.role || selectedRole;
+
   useEffect(() => {
-    if (currentRole !== 'PLAYER') {
-      router.replace('/(auth)/role-selection');
+    if (!isInitialized || isLoading) return;
+
+    if (!currentUser) {
+      router.replace('/(auth)/login');
+      return;
     }
-  }, [currentRole]);
+
+    if (currentRole && currentRole !== 'PLAYER') {
+      if (currentRole === 'TEAM_CAPTAIN') {
+        router.replace('/onboarding/captain-setup');
+      } else if (currentRole === 'HUB_OWNER') {
+        router.replace('/onboarding/hub-setup');
+      } else {
+        router.replace('/(auth)/role-selection');
+      }
+    }
+  }, [isInitialized, isLoading, currentUser, currentRole]);
 
   const [selectedSports, setSelectedSports] = useState<Sport[]>(['cricket']);
   const [skillLevel, setSkillLevel] = useState<SkillLevel>('intermediate');
@@ -132,6 +149,17 @@ export default function PlayerSetupScreen() {
     setTimeout(() => setEditNotice(null), 3500);
   };
 
+  if (!isInitialized || isLoading) {
+    return (
+      <SafeAreaView className="flex-1 bg-warm-white items-center justify-center">
+        <ActivityIndicator size="large" color="#3D4438" />
+        <Text className="text-stone-muted text-xs font-bold uppercase tracking-widest mt-3">
+          Restoring Arena Session...
+        </Text>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView className="flex-1 bg-warm-white" edges={['top', 'bottom']}>
       {/* Concrete Arena Match-Day Header */}
@@ -139,6 +167,7 @@ export default function PlayerSetupScreen() {
         title="MAIDAAN"
         subtitle="MATCH-DAY ROSTER // STEP 01 OF 01"
         showBack
+        fallbackRoute="/(auth)/role-selection"
       />
 
       <ScrollView

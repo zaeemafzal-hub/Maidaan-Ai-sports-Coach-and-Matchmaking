@@ -69,6 +69,8 @@ export default function NotificationsScreen() {
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
+  const isMountedRef = React.useRef(true);
+
   const loadNotifications = async (isPullRefresh = false) => {
     try {
       if (isPullRefresh) {
@@ -78,19 +80,29 @@ export default function NotificationsScreen() {
       }
       setError(null);
       const items = await notificationService.getNotifications();
-      setNotifications(items);
+      if (isMountedRef.current) {
+        setNotifications(items || []);
+      }
     } catch (err: any) {
-      console.warn('[Notifications] Failed to load notifications:', err);
-      setError(err?.message || 'Could not load notifications from server.');
+      if (isMountedRef.current) {
+        console.warn('[Notifications] Failed to load notifications:', err);
+        setError(err?.message || 'Could not load notifications from server.');
+      }
     } finally {
-      setLoading(false);
-      setRefreshing(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+        setRefreshing(false);
+      }
     }
   };
 
   useFocusEffect(
     useCallback(() => {
+      isMountedRef.current = true;
       loadNotifications();
+      return () => {
+        isMountedRef.current = false;
+      };
     }, [])
   );
 
@@ -117,6 +129,10 @@ export default function NotificationsScreen() {
       } catch (err: any) {
         console.warn('[Notifications] Failed to mark read:', err);
       }
+    }
+
+    if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
     }
 
     // Deterministic route navigation based on notification event
@@ -174,7 +190,14 @@ export default function NotificationsScreen() {
         title="NOTIFICATIONS"
         subtitle="CIRCUIT DESK // ACTIVITY FEED"
         showBack
-        onBack={() => router.back()}
+        fallbackRoute="/(tabs)/discover"
+        onBack={() => {
+          if (router.canGoBack()) {
+            router.back();
+          } else {
+            router.replace('/(tabs)/discover');
+          }
+        }}
         rightAction={
           unreadCount > 0 ? (
             <Pressable

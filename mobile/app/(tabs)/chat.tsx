@@ -38,6 +38,8 @@ export default function ChatScreen() {
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
+  const isMountedRef = React.useRef(true);
+
   const loadRooms = async (isPullRefresh = false) => {
     try {
       if (isPullRefresh) {
@@ -47,19 +49,29 @@ export default function ChatScreen() {
       }
       setError(null);
       const data = await chatService.getRooms();
-      setRooms(data);
+      if (isMountedRef.current) {
+        setRooms(data);
+      }
     } catch (err: any) {
-      console.warn('[ChatScreen] Failed to load chat rooms:', err);
-      setError(err?.message || 'Could not load chat channels.');
+      if (isMountedRef.current) {
+        console.warn('[ChatScreen] Failed to load chat rooms:', err);
+        setError(err?.message || 'Could not load chat channels.');
+      }
     } finally {
-      setLoading(false);
-      setRefreshing(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+        setRefreshing(false);
+      }
     }
   };
 
   useFocusEffect(
     useCallback(() => {
+      isMountedRef.current = true;
       loadRooms();
+      return () => {
+        isMountedRef.current = false;
+      };
     }, [])
   );
 
@@ -71,6 +83,9 @@ export default function ChatScreen() {
   });
 
   const handleOpenRoom = (room: ChatRoom) => {
+    if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
     router.push({
       pathname: '/chat/[id]',
       params: {

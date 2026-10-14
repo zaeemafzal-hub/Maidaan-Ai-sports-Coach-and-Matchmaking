@@ -240,23 +240,37 @@ export default function CaptainDashboardScreen() {
   const [isLoadingFixtures, setIsLoadingFixtures] = useState<boolean>(true);
   const [fixturesError, setFixturesError] = useState<string | null>(null);
 
+  const isMountedRef = React.useRef(true);
+
   const loadCaptainFixtures = React.useCallback(async () => {
     try {
-      setIsLoadingFixtures(true);
-      setFixturesError(null);
+      if (isMountedRef.current) {
+        setIsLoadingFixtures(true);
+        setFixturesError(null);
+      }
       const data = await matchService.getCaptainMatches();
-      setCaptainFixtures(data.map(mapToCaptainFixture));
+      if (isMountedRef.current) {
+        setCaptainFixtures(data.map(mapToCaptainFixture));
+      }
     } catch (err: any) {
-      console.warn('[CaptainDashboard] Failed to fetch captain fixtures:', err);
-      setFixturesError(err?.message || 'Failed to load captain fixtures. Please try again.');
+      if (isMountedRef.current) {
+        console.warn('[CaptainDashboard] Failed to fetch captain fixtures:', err);
+        setFixturesError(err?.message || 'Failed to load captain fixtures. Please try again.');
+      }
     } finally {
-      setIsLoadingFixtures(false);
+      if (isMountedRef.current) {
+        setIsLoadingFixtures(false);
+      }
     }
   }, []);
 
   useFocusEffect(
     React.useCallback(() => {
+      isMountedRef.current = true;
       loadCaptainFixtures();
+      return () => {
+        isMountedRef.current = false;
+      };
     }, [loadCaptainFixtures])
   );
 

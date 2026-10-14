@@ -13,7 +13,16 @@ export default function RootLayout() {
   const initializeAuth = useAuthStore((state) => state.initializeAuth);
 
   useEffect(() => {
-    initializeAuth();
+    let isMounted = true;
+    const init = async () => {
+      if (isMounted) {
+        await initializeAuth();
+      }
+    };
+    init();
+    return () => {
+      isMounted = false;
+    };
   }, [initializeAuth]);
 
   return (

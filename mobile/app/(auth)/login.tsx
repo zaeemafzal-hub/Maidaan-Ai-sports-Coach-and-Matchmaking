@@ -125,22 +125,29 @@ export default function LoginScreen() {
     }
   };
 
-  const handleSocialMockLogin = (provider: 'Google' | 'Apple') => {
-    const role = currentUser?.role || selectedRole || 'PLAYER';
-    const user: User = {
-      id: `usr_${provider.toLowerCase()}_${Date.now()}`,
-      name: `${provider} Athlete`,
-      email: `${provider.toLowerCase()}.user@maidaan.pk`,
-      role,
-      createdAt: new Date().toISOString(),
-    };
+  const handleSocialMockLogin = async (provider: 'Google' | 'Apple') => {
+    setIsSubmitting(true);
+    setErrors({});
+    try {
+      const role = currentUser?.role || selectedRole || 'PLAYER';
+      const result = await authService.socialLogin(provider, role);
+      setCurrentUser(result.user);
+      setSelectedRole(result.user.role);
+      setOnboardingCompleted(false);
 
-    setCurrentUser(user);
-
-    if (onboardingCompleted) {
-      router.replace('/(tabs)/discover');
-    } else {
-      router.replace('/onboarding/player-setup');
+      if (role === 'PLAYER') {
+        router.replace('/onboarding/player-setup');
+      } else if (role === 'TEAM_CAPTAIN') {
+        router.replace('/onboarding/captain-setup');
+      } else if (role === 'HUB_OWNER') {
+        router.replace('/onboarding/hub-setup');
+      } else {
+        router.replace('/(tabs)/discover');
+      }
+    } catch (err: any) {
+      setErrors({ general: err?.message || 'Social sign in failed.' });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -158,6 +165,7 @@ export default function LoginScreen() {
         title="MAIDAAN"
         subtitle="MATCH-DAY SIGN IN"
         showBack
+        fallbackRoute="/(auth)/welcome"
         rightAction={
           <Pressable onPress={handleRegister} className="py-1 px-2.5">
             <Text className="text-olive text-xs font-black uppercase tracking-wider">

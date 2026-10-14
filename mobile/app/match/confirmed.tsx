@@ -56,16 +56,22 @@ export default function SpotConfirmedScreen() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isUnauthorized, setIsUnauthorized] = useState<boolean>(false);
 
+  const isMountedRef = React.useRef(true);
+
   const verifyConfirmation = useCallback(async () => {
     if (!matchId) {
-      setIsUnauthorized(true);
-      setIsLoading(false);
+      if (isMountedRef.current) {
+        setIsUnauthorized(true);
+        setIsLoading(false);
+      }
       return;
     }
 
     try {
-      setIsLoading(true);
-      setIsUnauthorized(false);
+      if (isMountedRef.current) {
+        setIsLoading(true);
+        setIsUnauthorized(false);
+      }
 
       // Verify that current user actually has an ACCEPTED request for this match
       const myRequests = await joinRequestService.getMyJoinRequests();
@@ -74,33 +80,47 @@ export default function SpotConfirmedScreen() {
       );
 
       if (!confirmedReq) {
-        setIsUnauthorized(true);
-        setMatch(null);
-        setAcceptedRequest(null);
+        if (isMountedRef.current) {
+          setIsUnauthorized(true);
+          setMatch(null);
+          setAcceptedRequest(null);
+        }
         return;
       }
 
-      setAcceptedRequest(confirmedReq);
+      if (isMountedRef.current) {
+        setAcceptedRequest(confirmedReq);
+      }
 
       // Load live match fixture details
       const matchData = await matchService.getMatchById(matchId);
-      if (!matchData) {
-        setIsUnauthorized(true);
-        setMatch(null);
-      } else {
-        setMatch(matchData);
+      if (isMountedRef.current) {
+        if (!matchData) {
+          setIsUnauthorized(true);
+          setMatch(null);
+        } else {
+          setMatch(matchData);
+        }
       }
     } catch (err: any) {
-      console.warn('[SpotConfirmedScreen] Verification error:', err);
-      setIsUnauthorized(true);
+      if (isMountedRef.current) {
+        console.warn('[SpotConfirmedScreen] Verification error:', err);
+        setIsUnauthorized(true);
+      }
     } finally {
-      setIsLoading(false);
+      if (isMountedRef.current) {
+        setIsLoading(false);
+      }
     }
   }, [matchId]);
 
   useFocusEffect(
     useCallback(() => {
+      isMountedRef.current = true;
       verifyConfirmation();
+      return () => {
+        isMountedRef.current = false;
+      };
     }, [verifyConfirmation])
   );
 

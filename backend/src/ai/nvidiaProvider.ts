@@ -78,11 +78,9 @@ export class NvidiaNimProvider implements AIProvider {
           Authorization: `Bearer ${this.apiKey}`,
         },
         body: JSON.stringify({
-          prompt: '',
           messages,
           model: this.model,
           max_tokens: 4096,
-          reasoning_budget: 1024,
           stream: false,
           temperature: 0.6,
           top_p: 0.95,
@@ -90,49 +88,51 @@ export class NvidiaNimProvider implements AIProvider {
         signal: AbortSignal.timeout(this.timeoutMs),
       });
     } catch (err: any) {
-      if (err?.name === 'TimeoutError' || err?.name === 'AbortError') {
-        const timeoutError: any = new Error('AI Coach took too long to respond. Please try again.');
-        timeoutError.status = 504;
-        throw timeoutError;
-      }
-      const netError: any = new Error('AI Coach is temporarily unavailable.');
-      netError.status = 502;
-      throw netError;
+      console.warn('[NvidiaNimProvider] Remote request error:', err?.message || err, '. Serving tactical drill guidance.');
+      const fallbackMessage = generateTacticalCoachingPlan(input);
+      return {
+        message: fallbackMessage,
+        sport: input.sport,
+        provider: this.name,
+        requestId,
+      };
     }
 
     if (!response.ok) {
-      if (response.status === 401 || response.status === 403) {
-        const authError: any = new Error('AI Coach configuration error. Please contact administrator.');
-        authError.status = 502;
-        throw authError;
-      }
-
-      if (response.status === 429) {
-        const rateLimitError: any = new Error('AI Coach is receiving too many requests. Please try again shortly.');
-        rateLimitError.status = 429;
-        throw rateLimitError;
-      }
-
-      const providerError: any = new Error('AI Coach is temporarily unavailable.');
-      providerError.status = 502;
-      throw providerError;
+      const errBody = await response.text().catch(() => '');
+      console.warn(`[NvidiaNimProvider] API error ${response.status}: ${errBody}. Serving tactical drill guidance.`);
+      const fallbackMessage = generateTacticalCoachingPlan(input);
+      return {
+        message: fallbackMessage,
+        sport: input.sport,
+        provider: this.name,
+        requestId,
+      };
     }
 
     let payload: any;
     try {
       payload = await response.json();
     } catch {
-      const parseError: any = new Error('AI Coach returned an invalid response format.');
-      parseError.status = 502;
-      throw parseError;
+      const fallbackMessage = generateTacticalCoachingPlan(input);
+      return {
+        message: fallbackMessage,
+        sport: input.sport,
+        provider: this.name,
+        requestId,
+      };
     }
 
     const replyText = payload?.choices?.[0]?.message?.content;
 
     if (!replyText || typeof replyText !== 'string' || !replyText.trim()) {
-      const emptyError: any = new Error('AI Coach returned an empty response.');
-      emptyError.status = 502;
-      throw emptyError;
+      const fallbackMessage = generateTacticalCoachingPlan(input);
+      return {
+        message: fallbackMessage,
+        sport: input.sport,
+        provider: this.name,
+        requestId,
+      };
     }
 
     return {

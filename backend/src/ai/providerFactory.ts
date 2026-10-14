@@ -35,8 +35,8 @@ export function setMockAIProvider(provider: AIProvider | null): void {
 
 /**
  * Resolves the configured AI provider.
- * Uses NVIDIA NIM as the designated AI provider.
- * In test mode (NODE_ENV=test), returns injected mock provider or default MockTestAIProvider.
+ * NVIDIA NIM is the primary (and only) live AI provider for Maidaan.
+ * In test mode (NODE_ENV=test), returns an injected mock or the default MockTestAIProvider.
  */
 export function getAIProvider(): AIProvider {
   const isTestMode = process.env.NODE_ENV === 'test';
@@ -48,10 +48,11 @@ export function getAIProvider(): AIProvider {
     return new MockTestAIProvider();
   }
 
+  // ─── NVIDIA NIM — primary AI provider ────────────────────────────────────
   if (!activeNvidiaProvider) {
     activeNvidiaProvider = new NvidiaNimProvider({
       apiKey: process.env.NVIDIA_API_KEY,
-      model: process.env.NVIDIA_MODEL || 'meta/llama-3.1-70b-instruct',
+      model: process.env.NVIDIA_MODEL || 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning',
       baseUrl: process.env.NVIDIA_BASE_URL || 'https://integrate.api.nvidia.com/v1',
     });
   }

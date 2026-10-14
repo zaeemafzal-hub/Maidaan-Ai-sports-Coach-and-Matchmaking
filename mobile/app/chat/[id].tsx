@@ -169,7 +169,11 @@ export default function ChatRoomScreen() {
   };
 
   const handleBack = () => {
-    router.replace('/(tabs)/chat');
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)/chat');
+    }
   };
 
   const handleViewMatch = () => {

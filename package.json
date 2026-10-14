@@ -15,16 +15,12 @@
     "backend": "npm --prefix backend run dev"
   },
   "devDependencies": {
-    "@types/bcryptjs": "^3.0.0",
-    "@types/cors": "^2.8.19",
-    "@types/jsonwebtoken": "^9.0.10",
-    "typescript": "^7.0.2"
+    "typescript": "^5.9.3"
   },
-  "dependencies": {
-    "@supabase/supabase-js": "^2.117.3",
-    "bcryptjs": "^3.0.3",
-    "cors": "^2.8.6",
-    "jsonwebtoken": "^9.0.3",
-    "mongoose": "^9.11.1"
+  "overrides": {
+    "react-native-reanimated": "4.5.1",
+    "react-native-worklets": "0.10.1",
+    "react": "19.2.3",
+    "react-dom": "19.2.3"
   }
 }

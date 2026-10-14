@@ -8,6 +8,7 @@ interface ArenaHeaderProps {
   subtitle?: string;
   showBack?: boolean;
   onBack?: () => void;
+  fallbackRoute?: string;
   rightAction?: React.ReactNode;
   theme?: 'dark' | 'light';
   locationBadge?: string;
@@ -18,6 +19,7 @@ export const ArenaHeader: React.FC<ArenaHeaderProps> = ({
   subtitle,
   showBack = false,
   onBack,
+  fallbackRoute,
   rightAction,
   theme = 'light',
   locationBadge,
@@ -27,8 +29,14 @@ export const ArenaHeader: React.FC<ArenaHeaderProps> = ({
   const handleBack = () => {
     if (onBack) {
       onBack();
-    } else {
+      return;
+    }
+    if (router.canGoBack()) {
       router.back();
+    } else if (fallbackRoute) {
+      router.replace(fallbackRoute as any);
+    } else {
+      router.replace('/(auth)/welcome');
     }
   };
 

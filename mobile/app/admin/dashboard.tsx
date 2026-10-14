@@ -56,12 +56,16 @@ export default function AdminDashboardScreen() {
   });
   const [activities, setActivities] = useState<AdminActivityItem[]>([]);
 
+  const isMountedRef = React.useRef(true);
+
   const fetchDashboardData = useCallback(async () => {
     if (!isAdmin) return;
 
     try {
-      setLoading(true);
-      setError(null);
+      if (isMountedRef.current) {
+        setLoading(true);
+        setError(null);
+      }
 
       const [verifRes, reportsRes] = await Promise.all([
         adminService.getHubVerifications(),
@@ -73,7 +77,9 @@ export default function AdminDashboardScreen() {
           verifRes.error ||
           reportsRes.error ||
           'Failed to retrieve operational queue data.';
-        setError(err);
+        if (isMountedRef.current) {
+          setError(err);
+        }
         return;
       }
 
@@ -91,12 +97,14 @@ export default function AdminDashboardScreen() {
       ).length;
       const completedReviews = completedHubs + completedReports;
 
-      setSummary({
-        pendingHubs,
-        openReports,
-        followUpReports,
-        completedReviews,
-      });
+      if (isMountedRef.current) {
+        setSummary({
+          pendingHubs,
+          openReports,
+          followUpReports,
+          completedReviews,
+        });
+      }
 
       // Construct live recent activity stream from real verifications & reports
       const liveItems: AdminActivityItem[] = [
@@ -139,17 +147,27 @@ export default function AdminDashboardScreen() {
         .sort((a, b) => b.rawDate - a.rawDate)
         .slice(0, 6);
 
-      setActivities(liveItems);
+      if (isMountedRef.current) {
+        setActivities(liveItems);
+      }
     } catch {
-      setError('Connection failure while loading operational data. Please retry.');
+      if (isMountedRef.current) {
+        setError('Connection failure while loading operational data. Please retry.');
+      }
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
   }, [isAdmin]);
 
   useFocusEffect(
     useCallback(() => {
+      isMountedRef.current = true;
       fetchDashboardData();
+      return () => {
+        isMountedRef.current = false;
+      };
     }, [fetchDashboardData])
   );
 

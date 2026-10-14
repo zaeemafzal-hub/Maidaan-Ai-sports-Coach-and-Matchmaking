@@ -92,36 +92,50 @@ export default function HubCourtsScreen() {
   const [deleteConfirmCourt, setDeleteConfirmCourt] = useState<HubCourt | null>(null);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
+  const isMountedRef = React.useRef(true);
+
   // Fetch real courts from backend
   const loadCourts = async () => {
     try {
-      setLoading(true);
-      setFetchError(null);
+      if (isMountedRef.current) {
+        setLoading(true);
+        setFetchError(null);
+      }
       const data = await hubCourtService.getCourts();
-      setCourts(data);
+      if (isMountedRef.current) {
+        setCourts(data);
+      }
 
       // Re-fetch profile to keep synchronized court_count fresh
       try {
         const myProfile = await profileService.getMyProfile();
-        if (myProfile?.hubOwnerProfile) {
+        if (isMountedRef.current && myProfile?.hubOwnerProfile) {
           setHubOwnerProfile(myProfile.hubOwnerProfile);
         }
       } catch {
         // Safe ignore
       }
     } catch (err: any) {
-      console.warn('[HubCourts] Failed to load courts:', err);
-      setFetchError(err?.message || 'Failed to load playing spaces. Please check your connection.');
+      if (isMountedRef.current) {
+        console.warn('[HubCourts] Failed to load courts:', err);
+        setFetchError(err?.message || 'Failed to load playing spaces. Please check your connection.');
+      }
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
   };
 
   useFocusEffect(
     useCallback(() => {
+      isMountedRef.current = true;
       if (isHubOwner && hubOwnerProfile) {
         loadCourts();
       }
+      return () => {
+        isMountedRef.current = false;
+      };
     }, [isHubOwner, Boolean(hubOwnerProfile)])
   );
 
@@ -338,7 +352,14 @@ export default function HubCourtsScreen() {
         title="MAIDAAN"
         subtitle="FACILITY DESK // PLAYING SPACES"
         showBack
-        onBack={() => router.back()}
+        fallbackRoute="/hub/profile"
+        onBack={() => {
+          if (router.canGoBack()) {
+            router.back();
+          } else {
+            router.replace('/hub/profile');
+          }
+        }}
         rightAction={
           <Pressable
             onPress={() => {

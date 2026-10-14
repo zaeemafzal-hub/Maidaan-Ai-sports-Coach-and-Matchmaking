@@ -62,44 +62,64 @@ export default function MatchDetailsScreen() {
   const [requestSentNotice, setRequestSentNotice] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  const isMountedRef = React.useRef(true);
+
   // Fetch match by ID from backend via matchService
   const loadMatch = React.useCallback(async () => {
     if (!id || typeof id !== 'string' || !id.trim()) {
-      setIsLoading(false);
-      setIsNotFound(true);
-      setError(null);
-      setMatch(null);
+      if (isMountedRef.current) {
+        setIsLoading(false);
+        setIsNotFound(true);
+        setError(null);
+        setMatch(null);
+      }
       return;
     }
 
     try {
-      setIsLoading(true);
-      setError(null);
-      setIsNotFound(false);
-      const data = await matchService.getMatchById(id.trim());
-      if (!data) {
-        setIsNotFound(true);
-        setMatch(null);
-      } else {
-        setMatch(data);
+      if (isMountedRef.current) {
+        setIsLoading(true);
+        setError(null);
         setIsNotFound(false);
       }
+      const data = await matchService.getMatchById(id.trim());
+      if (isMountedRef.current) {
+        if (!data) {
+          setIsNotFound(true);
+          setMatch(null);
+        } else {
+          setMatch(data);
+          setIsNotFound(false);
+        }
+      }
     } catch (err: any) {
-      console.warn('[MatchDetailsScreen] Error loading fixture:', err);
-      setError('Unable to load match fixture details. Please check your connection.');
-      setMatch(null);
-      setIsNotFound(false);
+      if (isMountedRef.current) {
+        console.warn('[MatchDetailsScreen] Error loading fixture:', err);
+        setError('Unable to load match fixture details. Please check your connection.');
+        setMatch(null);
+        setIsNotFound(false);
+      }
     } finally {
-      setIsLoading(false);
+      if (isMountedRef.current) {
+        setIsLoading(false);
+      }
     }
   }, [id]);
 
   React.useEffect(() => {
+    isMountedRef.current = true;
     loadMatch();
+    return () => {
+      isMountedRef.current = false;
+    };
   }, [loadMatch]);
 
   const handleBack = () => {
-    router.back();
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)/discover');
+    }
   };
 
   const handleRequestJoin = async () => {

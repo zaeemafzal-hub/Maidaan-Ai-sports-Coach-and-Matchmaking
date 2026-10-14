@@ -63,6 +63,7 @@ export default function RoleSelectionScreen() {
         title="MAIDAAN"
         subtitle="STEP 01 OF 02"
         showBack
+        fallbackRoute="/(auth)/welcome"
         rightAction={
           <View className="px-2.5 py-1 rounded-sm bg-stone/30 border border-stone">
             <Text className="text-graphite text-[10px] font-black uppercase tracking-wider">

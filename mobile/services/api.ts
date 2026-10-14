@@ -31,17 +31,18 @@ class ApiClient {
       ...customHeaders,
     };
 
-    let token = await AuthStorage.getToken();
-    if (!token) {
-      try {
-        const { data } = await supabase.auth.getSession();
-        if (data?.session?.access_token) {
-          token = data.session.access_token;
-          await AuthStorage.setToken(token);
-        }
-      } catch {
-        // ignore
+    let token: string | null = null;
+    try {
+      const { data } = await supabase.auth.getSession();
+      if (data?.session?.access_token) {
+        token = data.session.access_token;
       }
+    } catch {
+      // ignore
+    }
+
+    if (!token) {
+      token = await AuthStorage.getToken();
     }
 
     if (token) {
@@ -57,6 +58,7 @@ class ApiClient {
       method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
       body?: unknown;
       headers?: Record<string, string>;
+      _isRetry?: boolean;
     } = {}
   ): Promise<ApiResponse<T>> {
     const method = options.method || 'GET';
@@ -76,6 +78,21 @@ class ApiClient {
 
       const res = await fetch(url, config);
       const status = res.status;
+
+      // Handle 401 with a single session refresh attempt if not already retried
+      if (status === 401 && !options._isRetry) {
+        try {
+          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+          if (!refreshError && refreshData?.session?.access_token) {
+            return await this.request<T>(endpoint, {
+              ...options,
+              _isRetry: true,
+            });
+          }
+        } catch {
+          // Refresh failed
+        }
+      }
 
       let json: unknown = null;
       try {

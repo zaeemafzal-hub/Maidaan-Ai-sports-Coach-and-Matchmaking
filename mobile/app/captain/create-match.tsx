@@ -466,7 +466,14 @@ export default function CreateMatchScreen() {
           title="MAIDAAN"
           subtitle="CAPTAIN DESK // CREATE MATCH"
           showBack
-          onBack={() => router.back()}
+          fallbackRoute="/captain/dashboard"
+          onBack={() => {
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace('/captain/dashboard');
+            }
+          }}
           rightAction={
             <ArenaBadge label="SCREEN 17" variant="stone" size="sm" />
           }

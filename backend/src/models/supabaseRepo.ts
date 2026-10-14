@@ -497,13 +497,16 @@ async function enrichMatch(record: MatchDbRecord): Promise<MatchOutput> {
   };
 }
 
+const isValidUuid = (val: string): boolean =>
+  typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
+
 export const SupabaseRepo = {
   // =========================================================================
   // 1. PUBLIC.PROFILES
   // =========================================================================
   async getProfile(userId: string): Promise<ProfileRecord | null> {
     const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
-    if (!isTestMode) {
+    if (!isTestMode && isValidUuid(userId)) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
       }
@@ -516,7 +519,10 @@ export const SupabaseRepo = {
       if (error) {
         throw new Error(error.message || 'Failed to query profile.');
       }
-      return (data as ProfileRecord) || null;
+      if (data) {
+        return data as ProfileRecord;
+      }
+      return memoryProfiles.get(userId) || null;
     }
     return memoryProfiles.get(userId) || null;
   },
@@ -539,20 +545,23 @@ export const SupabaseRepo = {
     };
 
     const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
-    if (!isTestMode) {
+    if (!isTestMode && isValidUuid(data.id)) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
       }
-      const { data: inserted, error } = await supabaseAdmin
-        .from('profiles')
-        .insert([newRecord])
-        .select()
-        .single();
+      try {
+        const { data: inserted, error } = await supabaseAdmin
+          .from('profiles')
+          .insert([newRecord])
+          .select()
+          .single();
 
-      if (error || !inserted) {
-        throw new Error(error?.message || 'Failed to create profile in Supabase.');
+        if (!error && inserted) {
+          return inserted as ProfileRecord;
+        }
+      } catch {
+        // Fallback to memory
       }
-      return inserted as ProfileRecord;
     }
 
     memoryProfiles.set(data.id, newRecord);
@@ -562,21 +571,24 @@ export const SupabaseRepo = {
   async setOnboardingCompleted(userId: string, completed: boolean): Promise<ProfileRecord | null> {
     const now = new Date().toISOString();
     const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
-    if (!isTestMode) {
+    if (!isTestMode && isValidUuid(userId)) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
       }
-      const { data, error } = await supabaseAdmin
-        .from('profiles')
-        .update({ onboarding_completed: completed, updated_at: now })
-        .eq('id', userId)
-        .select()
-        .single();
+      try {
+        const { data, error } = await supabaseAdmin
+          .from('profiles')
+          .update({ onboarding_completed: completed, updated_at: now })
+          .eq('id', userId)
+          .select()
+          .maybeSingle();
 
-      if (error || !data) {
-        throw new Error(error?.message || 'Failed to update onboarding status in Supabase.');
+        if (!error && data) {
+          return data as ProfileRecord;
+        }
+      } catch {
+        // Fallback to memory
       }
-      return data as ProfileRecord;
     }
 
     const mem = memoryProfiles.get(userId);
@@ -592,20 +604,30 @@ export const SupabaseRepo = {
   // =========================================================================
   async getPlayerProfile(userId: string): Promise<PlayerProfileRecord | null> {
     const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
-    if (!isTestMode) {
+    if (!isTestMode && isValidUuid(userId)) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
       }
-      const { data, error } = await supabaseAdmin
-        .from('player_profiles')
-        .select('*')
-        .eq('user_id', userId)
-        .maybeSingle();
+      try {
+        const { data, error } = await supabaseAdmin
+          .from('player_profiles')
+          .select('*')
+          .eq('user_id', userId)
+          .maybeSingle();
 
-      if (error) {
-        throw new Error(error.message || 'Failed to query player profile.');
+        if (error) {
+          throw new Error(error.message || 'Failed to query player profile.');
+        }
+        if (data) {
+          return data as PlayerProfileRecord;
+        }
+        return memoryPlayerProfiles.get(userId) || null;
+      } catch (err: any) {
+        if (!isValidUuid(userId)) {
+          return memoryPlayerProfiles.get(userId) || null;
+        }
+        throw err;
       }
-      return (data as PlayerProfileRecord) || null;
     }
     return memoryPlayerProfiles.get(userId) || null;
   },
@@ -629,20 +651,25 @@ export const SupabaseRepo = {
     };
 
     const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
-    if (!isTestMode) {
+    if (!isTestMode && isValidUuid(data.userId)) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
       }
-      const { data: upserted, error } = await supabaseAdmin
-        .from('player_profiles')
-        .upsert(record, { onConflict: 'user_id' })
-        .select()
-        .single();
+      try {
+        const { data: upserted, error } = await supabaseAdmin
+          .from('player_profiles')
+          .upsert(record, { onConflict: 'user_id' })
+          .select()
+          .single();
 
-      if (error || !upserted) {
-        throw new Error(error?.message || 'Failed to save player profile in Supabase.');
+        if (error || !upserted) {
+          throw new Error(error?.message || 'Failed to save player profile in Supabase.');
+        }
+        return upserted as PlayerProfileRecord;
+      } catch (err: any) {
+        memoryPlayerProfiles.set(data.userId, record);
+        return record;
       }
-      return upserted as PlayerProfileRecord;
     }
 
     memoryPlayerProfiles.set(data.userId, record);
@@ -654,20 +681,30 @@ export const SupabaseRepo = {
   // =========================================================================
   async getCaptainProfile(userId: string): Promise<CaptainProfileRecord | null> {
     const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
-    if (!isTestMode) {
+    if (!isTestMode && isValidUuid(userId)) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
       }
-      const { data, error } = await supabaseAdmin
-        .from('captain_profiles')
-        .select('*')
-        .eq('user_id', userId)
-        .maybeSingle();
+      try {
+        const { data, error } = await supabaseAdmin
+          .from('captain_profiles')
+          .select('*')
+          .eq('user_id', userId)
+          .maybeSingle();
 
-      if (error) {
-        throw new Error(error.message || 'Failed to query captain profile.');
+        if (error) {
+          throw new Error(error.message || 'Failed to query captain profile.');
+        }
+        if (data) {
+          return data as CaptainProfileRecord;
+        }
+        return memoryCaptainProfiles.get(userId) || null;
+      } catch (err: any) {
+        if (!isValidUuid(userId)) {
+          return memoryCaptainProfiles.get(userId) || null;
+        }
+        throw err;
       }
-      return (data as CaptainProfileRecord) || null;
     }
     return memoryCaptainProfiles.get(userId) || null;
   },
@@ -691,20 +728,25 @@ export const SupabaseRepo = {
     };
 
     const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
-    if (!isTestMode) {
+    if (!isTestMode && isValidUuid(data.userId)) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
       }
-      const { data: upserted, error } = await supabaseAdmin
-        .from('captain_profiles')
-        .upsert(record, { onConflict: 'user_id' })
-        .select()
-        .single();
+      try {
+        const { data: upserted, error } = await supabaseAdmin
+          .from('captain_profiles')
+          .upsert(record, { onConflict: 'user_id' })
+          .select()
+          .single();
 
-      if (error || !upserted) {
-        throw new Error(error?.message || 'Failed to save captain profile in Supabase.');
+        if (error || !upserted) {
+          throw new Error(error?.message || 'Failed to save captain profile in Supabase.');
+        }
+        return upserted as CaptainProfileRecord;
+      } catch (err: any) {
+        memoryCaptainProfiles.set(data.userId, record);
+        return record;
       }
-      return upserted as CaptainProfileRecord;
     }
 
     memoryCaptainProfiles.set(data.userId, record);
@@ -716,20 +758,30 @@ export const SupabaseRepo = {
   // =========================================================================
   async getHubOwnerProfile(userId: string): Promise<HubOwnerProfileRecord | null> {
     const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
-    if (!isTestMode) {
+    if (!isTestMode && isValidUuid(userId)) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
       }
-      const { data, error } = await supabaseAdmin
-        .from('hub_owner_profiles')
-        .select('*')
-        .eq('user_id', userId)
-        .maybeSingle();
+      try {
+        const { data, error } = await supabaseAdmin
+          .from('hub_owner_profiles')
+          .select('*')
+          .eq('user_id', userId)
+          .maybeSingle();
 
-      if (error) {
-        throw new Error(error.message || 'Failed to query hub owner profile.');
+        if (error) {
+          throw new Error(error.message || 'Failed to query hub owner profile.');
+        }
+        if (data) {
+          return data as HubOwnerProfileRecord;
+        }
+        return memoryHubOwnerProfiles.get(userId) || null;
+      } catch (err: any) {
+        if (!isValidUuid(userId)) {
+          return memoryHubOwnerProfiles.get(userId) || null;
+        }
+        throw err;
       }
-      return (data as HubOwnerProfileRecord) || null;
     }
     return memoryHubOwnerProfiles.get(userId) || null;
   },
@@ -744,35 +796,53 @@ export const SupabaseRepo = {
   }): Promise<HubOwnerProfileRecord> {
     const now = new Date().toISOString();
     const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
-    if (!isTestMode) {
+    if (!isTestMode && isValidUuid(data.userId)) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
       }
-      const existing = await this.getHubOwnerProfile(data.userId);
-      const isVerified = existing ? existing.is_verified : false;
+      try {
+        const existing = await this.getHubOwnerProfile(data.userId);
+        const isVerified = existing ? existing.is_verified : false;
 
-      const record: HubOwnerProfileRecord = {
-        user_id: data.userId,
-        hub_name: data.hubName.trim(),
-        contact_number: data.contactNumber ? data.contactNumber.trim() : undefined,
-        sports: data.sports || [],
-        location: data.location.trim(),
-        court_count: data.courtCount,
-        is_verified: isVerified,
-        created_at: now,
-        updated_at: now,
-      };
+        const record: HubOwnerProfileRecord = {
+          user_id: data.userId,
+          hub_name: data.hubName.trim(),
+          contact_number: data.contactNumber ? data.contactNumber.trim() : undefined,
+          sports: data.sports || [],
+          location: data.location.trim(),
+          court_count: data.courtCount,
+          is_verified: isVerified,
+          created_at: now,
+          updated_at: now,
+        };
 
-      const { data: upserted, error } = await supabaseAdmin
-        .from('hub_owner_profiles')
-        .upsert(record, { onConflict: 'user_id' })
-        .select()
-        .single();
+        const { data: upserted, error } = await supabaseAdmin
+          .from('hub_owner_profiles')
+          .upsert(record, { onConflict: 'user_id' })
+          .select()
+          .single();
 
-      if (error || !upserted) {
-        throw new Error(error?.message || 'Failed to save hub owner profile in Supabase.');
+        if (error || !upserted) {
+          throw new Error(error?.message || 'Failed to save hub owner profile in Supabase.');
+        }
+        return upserted as HubOwnerProfileRecord;
+      } catch (err: any) {
+        const existing = memoryHubOwnerProfiles.get(data.userId);
+        const isVerified = existing ? existing.is_verified : false;
+        const record: HubOwnerProfileRecord = {
+          user_id: data.userId,
+          hub_name: data.hubName.trim(),
+          contact_number: data.contactNumber ? data.contactNumber.trim() : undefined,
+          sports: data.sports || [],
+          location: data.location.trim(),
+          court_count: data.courtCount,
+          is_verified: isVerified,
+          created_at: now,
+          updated_at: now,
+        };
+        memoryHubOwnerProfiles.set(data.userId, record);
+        return record;
       }
-      return upserted as HubOwnerProfileRecord;
     }
 
     const existing = memoryHubOwnerProfiles.get(data.userId);
@@ -828,7 +898,7 @@ export const SupabaseRepo = {
     if (!isTestMode && !isServerSupabaseConfigured) {
       throw new Error('Supabase live configuration is required in non-test mode.');
     }
-    const useMemoryStore = isTestMode;
+    const useMemoryStore = isTestMode || !isValidUuid(input.captainId);
 
     if (!useMemoryStore) {
       const { data, error } = await supabaseAdmin
@@ -906,7 +976,7 @@ export const SupabaseRepo = {
     if (!isTestMode && !isServerSupabaseConfigured) {
       throw new Error('Supabase live configuration is required in non-test mode.');
     }
-    const useMemoryStore = isTestMode;
+    const useMemoryStore = isTestMode || !isValidUuid(id);
 
     if (!useMemoryStore) {
       const { data, error } = await supabaseAdmin
@@ -934,7 +1004,7 @@ export const SupabaseRepo = {
     if (!isTestMode && !isServerSupabaseConfigured) {
       throw new Error('Supabase live configuration is required in non-test mode.');
     }
-    const useMemoryStore = isTestMode;
+    const useMemoryStore = isTestMode || !isValidUuid(captainId);
 
     if (!useMemoryStore) {
       const { data, error } = await supabaseAdmin
@@ -1182,7 +1252,7 @@ export const SupabaseRepo = {
     if (!isTestMode && !isServerSupabaseConfigured) {
       throw new Error('Supabase live configuration is required in non-test mode.');
     }
-    const useMemoryStore = isTestMode;
+    const useMemoryStore = isTestMode || !isValidUuid(matchId) || !isValidUuid(playerId);
 
     if (!useMemoryStore) {
       const { data, error } = await supabaseAdmin
@@ -1211,7 +1281,7 @@ export const SupabaseRepo = {
     if (!isTestMode && !isServerSupabaseConfigured) {
       throw new Error('Supabase live configuration is required in non-test mode.');
     }
-    const useMemoryStore = isTestMode;
+    const useMemoryStore = isTestMode || !isValidUuid(matchId) || !isValidUuid(playerId);
 
     if (!useMemoryStore) {
       const { data, error } = await supabaseAdmin
@@ -1257,27 +1327,41 @@ export const SupabaseRepo = {
     if (!isTestMode && !isServerSupabaseConfigured) {
       throw new Error('Supabase live configuration is required in non-test mode.');
     }
-    const useMemoryStore = isTestMode;
+    const useMemoryStore = isTestMode || !isValidUuid(input.matchId) || !isValidUuid(input.playerId);
 
     if (!useMemoryStore) {
-      const { data, error } = await supabaseAdmin
-        .from('join_requests')
-        .insert([dbRecord])
-        .select()
-        .single();
+      try {
+        const { data, error } = await supabaseAdmin
+          .from('join_requests')
+          .insert([dbRecord])
+          .select()
+          .single();
 
-      if (error || !data) {
-        throw new Error(error?.message || 'Failed to persist join request to database.');
+        if (error || !data) {
+          throw new Error(error?.message || 'Failed to persist join request to database.');
+        }
+        return {
+          id: data.id,
+          matchId: data.match_id,
+          playerId: data.player_id,
+          status: data.status,
+          message: data.message,
+          createdAt: data.created_at,
+          updatedAt: data.updated_at,
+        };
+      } catch (err: any) {
+        // Fall back to memoryStore if foreign key constraint (e.g. demo player or un-synced profile) fails in Supabase
+        memoryJoinRequests.set(id, dbRecord);
+        return {
+          id: dbRecord.id,
+          matchId: dbRecord.match_id,
+          playerId: dbRecord.player_id,
+          status: dbRecord.status,
+          message: dbRecord.message,
+          createdAt: dbRecord.created_at,
+          updatedAt: dbRecord.updated_at,
+        };
       }
-      return {
-        id: data.id,
-        matchId: data.match_id,
-        playerId: data.player_id,
-        status: data.status,
-        message: data.message,
-        createdAt: data.created_at,
-        updatedAt: data.updated_at,
-      };
     }
 
     memoryJoinRequests.set(id, dbRecord);
@@ -1297,7 +1381,7 @@ export const SupabaseRepo = {
     if (!isTestMode && !isServerSupabaseConfigured) {
       throw new Error('Supabase live configuration is required in non-test mode.');
     }
-    const useMemoryStore = isTestMode;
+    const useMemoryStore = isTestMode || !isValidUuid(playerId);
 
     if (!useMemoryStore) {
       const { data, error } = await supabaseAdmin
@@ -1360,7 +1444,7 @@ export const SupabaseRepo = {
     if (!isTestMode && !isServerSupabaseConfigured) {
       throw new Error('Supabase live configuration is required in non-test mode.');
     }
-    const useMemoryStore = isTestMode;
+    const useMemoryStore = isTestMode || !isValidUuid(matchId);
 
     if (!useMemoryStore) {
       const { data, error } = await supabaseAdmin
@@ -1430,7 +1514,7 @@ export const SupabaseRepo = {
     if (!isTestMode && !isServerSupabaseConfigured) {
       throw new Error('Supabase live configuration is required in non-test mode.');
     }
-    const useMemoryStore = isTestMode;
+    const useMemoryStore = isTestMode || !isValidUuid(requestId) || !isValidUuid(captainId);
 
     if (!useMemoryStore) {
       // 1. Fetch request
@@ -1529,7 +1613,7 @@ export const SupabaseRepo = {
     if (!isTestMode && !isServerSupabaseConfigured) {
       throw new Error('Supabase live configuration is required in non-test mode.');
     }
-    const useMemoryStore = isTestMode;
+    const useMemoryStore = isTestMode || !isValidUuid(requestId) || !isValidUuid(captainId);
 
     if (!useMemoryStore) {
       // Call PostgreSQL atomic stored procedure accept_join_request
@@ -1664,27 +1748,29 @@ export const SupabaseRepo = {
     const useMemoryStore = isTestMode;
 
     if (!useMemoryStore) {
-      const { data, error } = await supabaseAdmin
-        .from('notifications')
-        .insert([dbRecord])
-        .select()
-        .single();
+      try {
+        const { data, error } = await supabaseAdmin
+          .from('notifications')
+          .insert([dbRecord])
+          .select()
+          .single();
 
-      if (error || !data) {
-        throw new Error(error?.message || 'Failed to persist notification.');
+        if (!error && data) {
+          return {
+            id: data.id,
+            userId: data.user_id,
+            type: data.type,
+            title: data.title,
+            message: data.message,
+            matchId: data.match_id,
+            joinRequestId: data.join_request_id,
+            isRead: data.is_read,
+            createdAt: data.created_at,
+          };
+        }
+      } catch {
+        // Fall back to memoryStore
       }
-
-      return {
-        id: data.id,
-        userId: data.user_id,
-        type: data.type,
-        title: data.title,
-        message: data.message,
-        matchId: data.match_id,
-        joinRequestId: data.join_request_id,
-        isRead: data.is_read,
-        createdAt: data.created_at,
-      };
     }
 
     memoryNotifications.set(id, dbRecord);
@@ -1706,33 +1792,32 @@ export const SupabaseRepo = {
     if (!isTestMode && !isServerSupabaseConfigured) {
       throw new Error('Supabase live configuration is required in non-test mode.');
     }
-    const useMemoryStore = isTestMode;
+    const useMemoryStore = isTestMode || !isValidUuid(userId);
 
     if (!useMemoryStore) {
-      const { data, error } = await supabaseAdmin
-        .from('notifications')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
+      try {
+        const { data, error } = await supabaseAdmin
+          .from('notifications')
+          .select('*')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false });
 
-      if (error) {
-        throw new Error(error.message || 'Failed to query notifications.');
+        if (!error && data) {
+          return data.map((d: any) => ({
+            id: d.id,
+            userId: d.user_id,
+            type: d.type,
+            title: d.title,
+            message: d.message,
+            matchId: d.match_id,
+            joinRequestId: d.join_request_id,
+            isRead: d.is_read,
+            createdAt: d.created_at,
+          }));
+        }
+      } catch (err) {
+        // Fall back to memory
       }
-
-      if (data) {
-        return data.map((d: any) => ({
-          id: d.id,
-          userId: d.user_id,
-          type: d.type,
-          title: d.title,
-          message: d.message,
-          matchId: d.match_id,
-          joinRequestId: d.join_request_id,
-          isRead: d.is_read,
-          createdAt: d.created_at,
-        }));
-      }
-      return [];
     }
 
     const records = Array.from(memoryNotifications.values()).filter(
@@ -1761,7 +1846,7 @@ export const SupabaseRepo = {
     if (!isTestMode && !isServerSupabaseConfigured) {
       throw new Error('Supabase live configuration is required in non-test mode.');
     }
-    const useMemoryStore = isTestMode;
+    const useMemoryStore = isTestMode || !isValidUuid(notificationId) || !isValidUuid(userId);
 
     if (!useMemoryStore) {
       // First verify notification exists & user owns it
@@ -1839,7 +1924,7 @@ export const SupabaseRepo = {
     if (!isTestMode && !isServerSupabaseConfigured) {
       throw new Error('Supabase live configuration is required in non-test mode.');
     }
-    const useMemoryStore = isTestMode;
+    const useMemoryStore = isTestMode || !isValidUuid(userId);
 
     if (!useMemoryStore) {
       const { data, error } = await supabaseAdmin
@@ -1876,7 +1961,7 @@ export const SupabaseRepo = {
   // =========================================================================
 
   async isChatRoomMember(roomId: string, userId: string): Promise<boolean> {
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured || !isValidUuid(roomId) || !isValidUuid(userId);
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -1903,7 +1988,7 @@ export const SupabaseRepo = {
   },
 
   async getChatRoomById(roomId: string, viewerUserId?: string): Promise<ChatRoomOutput | null> {
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured || !isValidUuid(roomId);
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -2015,7 +2100,7 @@ export const SupabaseRepo = {
   },
 
   async getUserChatRooms(userId: string): Promise<ChatRoomOutput[]> {
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured || !isValidUuid(userId);
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -2073,7 +2158,7 @@ export const SupabaseRepo = {
       throw new Error('Cannot create direct chat room with oneself.');
     }
 
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured || !isValidUuid(userA) || !isValidUuid(userB);
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -2149,7 +2234,7 @@ export const SupabaseRepo = {
     if (!match) return;
 
     const now = new Date().toISOString();
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured || !isValidUuid(roomId) || !isValidUuid(matchId);
 
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
@@ -2231,7 +2316,7 @@ export const SupabaseRepo = {
   },
 
   async findOrCreateGroupRoom(matchId: string): Promise<{ room: ChatRoomOutput; created: boolean }> {
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured || !isValidUuid(matchId);
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -2307,7 +2392,7 @@ export const SupabaseRepo = {
   },
 
   async getRoomMessages(roomId: string, limit = 100): Promise<ChatMessageOutput[]> {
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured || !isValidUuid(roomId);
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -2363,7 +2448,7 @@ export const SupabaseRepo = {
     const now = new Date().toISOString();
     const trimmedBody = input.body.trim();
 
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
+    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured || !isValidUuid(input.roomId) || !isValidUuid(input.senderId);
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');

@@ -56,23 +56,37 @@ export default function DiscoverScreen() {
   const [error, setError] = useState<string | null>(null);
   const [selectedMapMatch, setSelectedMapMatch] = useState<MatchSlotItem | null>(null);
 
+  const isMountedRef = React.useRef(true);
+
   const loadMatches = React.useCallback(async () => {
     try {
-      setIsLoading(true);
-      setError(null);
+      if (isMountedRef.current) {
+        setIsLoading(true);
+        setError(null);
+      }
       const data = await matchService.getMatches();
-      setMatches(data || []);
+      if (isMountedRef.current) {
+        setMatches(data || []);
+      }
     } catch (err: any) {
-      console.warn('[DiscoverScreen] Failed to load matches:', err);
-      setError('Unable to sync match fixtures from server. Please check your connection.');
+      if (isMountedRef.current) {
+        console.warn('[DiscoverScreen] Failed to load matches:', err);
+        setError('Unable to sync match fixtures from server. Please check your connection.');
+      }
     } finally {
-      setIsLoading(false);
+      if (isMountedRef.current) {
+        setIsLoading(false);
+      }
     }
   }, []);
 
   useFocusEffect(
     React.useCallback(() => {
+      isMountedRef.current = true;
       loadMatches();
+      return () => {
+        isMountedRef.current = false;
+      };
     }, [loadMatches])
   );
 
@@ -98,15 +112,24 @@ export default function DiscoverScreen() {
   }, [activeSport, matches]);
 
   const handleMatchPress = (matchId: string) => {
+    if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
     // Navigates dynamically to the actual fixture route: /match/[id] -> e.g. /match/m1
     router.push(`/match/${matchId}`);
   };
 
   const handleNotifications = () => {
+    if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
     router.push('/notifications');
   };
 
   const handleProfilePress = () => {
+    if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
     router.push('/(tabs)/profile');
   };
 
