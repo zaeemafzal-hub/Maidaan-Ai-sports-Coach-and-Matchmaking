@@ -1,0 +1,30 @@
+{
+  "name": "maidaan-platform",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "workspaces": [
+    "mobile",
+    "backend"
+  ],
+  "scripts": {
+    "dev": "node scripts/dev.js",
+    "build": "tsc --noEmit --project mobile/tsconfig.json && tsc --noEmit --project backend/tsconfig.json",
+    "lint": "tsc --noEmit --project mobile/tsconfig.json && tsc --noEmit --project backend/tsconfig.json",
+    "mobile": "npm --prefix mobile start",
+    "backend": "npm --prefix backend run dev"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^3.0.0",
+    "@types/cors": "^2.8.19",
+    "@types/jsonwebtoken": "^9.0.10",
+    "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.117.3",
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.11.1"
+  }
+}

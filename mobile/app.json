@@ -1,0 +1,46 @@
+{
+  "expo": {
+    "name": "Maidaan",
+    "slug": "maidaan",
+    "version": "1.0.0",
+    "scheme": "maidaan",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "ios": {
+      "supportsTablet": false,
+      "infoPlist": {
+        "NSSpeechRecognitionUsageDescription": "Allow Maidaan to recognize your speech for tactical coaching.",
+        "NSMicrophoneUsageDescription": "Allow Maidaan to access your microphone for AI sports coaching voice queries."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#050706",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ],
+      "package": "com.anonymous.maidaan"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Allow Maidaan to access your microphone for AI sports coaching voice queries.",
+          "speechRecognitionPermission": "Allow Maidaan to recognize your speech for tactical coaching."
+        }
+      ]
+    ]
+  }
+}

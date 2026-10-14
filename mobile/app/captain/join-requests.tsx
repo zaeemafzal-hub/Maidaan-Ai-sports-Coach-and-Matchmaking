@@ -1,0 +1,745 @@
+import React, { useState, useMemo, useCallback } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  Pressable,
+  Modal,
+  Image,
+  ActivityIndicator,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useAuthStore } from '../../store/useAuthStore';
+import { MatchSlotItem } from '../../constants/matches';
+import { matchService } from '../../services/matchService';
+import {
+  joinRequestService,
+  CaptainJoinRequest,
+  JoinRequestStatus,
+} from '../../services/joinRequestService';
+import { ArenaHeader } from '../../components/ui/ArenaHeader';
+import { ArenaBadge } from '../../components/ui/ArenaBadge';
+import { PrimaryButton } from '../../components/ui/PrimaryButton';
+import { IMAGES } from '../../constants/images';
+import { Sport, SkillLevel } from '../../types';
+
+// Concrete Arena skill tier badges
+const SKILL_METAS: Record<
+  SkillLevel,
+  { label: string; badge: string; variant: 'stone' | 'olive' | 'rust' }
+> = {
+  beginner: { label: 'Beginner', badge: 'DIV 03', variant: 'stone' },
+  intermediate: { label: 'Intermediate', badge: 'DIV 02', variant: 'olive' },
+  advanced: { label: 'Advanced', badge: 'DIV 01', variant: 'rust' },
+};
+
+const SPORT_ICONS: Record<Sport, 'soccer' | 'cricket' | 'tennis' | 'badminton'> = {
+  football: 'soccer',
+  cricket: 'cricket',
+  padel: 'tennis',
+  badminton: 'badminton',
+};
+
+export default function JoinRequestsScreen() {
+  const { matchId: routeMatchId } = useLocalSearchParams<{ matchId?: string }>();
+  const { currentUser, selectedRole, captainProfile } = useAuthStore();
+
+  // Role resolution
+  const effectiveRole = currentUser?.role || selectedRole || 'PLAYER';
+  const isCaptain = effectiveRole === 'TEAM_CAPTAIN';
+
+  // Filter tab state
+  const [activeFilter, setActiveFilter] = useState<'all' | 'pending' | 'accepted' | 'declined'>('pending');
+
+  // Real backend join requests and owned fixtures
+  const [requests, setRequests] = useState<CaptainJoinRequest[]>([]);
+  const [ownedFixtures, setOwnedFixtures] = useState<MatchSlotItem[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Per-request action processing state
+  const [processingRequestId, setProcessingRequestId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  // Lightweight confirmation dialog state
+  const [confirmModal, setConfirmModal] = useState<{
+    type: 'accept' | 'decline';
+    request: CaptainJoinRequest;
+    match?: MatchSlotItem;
+  } | null>(null);
+
+  // Load real captain fixtures and their requests
+  const loadData = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      setActionError(null);
+
+      // 1. Fetch captain-owned fixtures from backend
+      const fixtures = await matchService.getCaptainMatches();
+      setOwnedFixtures(fixtures);
+
+      if (fixtures.length === 0) {
+        setRequests([]);
+        return;
+      }
+
+      // 2. Fetch requests
+      // If route specified matchId, fetch for that match, else fetch for all owned matches
+      if (routeMatchId) {
+        const matchRequests = await joinRequestService.getMatchJoinRequests(routeMatchId);
+        setRequests(matchRequests);
+      } else {
+        const allRequestsPromises = fixtures.map((f) =>
+          joinRequestService.getMatchJoinRequests(f.id).catch(() => [])
+        );
+        const results = await Promise.all(allRequestsPromises);
+        setRequests(results.flat());
+      }
+    } catch (err: any) {
+      console.warn('[JoinRequestsScreen] Error loading captain requests:', err);
+      setError('Unable to load join requests from server. Please check your connection.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [routeMatchId]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [loadData])
+  );
+
+  // =========================================================================
+  // 1. ROLE GUARD: NON-CAPTAIN USER ACCESS
+  // =========================================================================
+  if (!isCaptain) {
+    return (
+      <SafeAreaView className="flex-1 bg-warm-white" edges={['top']}>
+        <ArenaHeader
+          title="MAIDAAN"
+          subtitle="CAPTAIN DESK // ROLE RESTRICTION"
+          showBack
+          onBack={() => router.replace('/(tabs)/discover')}
+        />
+        <View className="flex-1 items-center justify-center p-6 bg-warm-white">
+          <View className="w-16 h-16 rounded-full bg-rust/10 items-center justify-center border border-rust/30 mb-5">
+            <Ionicons name="lock-closed" size={28} color="#875646" />
+          </View>
+
+          <ArenaBadge label="CAPTAIN ACCESS REQUIRED" variant="rust" size="md" />
+
+          <Text className="text-graphite text-lg font-black uppercase tracking-tight text-center mt-3">
+            CAPTAIN ACCESS REQUIRED
+          </Text>
+
+          <Text className="text-stone-muted text-sm text-center mt-2 max-w-[310px] leading-5">
+            Player join request management is restricted to Team Captain accounts.
+          </Text>
+
+          <View className="w-full mt-6 space-y-3">
+            <PrimaryButton
+              title="RETURN TO DISCOVER"
+              variant="primary"
+              onPress={() => router.replace('/(tabs)/discover')}
+            />
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // =========================================================================
+  // 2. MISSING CAPTAIN PROFILE: ONBOARDING REQUIRED
+  // =========================================================================
+  if (!captainProfile) {
+    return (
+      <SafeAreaView className="flex-1 bg-warm-white" edges={['top']}>
+        <ArenaHeader
+          title="MAIDAAN"
+          subtitle="CAPTAIN DESK // SETUP REQUIRED"
+          showBack
+          onBack={() => router.replace('/captain/dashboard')}
+        />
+        <View className="flex-1 items-center justify-center p-6 bg-warm-white">
+          <View className="w-16 h-16 rounded-full bg-stone/20 border border-stone items-center justify-center mb-5">
+            <Ionicons name="clipboard-outline" size={30} color="#666B60" />
+          </View>
+
+          <ArenaBadge label="CAPTAIN PROFILE NOT SET" variant="stone" size="md" />
+
+          <Text className="text-graphite text-lg font-black uppercase tracking-tight text-center mt-3">
+            CAPTAIN PROFILE NOT SET
+          </Text>
+
+          <Text className="text-stone-muted text-sm text-center mt-2 max-w-[310px] leading-5">
+            Please complete your captain setup before reviewing player join requests.
+          </Text>
+
+          <View className="w-full mt-6 space-y-3">
+            <PrimaryButton
+              title="COMPLETE CAPTAIN SETUP"
+              variant="primary"
+              onPress={() => router.push('/onboarding/captain-setup')}
+            />
+            <PrimaryButton
+              title="RETURN TO CAPTAIN DESK"
+              variant="outline"
+              onPress={() => router.replace('/captain/dashboard')}
+            />
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Fixture lookup map
+  const fixturesMap = useMemo(() => {
+    const map = new Map<string, MatchSlotItem>();
+    for (const f of ownedFixtures) {
+      map.set(f.id, f);
+    }
+    return map;
+  }, [ownedFixtures]);
+
+  // Derive counts for Summary Strip
+  const pendingCount = useMemo(
+    () => requests.filter((r) => r.status === 'PENDING').length,
+    [requests]
+  );
+  const acceptedCount = useMemo(
+    () => requests.filter((r) => r.status === 'ACCEPTED').length,
+    [requests]
+  );
+  const declinedCount = useMemo(
+    () => requests.filter((r) => r.status === 'REJECTED').length,
+    [requests]
+  );
+
+  // Filtered list based on active filter tab
+  const displayedRequests = useMemo(() => {
+    switch (activeFilter) {
+      case 'pending':
+        return requests.filter((r) => r.status === 'PENDING');
+      case 'accepted':
+        return requests.filter((r) => r.status === 'ACCEPTED');
+      case 'declined':
+        return requests.filter((r) => r.status === 'REJECTED');
+      case 'all':
+      default:
+        return requests;
+    }
+  }, [requests, activeFilter]);
+
+  // =========================================================================
+  // ACTION HANDLERS (Real backend PATCH)
+  // =========================================================================
+  const handleOpenConfirm = (type: 'accept' | 'decline', request: CaptainJoinRequest) => {
+    const match = fixturesMap.get(request.matchId);
+    setConfirmModal({ type, request, match });
+  };
+
+  const handleConfirmDecision = async () => {
+    if (!confirmModal) return;
+    const { type, request } = confirmModal;
+    setConfirmModal(null);
+
+    const action = type === 'accept' ? 'ACCEPT' : 'REJECT';
+
+    try {
+      setProcessingRequestId(request.id);
+      setActionError(null);
+
+      await joinRequestService.updateJoinRequest(request.id, action);
+
+      // Re-fetch requests & fixture list upon backend success
+      await loadData();
+    } catch (err: any) {
+      console.warn('[JoinRequestsScreen] Update request error:', err);
+      setActionError(
+        err?.message ||
+          (action === 'ACCEPT'
+            ? 'THIS FIXTURE NO LONGER HAS AN OPEN SLOT'
+            : 'Failed to decline request. Please try again.')
+      );
+      // Refresh to ensure state is synchronized with server
+      loadData();
+    } finally {
+      setProcessingRequestId(null);
+    }
+  };
+
+  return (
+    <SafeAreaView className="flex-1 bg-warm-white" edges={['top']}>
+      {/* Concrete Arena Header */}
+      <ArenaHeader
+        title="MAIDAAN"
+        subtitle="CAPTAIN DESK // MATCH OPERATIONS"
+        showBack
+        onBack={() => router.back()}
+        rightAction={<ArenaBadge label="SCREEN 18" variant="stone" size="sm" />}
+      />
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 56 }}
+      >
+        {/* Banner */}
+        <View className="px-4 pt-3">
+          <View className="h-14 w-full rounded-sm overflow-hidden border border-stone relative bg-graphite">
+            <Image
+              source={IMAGES.arenaTeam}
+              className="w-full h-full opacity-30"
+              resizeMode="cover"
+            />
+            <View className="absolute inset-0 px-3.5 py-2 flex-row items-center justify-between">
+              <View>
+                <Text className="text-stone-muted text-[9px] font-mono uppercase tracking-widest">
+                  SELECTION BOARD
+                </Text>
+                <Text
+                  numberOfLines={1}
+                  className="text-warm-white text-xs font-black uppercase tracking-tight"
+                >
+                  {captainProfile.teamName?.trim() || 'TEAM CAPTAIN'}
+                </Text>
+              </View>
+              <ArenaBadge
+                label={`${ownedFixtures.length} FIXTURE${ownedFixtures.length > 1 ? 'S' : ''}`}
+                variant="olive"
+                size="sm"
+              />
+            </View>
+          </View>
+        </View>
+
+        {/* Page Title & Context */}
+        <View className="px-4 pt-3 pb-1">
+          <Text className="text-graphite text-xl font-black uppercase tracking-tight">
+            JOIN REQUESTS
+          </Text>
+          <Text className="text-stone-muted text-xs leading-4 mt-0.5">
+            Review applicant player profiles and approve open slot call-ups for your squad fixtures.
+          </Text>
+        </View>
+
+        {/* Action Error Message Banner */}
+        {actionError && (
+          <View className="mx-4 mt-3 p-3 bg-rust/10 border border-rust/40 rounded-sm flex-row items-center">
+            <Ionicons name="alert-circle" size={16} color="#875646" />
+            <Text className="text-rust text-xs font-bold ml-2 flex-1">
+              {actionError}
+            </Text>
+          </View>
+        )}
+
+        {/* SUMMARY STRIP */}
+        <View className="px-4 mt-3">
+          <View className="flex-row gap-2">
+            {/* PENDING */}
+            <Pressable
+              onPress={() => setActiveFilter('pending')}
+              className={`flex-1 rounded-sm p-3 border ${
+                activeFilter === 'pending'
+                  ? 'bg-rust/15 border-rust'
+                  : 'bg-stone/20 border-stone'
+              }`}
+            >
+              <Text className="text-stone-muted text-[9px] font-mono uppercase tracking-wider font-bold">
+                PENDING
+              </Text>
+              <Text className="text-rust text-xl font-black tracking-tight mt-0.5">
+                {pendingCount}
+              </Text>
+              <Text className="text-stone-muted text-[10px] font-medium">Awaiting</Text>
+            </Pressable>
+
+            {/* ACCEPTED */}
+            <Pressable
+              onPress={() => setActiveFilter('accepted')}
+              className={`flex-1 rounded-sm p-3 border ${
+                activeFilter === 'accepted'
+                  ? 'bg-arena-olive/20 border-arena-olive'
+                  : 'bg-stone/20 border-stone'
+              }`}
+            >
+              <Text className="text-stone-muted text-[9px] font-mono uppercase tracking-wider font-bold">
+                ACCEPTED
+              </Text>
+              <Text className="text-arena-olive text-xl font-black tracking-tight mt-0.5">
+                {acceptedCount}
+              </Text>
+              <Text className="text-stone-muted text-[10px] font-medium">Cleared</Text>
+            </Pressable>
+
+            {/* DECLINED */}
+            <Pressable
+              onPress={() => setActiveFilter('declined')}
+              className={`flex-1 rounded-sm p-3 border ${
+                activeFilter === 'declined'
+                  ? 'bg-stone/40 border-graphite'
+                  : 'bg-stone/20 border-stone'
+              }`}
+            >
+              <Text className="text-stone-muted text-[9px] font-mono uppercase tracking-wider font-bold">
+                DECLINED
+              </Text>
+              <Text className="text-stone-muted text-xl font-black tracking-tight mt-0.5">
+                {declinedCount}
+              </Text>
+              <Text className="text-stone-muted text-[10px] font-medium">Closed</Text>
+            </Pressable>
+          </View>
+        </View>
+
+        {/* REQUESTS LIST SECTION */}
+        <View className="px-4 mt-5">
+          <View className="flex-row items-center justify-between mb-2">
+            <Text className="text-graphite text-[11px] font-mono uppercase tracking-widest font-bold">
+              CANDIDATE APPLICATIONS
+            </Text>
+            <Text className="text-stone-muted text-[10px] font-mono">
+              {displayedRequests.length} of {requests.length} Shown
+            </Text>
+          </View>
+
+          {/* ASYNC STATES: LOADING / ERROR / EMPTY / LIST */}
+          {isLoading ? (
+            <View className="bg-white rounded-sm p-8 border border-stone items-center justify-center">
+              <ActivityIndicator size="small" color="#1A1C19" />
+              <Text className="text-stone-muted text-[10px] font-mono uppercase tracking-widest mt-3">
+                SYNCING JOIN REQUESTS...
+              </Text>
+            </View>
+          ) : error ? (
+            <View className="bg-white rounded-sm p-6 border border-rust/40 items-center">
+              <View className="w-12 h-12 rounded-full bg-rust/10 border border-rust/30 items-center justify-center mb-3">
+                <Ionicons name="cloud-offline-outline" size={24} color="#875646" />
+              </View>
+              <Text className="text-graphite text-sm font-black uppercase tracking-tight text-center">
+                FAILED TO LOAD REQUESTS
+              </Text>
+              <Text className="text-stone-muted text-xs font-medium text-center mt-1.5 leading-5 max-w-[260px]">
+                {error}
+              </Text>
+              <View className="w-full mt-5">
+                <Pressable
+                  onPress={loadData}
+                  accessibilityRole="button"
+                  accessibilityLabel="Retry Loading Requests"
+                  className="w-full bg-arena-olive rounded-sm py-3 items-center justify-center active:bg-olive-dark border border-arena-olive"
+                >
+                  <Text className="text-warm-white text-xs font-black uppercase tracking-wider">
+                    RETRY
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+          ) : displayedRequests.length === 0 ? (
+            <View className="bg-white rounded-sm p-8 border border-stone items-center">
+              <View className="w-12 h-12 rounded-full bg-stone/20 border border-stone items-center justify-center mb-3">
+                <Ionicons name="people-outline" size={24} color="#666B60" />
+              </View>
+              <Text className="text-graphite text-sm font-black uppercase tracking-tight text-center">
+                NO PENDING REQUESTS
+              </Text>
+              <Text className="text-stone-muted text-xs font-medium text-center mt-1.5 leading-5 max-w-[260px]">
+                {activeFilter === 'pending'
+                  ? 'There are no awaiting player applications for your match fixtures right now.'
+                  : 'No request records match the selected status filter.'}
+              </Text>
+            </View>
+          ) : (
+            displayedRequests.map((req) => {
+              const match = fixturesMap.get(req.matchId);
+              const sport = (req.preferredSports?.[0] || match?.sport || 'cricket') as Sport;
+              const sportIcon = SPORT_ICONS[sport] || 'soccer';
+              const skillMeta = SKILL_METAS[req.skillLevel] || SKILL_METAS.beginner;
+              const isMatchFull = match ? match.slotsOpen <= 0 : false;
+              const isProcessing = processingRequestId === req.id;
+
+              return (
+                <View
+                  key={req.id}
+                  className="bg-white rounded-sm border border-stone p-4 mb-3 shadow-2xs"
+                >
+                  {/* Top Bar: Player Name & Status Badge */}
+                  <View className="flex-row items-start justify-between">
+                    <View className="flex-1 pr-2">
+                      <View className="flex-row items-center">
+                        <Text
+                          className="text-graphite text-base font-black uppercase tracking-tight"
+                          numberOfLines={1}
+                        >
+                          {req.playerName}
+                        </Text>
+                        <View className="ml-2 bg-stone/20 px-1.5 py-0.5 rounded-xs border border-stone/50">
+                          <Text className="text-stone-muted text-[9px] font-mono uppercase font-bold">
+                            PLAYER
+                          </Text>
+                        </View>
+                      </View>
+
+                      {/* Locality & Time */}
+                      <View className="flex-row items-center mt-1 flex-wrap">
+                        {req.primaryLocation ? (
+                          <View className="flex-row items-center mr-2">
+                            <Ionicons name="location-outline" size={11} color="#666B60" />
+                            <Text className="text-stone-muted text-[10px] ml-0.5 font-medium">
+                              {req.primaryLocation}
+                            </Text>
+                          </View>
+                        ) : null}
+
+                        <Text className="text-stone-muted text-[10px] font-mono">
+                          • {new Date(req.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </Text>
+                      </View>
+                    </View>
+
+                    {/* Status Badge */}
+                    {req.status === 'PENDING' ? (
+                      <ArenaBadge label="PENDING" variant="rust" size="sm" />
+                    ) : req.status === 'ACCEPTED' ? (
+                      <ArenaBadge label="ACCEPTED" variant="olive" size="sm" />
+                    ) : (
+                      <ArenaBadge label="DECLINED" variant="stone" size="sm" />
+                    )}
+                  </View>
+
+                  {/* Sport & Skill Strip */}
+                  <View className="flex-row items-center space-x-2 mt-2.5 pt-2.5 border-t border-stone/30">
+                    <View className="flex-row items-center bg-stone/20 px-2 py-1 rounded-xs border border-stone/40 mr-2">
+                      <MaterialCommunityIcons name={sportIcon} size={12} color="#242522" />
+                      <Text className="text-graphite text-[10px] font-mono uppercase font-bold ml-1">
+                        {sport.toUpperCase()}
+                      </Text>
+                    </View>
+
+                    <ArenaBadge
+                      label={`${skillMeta.badge} • ${skillMeta.label.toUpperCase()}`}
+                      variant={skillMeta.variant}
+                      size="sm"
+                    />
+                  </View>
+
+                  {/* Player Message if provided */}
+                  {req.message ? (
+                    <View className="mt-2.5 p-2 bg-stone/10 rounded-xs border border-stone/30">
+                      <Text className="text-stone-muted text-[10px] font-mono uppercase font-bold mb-0.5">
+                        PLAYER NOTE
+                      </Text>
+                      <Text className="text-graphite text-xs italic">
+                        "{req.message}"
+                      </Text>
+                    </View>
+                  ) : null}
+
+                  {/* Fixture Context Box */}
+                  {match ? (
+                    <View className="mt-3 bg-stone/15 rounded-xs p-2.5 border border-stone/40">
+                      <View className="flex-row items-center justify-between mb-1">
+                        <Text className="text-stone-muted text-[9px] font-mono uppercase font-bold">
+                          TARGET FIXTURE
+                        </Text>
+                        <Text className="text-stone-muted text-[9px] font-mono">
+                          {match.slotsOpen} / {match.totalSlots} SLOTS OPEN
+                        </Text>
+                      </View>
+
+                      <Text
+                        className="text-graphite text-xs font-black uppercase tracking-tight"
+                        numberOfLines={1}
+                      >
+                        {match.title}
+                      </Text>
+
+                      <View className="flex-row items-center justify-between mt-1 pt-1 border-t border-stone/20">
+                        <Text className="text-stone-muted text-[10px] font-mono" numberOfLines={1}>
+                          {match.date} • {match.startTime || match.time}
+                        </Text>
+                        <Text className="text-stone-muted text-[10px] font-mono" numberOfLines={1}>
+                          {match.groundName}
+                        </Text>
+                      </View>
+                    </View>
+                  ) : null}
+
+                  {/* Action Buttons for PENDING */}
+                  <View className="mt-3 pt-2.5 border-t border-stone/30">
+                    {req.status === 'PENDING' ? (
+                      <View>
+                        {isMatchFull ? (
+                          <View className="mb-2 p-2 bg-rust/10 border border-rust/30 rounded-xs flex-row items-center">
+                            <Ionicons name="alert-circle-outline" size={14} color="#875646" />
+                            <Text className="text-rust text-[10px] font-mono font-bold uppercase ml-1.5 flex-1">
+                              NO OPEN SLOT • ROSTER CAPACITY REACHED
+                            </Text>
+                          </View>
+                        ) : null}
+
+                        <View className="flex-row gap-2">
+                          {/* DECLINE BUTTON */}
+                          <Pressable
+                            onPress={() => handleOpenConfirm('decline', req)}
+                            disabled={isProcessing}
+                            accessibilityRole="button"
+                            accessibilityLabel={`Decline request from ${req.playerName}`}
+                            className="flex-1 py-2.5 rounded-xs bg-warm-white border border-stone items-center justify-center active:bg-stone/20"
+                          >
+                            <Text className="text-graphite text-xs font-bold uppercase tracking-wide">
+                              DECLINE
+                            </Text>
+                          </Pressable>
+
+                          {/* ACCEPT BUTTON */}
+                          <Pressable
+                            onPress={() => handleOpenConfirm('accept', req)}
+                            disabled={isMatchFull || isProcessing}
+                            accessibilityRole="button"
+                            accessibilityLabel={`Accept ${req.playerName} for match`}
+                            className={`flex-1 py-2.5 rounded-xs items-center justify-center ${
+                              isMatchFull || isProcessing
+                                ? 'bg-stone/30 border border-stone opacity-60'
+                                : 'bg-arena-olive border border-arena-olive active:bg-olive-dark'
+                            }`}
+                          >
+                            {isProcessing ? (
+                              <ActivityIndicator size="small" color="#F4F1EA" />
+                            ) : (
+                              <Text
+                                className={`text-xs font-black uppercase tracking-wider ${
+                                  isMatchFull ? 'text-stone-muted' : 'text-warm-white'
+                                }`}
+                              >
+                                ACCEPT
+                              </Text>
+                            )}
+                          </Pressable>
+                        </View>
+                      </View>
+                    ) : req.status === 'ACCEPTED' ? (
+                      <View className="p-2.5 bg-arena-olive/15 rounded-xs border border-arena-olive/30 flex-row items-center justify-between">
+                        <View className="flex-row items-center">
+                          <Ionicons name="checkmark-circle" size={16} color="#3D4438" />
+                          <View className="ml-2">
+                            <Text className="text-arena-olive text-xs font-black uppercase tracking-tight">
+                              SPOT APPROVED
+                            </Text>
+                            <Text className="text-stone-muted text-[9px] font-mono">
+                              PLAYER CONFIRMED IN MATCH ROSTER
+                            </Text>
+                          </View>
+                        </View>
+                        <ArenaBadge label="APPROVED" variant="olive" size="sm" />
+                      </View>
+                    ) : (
+                      <View className="p-2.5 bg-stone/20 rounded-xs border border-stone/50 flex-row items-center justify-between">
+                        <View className="flex-row items-center">
+                          <Ionicons name="close-circle-outline" size={16} color="#666B60" />
+                          <View className="ml-2">
+                            <Text className="text-graphite text-xs font-bold uppercase tracking-tight">
+                              REQUEST DECLINED
+                            </Text>
+                            <Text className="text-stone-muted text-[9px] font-mono">
+                              SLOT REMAINS VACANT
+                            </Text>
+                          </View>
+                        </View>
+                        <ArenaBadge label="DECLINED" variant="stone" size="sm" />
+                      </View>
+                    )}
+                  </View>
+                </View>
+              );
+            })
+          )}
+        </View>
+      </ScrollView>
+
+      {/* Confirmation Modal */}
+      <Modal
+        visible={!!confirmModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setConfirmModal(null)}
+      >
+        <View className="flex-1 bg-graphite/80 items-center justify-center p-5">
+          <View className="w-full max-w-sm bg-warm-white rounded-sm p-5 border border-stone shadow-xl">
+            {confirmModal ? (
+              <>
+                <View
+                  className={`w-12 h-12 rounded-sm items-center justify-center border mb-3 ${
+                    confirmModal.type === 'accept'
+                      ? 'bg-arena-olive border-warm-white/20'
+                      : 'bg-stone/30 border-stone'
+                  }`}
+                >
+                  <Ionicons
+                    name={confirmModal.type === 'accept' ? 'checkmark-sharp' : 'close-sharp'}
+                    size={24}
+                    color={confirmModal.type === 'accept' ? '#F4F1EA' : '#242522'}
+                  />
+                </View>
+
+                <ArenaBadge
+                  label={
+                    confirmModal.type === 'accept'
+                      ? 'CONFIRM SQUAD CALL-UP'
+                      : 'DECLINE APPLICATION'
+                  }
+                  variant={confirmModal.type === 'accept' ? 'olive' : 'stone'}
+                  size="sm"
+                />
+
+                <Text className="text-graphite text-lg font-black uppercase tracking-tight mt-2">
+                  {confirmModal.type === 'accept'
+                    ? `ACCEPT ${confirmModal.request.playerName}?`
+                    : `DECLINE REQUEST?`}
+                </Text>
+
+                <Text className="text-stone-muted text-xs leading-4 mt-1">
+                  {confirmModal.type === 'accept'
+                    ? `This will atomically decrement an open slot and confirm ${confirmModal.request.playerName} on the fixture lineup.`
+                    : `This will mark ${confirmModal.request.playerName}'s application as rejected.`}
+                </Text>
+
+                {confirmModal.match && (
+                  <View className="my-3 p-2.5 bg-white rounded-xs border border-stone">
+                    <Text className="text-graphite text-xs font-black uppercase" numberOfLines={1}>
+                      {confirmModal.match.title}
+                    </Text>
+                    <Text className="text-stone-muted text-[10px] font-mono mt-0.5">
+                      {confirmModal.match.date} • {confirmModal.match.startTime || confirmModal.match.time}
+                    </Text>
+                  </View>
+                )}
+
+                <View className="space-y-2 mt-1">
+                  <PrimaryButton
+                    title={
+                      confirmModal.type === 'accept' ? 'CONFIRM ACCEPT' : 'CONFIRM DECLINE'
+                    }
+                    variant={confirmModal.type === 'accept' ? 'primary' : 'rust'}
+                    onPress={handleConfirmDecision}
+                  />
+
+                  <Pressable
+                    onPress={() => setConfirmModal(null)}
+                    className="py-2.5 items-center mt-1"
+                  >
+                    <Text className="text-stone-muted text-xs font-bold uppercase tracking-wider">
+                      CANCEL
+                    </Text>
+                  </Pressable>
+                </View>
+              </>
+            ) : null}
+          </View>
+        </View>
+      </Modal>
+    </SafeAreaView>
+  );
+}

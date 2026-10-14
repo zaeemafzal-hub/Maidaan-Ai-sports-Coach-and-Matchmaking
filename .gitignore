@@ -1,0 +1,31 @@
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+backend/.env
+mobile/.env
+
+# Dependencies
+node_modules/
+backend/node_modules/
+mobile/node_modules/
+
+# Expo
+.expo/
+mobile/.expo/
+
+# Build output
+dist/
+build/
+backend/dist/
+coverage/
+
+# Android generated build output
+mobile/android/.gradle/
+mobile/android/app/build/
+mobile/android/build/
+
+# Logs & System
+*.log
+.DS_Store

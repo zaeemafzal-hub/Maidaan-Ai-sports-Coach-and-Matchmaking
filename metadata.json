@@ -1,0 +1,6 @@
+{
+  "name": "Maidaan - AI Sports Matchmaking & Coaching",
+  "description": "AI-powered sports matchmaking and coaching mobile application connecting players, captains, and venues for Cricket, Badminton, and Padel.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
