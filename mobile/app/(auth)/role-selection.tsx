@@ -8,6 +8,7 @@ import { Role } from '../../types';
 import { RoleCard } from '../../components/ui/RoleCard';
 import { PrimaryButton } from '../../components/ui/PrimaryButton';
 import { ArenaHeader } from '../../components/ui/ArenaHeader';
+import { AmbientGlowOverlay } from '../../components/ui';
 
 interface RoleOption {
   role: Role;
@@ -58,16 +59,17 @@ export default function RoleSelectionScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-warm-white" edges={['top', 'bottom']}>
+    <SafeAreaView className="flex-1 bg-[#0C0D0E]" edges={['top', 'bottom']}>
+      <AmbientGlowOverlay showTop={true} showBottom={false} />
       <ArenaHeader
-        title="MAIDAAN"
-        subtitle="STEP 01 OF 02"
+        title="Role Selection"
+        subtitle="Step 1 of 2"
         showBack
         fallbackRoute="/(auth)/welcome"
         rightAction={
-          <View className="px-2.5 py-1 rounded-sm bg-stone/30 border border-stone">
-            <Text className="text-graphite text-[10px] font-black uppercase tracking-wider">
-              IDENTITY
+          <View className="px-3 py-1 rounded-full bg-[#1B1D22] border border-[rgba(255,255,255,0.08)]">
+            <Text className="text-[#A0A5AD] text-[10px] font-bold uppercase tracking-wider">
+              Identity
             </Text>
           </View>
         }
@@ -76,20 +78,20 @@ export default function RoleSelectionScreen() {
       <ScrollView
         contentContainerStyle={{ flexGrow: 1 }}
         showsVerticalScrollIndicator={false}
-        className="px-6"
+        className="px-5"
       >
         {/* Athletic Headline */}
-        <View className="mt-5 mb-5">
-          <Text className="text-graphite text-2xl font-black uppercase tracking-tight">
-            How will you enter the arena?
+        <View className="mt-4 mb-6">
+          <Text className="text-white text-2xl font-bold tracking-tight">
+            How will you participate?
           </Text>
-          <Text className="text-stone-muted text-xs font-semibold leading-relaxed mt-1.5 uppercase tracking-wide">
-            Select your sporting identity. This shapes your match discovery, team rosters, and ground access.
+          <Text className="text-[#A0A5AD] text-sm leading-relaxed mt-2 font-normal">
+            Choose your primary role. This personalizes your discovery, fixtures, coaching, and team tools.
           </Text>
         </View>
 
         {/* Identity Cards */}
-        <View className="space-y-3 flex-1">
+        <View className="space-y-3.5 flex-1">
           {ROLE_OPTIONS.map((option) => (
             <RoleCard
               key={option.role}
@@ -105,15 +107,16 @@ export default function RoleSelectionScreen() {
         </View>
 
         {/* Bottom CTA */}
-        <View className="pt-6 pb-4">
+        <View className="pt-6 pb-6">
           <PrimaryButton
-            title="CONTINUE TO REGISTRATION"
+            title="Continue to Registration"
             onPress={handleContinue}
             variant="primary"
+            size="lg"
           />
 
-          <Text className="text-stone-muted text-[11px] font-medium text-center mt-3 uppercase tracking-wide">
-            Role can be updated or expanded anytime in profile settings.
+          <Text className="text-[#5C616A] text-xs font-normal text-center mt-3">
+            You can change or add roles later in your profile settings.
           </Text>
         </View>
       </ScrollView>

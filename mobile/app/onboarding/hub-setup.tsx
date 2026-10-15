@@ -212,21 +212,21 @@ export default function HubSetupScreen() {
 
   if (!isInitialized || isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-warm-white items-center justify-center">
-        <ActivityIndicator size="large" color="#3D4438" />
-        <Text className="text-stone-muted text-xs font-bold uppercase tracking-widest mt-3">
-          Restoring Arena Session...
+      <SafeAreaView className="flex-1 bg-[#171A1D] items-center justify-center">
+        <ActivityIndicator size="large" color="#E85D26" />
+        <Text className="text-[#A0A5AD] text-xs font-semibold tracking-wider mt-3">
+          Loading session...
         </Text>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-warm-white" edges={['top', 'bottom']}>
-      {/* Concrete Arena Match-Day Header */}
+    <SafeAreaView className="flex-1 bg-[#171A1D]" edges={['top', 'bottom']}>
+      {/* Modern Header */}
       <ArenaHeader
-        title={isEditMode ? 'EDIT HUB PROFILE' : 'MAIDAAN'}
-        subtitle={isEditMode ? 'VENUE CONFIGURATION // EDIT MODE' : 'VENUE ONBOARDING // STEP 01 OF 01'}
+        title={isEditMode ? 'Edit Venue' : 'Hub Setup'}
+        subtitle={isEditMode ? 'Update facility configuration' : 'Register your sports venue'}
         showBack
         fallbackRoute="/(auth)/role-selection"
         onBack={() => {
@@ -250,37 +250,37 @@ export default function HubSetupScreen() {
           showsVerticalScrollIndicator={false}
           className="flex-1"
         >
-          {/* Floodlit Sports Ground Photography Hero Section */}
-          <View className="relative w-full h-44 bg-graphite overflow-hidden border-b border-stone">
+          {/* Sports Ground Photography Hero Section */}
+          <View className="relative w-full h-44 bg-[#1F2327] overflow-hidden border-b border-white/5">
             <Image
               source={IMAGES.arenaGround}
               className="w-full h-full"
               resizeMode="cover"
             />
-            {/* Gritty Vignette & Atmospheric Stadium Lighting Overlay */}
-            <View className="absolute inset-0 bg-graphite/60" />
-            <View className="absolute inset-0 bg-gradient-to-t from-graphite via-graphite/40 to-transparent" />
+            {/* Dark Atmospheric Gradient Overlay */}
+            <View className="absolute inset-0 bg-[#171A1D]/65" />
+            <View className="absolute inset-0 bg-gradient-to-t from-[#171A1D] via-[#171A1D]/40 to-transparent" />
 
             {/* Hero Content Overlay */}
             <View className="absolute bottom-3 left-5 right-5 z-10">
               <View className="flex-row items-center mb-1">
-                <Text className="text-rust text-[10px] font-black uppercase tracking-widest">
-                  {isEditMode ? 'FACILITY MANAGEMENT' : 'CIRCUIT ONBOARDING'}
+                <Text className="text-[#E85D26] text-[10px] font-black uppercase tracking-widest">
+                  {isEditMode ? 'FACILITY MANAGEMENT' : 'HUB ONBOARDING'}
                 </Text>
-                <Text className="text-stone-muted text-[10px] font-bold mx-1.5">
-                  //
+                <Text className="text-[#7F8993] text-[10px] font-bold mx-1.5">
+                  ·
                 </Text>
-                <Text className="text-stone text-[10px] font-black uppercase tracking-wider">
-                  {isEditMode ? 'EDIT DETAILS' : 'HUB ACCESS'}
+                <Text className="text-[#A0A5AD] text-[10px] font-bold uppercase tracking-wider">
+                  {isEditMode ? 'EDIT DETAILS' : 'VENUE REGISTRATION'}
                 </Text>
               </View>
-              <Text className="text-warm-white text-xl font-black uppercase tracking-tight">
+              <Text className="text-[#F4F6F7] text-xl font-black uppercase tracking-tight">
                 {isEditMode ? 'Update Venue Details' : 'Register Your Sports Hub'}
               </Text>
-              <Text className="text-stone text-[11px] font-medium mt-0.5 tracking-tight">
+              <Text className="text-[#A0A5AD] text-[11px] font-medium mt-0.5 tracking-tight">
                 {isEditMode
                   ? 'Update your facility location, contact coordinator desk, and active sports.'
-                  : 'Enter your venue details and available playing areas to register on the circuit.'}
+                  : 'Enter your venue details and available playing areas to register on the platform.'}
               </Text>
             </View>
           </View>
@@ -289,23 +289,23 @@ export default function HubSetupScreen() {
           <View className="px-5 py-4">
             {/* Notice Toast if triggered */}
             {editNotice && (
-              <View className="mb-4 p-3 rounded-xl bg-stone-light border border-olive flex-row items-center shadow-xs">
-                <Ionicons name="information-circle-sharp" size={18} color="#3D4438" />
-                <Text className="text-olive text-xs font-bold ml-2 flex-1">
+              <View className="mb-4 p-3 rounded-xl bg-[#1F2327] border border-[#E85D26]/30 flex-row items-center shadow-xs">
+                <Ionicons name="information-circle-sharp" size={18} color="#E85D26" />
+                <Text className="text-[#E85D26] text-xs font-semibold ml-2 flex-1">
                   {editNotice}
                 </Text>
               </View>
             )}
 
             {/* Section 1: Hub Credential Card */}
-            <View className="bg-warm-white border border-stone border-b-[3px] border-b-stone-muted/70 rounded-xl p-3.5 mb-5 shadow-xs">
+            <View className="bg-[#1F2327] border border-white/10 rounded-2xl p-3.5 mb-5 shadow-sm">
               <View className="flex-row items-center justify-between">
                 <View className="flex-row items-center flex-1 mr-3">
-                  {/* 3D Venue Stadium Well */}
-                  <View className="w-12 h-12 rounded-lg bg-stone-light border border-stone border-b-[2px] border-b-stone-muted items-center justify-center mr-3 relative">
-                    <MaterialCommunityIcons name="domain" size={24} color="#3D4438" />
-                    <View className="absolute -bottom-1 -right-1 px-1 py-0.2 bg-stone-muted rounded-sm">
-                      <Text className="text-warm-white text-[8px] font-black tracking-tighter">
+                  {/* Venue Icon Well */}
+                  <View className="w-12 h-12 rounded-xl bg-[#272C31] border border-white/10 items-center justify-center mr-3 relative">
+                    <MaterialCommunityIcons name="domain" size={24} color="#E85D26" />
+                    <View className="absolute -bottom-1 -right-1 px-1 py-0.2 bg-[#E85D26] rounded-xs">
+                      <Text className="text-[#171A1D] text-[8px] font-black tracking-tighter">
                         HUB
                       </Text>
                     </View>
@@ -315,18 +315,18 @@ export default function HubSetupScreen() {
                   <View className="flex-1">
                     <Text
                       numberOfLines={1}
-                      className="text-graphite text-sm font-black uppercase tracking-tight"
+                      className="text-[#F4F6F7] text-sm font-bold uppercase tracking-tight"
                     >
                       {hubName.trim() || 'Sports Hub Venue'}
                     </Text>
                     <View className="flex-row items-center mt-0.5">
-                      <Text className="text-olive text-[11px] font-extrabold uppercase tracking-wide">
+                      <Text className="text-[#E85D26] text-[11px] font-bold uppercase tracking-wide">
                         HUB OWNER
                       </Text>
-                      <Text className="text-stone-muted text-[10px] font-bold mx-1.5">
+                      <Text className="text-[#7F8993] text-[10px] font-bold mx-1.5">
                         ·
                       </Text>
-                      <Text className="text-stone-muted text-[10px] font-medium tracking-tight">
+                      <Text className="text-[#A0A5AD] text-[10px] font-medium tracking-tight">
                         {isEditMode ? 'Venue Configuration' : 'Venue Registration'}
                       </Text>
                     </View>
@@ -338,9 +338,9 @@ export default function HubSetupScreen() {
                   onPress={handleEditPress}
                   accessibilityRole="button"
                   accessibilityLabel="Edit hub credential"
-                  className="py-1.5 px-3 rounded-lg bg-stone-light border border-stone border-b-[2px] border-b-stone-muted active:scale-95"
+                  className="py-1.5 px-3 rounded-lg bg-[#272C31] border border-white/10 active:scale-95"
                 >
-                  <Text className="text-graphite text-[10px] font-black tracking-wider uppercase">
+                  <Text className="text-[#A0A5AD] text-[10px] font-bold tracking-wider uppercase">
                     INFO
                   </Text>
                 </Pressable>
@@ -385,14 +385,14 @@ export default function HubSetupScreen() {
             <View className="mb-5">
               <View className="flex-row items-center justify-between mb-2">
                 <View className="flex-row items-center">
-                  <Text className="text-graphite text-xs font-black tracking-wider uppercase">
+                  <Text className="text-[#F4F6F7] text-xs font-bold tracking-wider uppercase">
                     SUPPORTED SPORTS
                   </Text>
-                  <Text className="text-stone-muted text-[11px] font-bold ml-2">
+                  <Text className="text-[#E85D26] text-[11px] font-bold ml-2">
                     ({selectedSports.length}/4 ACTIVE)
                   </Text>
                 </View>
-                <Text className="text-stone-muted text-[10px] font-bold uppercase tracking-wide">
+                <Text className="text-[#7F8993] text-[10px] font-bold uppercase tracking-wide">
                   MULTI-SELECT
                 </Text>
               </View>
@@ -415,40 +415,40 @@ export default function HubSetupScreen() {
                 })}
               </View>
 
-              {/* Sports Validation Error in Rust */}
+              {/* Sports Validation Error */}
               {sportsError && (
-                <View className="mt-2.5 p-2 rounded-lg bg-rust/10 border border-rust/30 flex-row items-center">
-                  <Ionicons name="alert-circle-outline" size={15} color="#875646" />
-                  <Text className="text-rust text-xs font-bold ml-1.5 flex-1">
+                <View className="mt-2.5 p-2 rounded-xl bg-[#F4A261]/10 border border-[#F4A261]/30 flex-row items-center">
+                  <Ionicons name="alert-circle-outline" size={15} color="#F4A261" />
+                  <Text className="text-[#F4A261] text-xs font-semibold ml-1.5 flex-1">
                     {sportsError}
                   </Text>
                 </View>
               )}
             </View>
 
-            {/* Section 5: Location / Home Circuit */}
+            {/* Section 5: Location */}
             <View className="mb-5">
               <View className="flex-row items-center justify-between mb-1.5">
-                <Text className="text-graphite text-xs font-black tracking-wider uppercase">
-                  VENUE LOCATION // ZONE
+                <Text className="text-[#F4F6F7] text-xs font-bold tracking-wider uppercase">
+                  VENUE LOCATION
                 </Text>
-                <Text className="text-stone-muted text-[10px] font-bold uppercase tracking-wide">
-                  LAHORE CIRCUIT
+                <Text className="text-[#7F8993] text-[10px] font-bold uppercase tracking-wide">
+                  AREA
                 </Text>
               </View>
 
-              <View className="bg-warm-white border border-stone border-b-[3px] border-b-stone-muted/70 rounded-xl p-3.5 flex-row items-center justify-between shadow-xs">
+              <View className="bg-[#1F2327] border border-white/10 rounded-xl p-3.5 flex-row items-center justify-between shadow-xs">
                 <View className="flex-row items-center flex-1 mr-3">
-                  <View className="w-10 h-10 rounded-lg bg-olive/10 border border-olive/30 border-b-[2px] border-b-olive/50 items-center justify-center mr-3">
-                    <Ionicons name="location-sharp" size={20} color="#3D4438" />
+                  <View className="w-10 h-10 rounded-lg bg-[#E85D26]/10 border border-[#E85D26]/25 items-center justify-center mr-3">
+                    <Ionicons name="location-sharp" size={20} color="#E85D26" />
                   </View>
 
                   <View className="flex-1">
-                    <Text className="text-graphite text-sm font-black uppercase tracking-tight">
+                    <Text className="text-[#F4F6F7] text-sm font-bold uppercase tracking-tight">
                       {area}
                     </Text>
-                    <Text className="text-stone-muted text-[11px] font-medium mt-0.5">
-                      Neighborhood ground location for matchmaking
+                    <Text className="text-[#A0A5AD] text-[11px] font-medium mt-0.5">
+                      Ground location for player discovery and matchmaking
                     </Text>
                   </View>
                 </View>
@@ -457,62 +457,62 @@ export default function HubSetupScreen() {
                   onPress={() => setIsAreaModalVisible(true)}
                   accessibilityRole="button"
                   accessibilityLabel="Change venue area"
-                  className="py-1.5 px-3 rounded-lg bg-stone-light border border-stone border-b-[2px] border-b-stone-muted active:scale-95"
+                  className="py-1.5 px-3 rounded-lg bg-[#272C31] border border-white/10 active:scale-95"
                 >
-                  <Text className="text-graphite text-[10px] font-black tracking-wider uppercase">
+                  <Text className="text-[#E85D26] text-[10px] font-bold tracking-wider uppercase">
                     CHANGE
                   </Text>
                 </Pressable>
               </View>
             </View>
 
-            {/* Section 6: Number of Courts / Playing Areas (Tactile Stepper) */}
+            {/* Section 6: Number of Courts / Playing Areas */}
             <View className="mb-5">
               <View className="flex-row items-center justify-between mb-1.5">
-                <Text className="text-graphite text-xs font-black tracking-wider uppercase">
-                  COURTS & PLAYING AREAS
+                <Text className="text-[#F4F6F7] text-xs font-bold tracking-wider uppercase">
+                  COURTS & PLAYING SPACES
                 </Text>
-                <Text className="text-stone-muted text-[10px] font-bold uppercase tracking-wide">
+                <Text className="text-[#7F8993] text-[10px] font-bold uppercase tracking-wide">
                   CAPACITY
                 </Text>
               </View>
-              <Text className="text-stone-muted text-[11px] font-medium mb-2.5">
+              <Text className="text-[#A0A5AD] text-[11px] font-medium mb-2.5">
                 Total number of pitches, courts, or nets available at your facility.
               </Text>
 
-              <View className="bg-warm-white border border-stone border-b-[3px] border-b-stone-muted/70 rounded-xl p-3.5 flex-row items-center justify-between shadow-xs">
+              <View className="bg-[#1F2327] border border-white/10 rounded-xl p-3.5 flex-row items-center justify-between shadow-xs">
                 <View className="flex-row items-center flex-1">
-                  <View className="w-10 h-10 rounded-lg bg-stone/20 border border-stone/50 items-center justify-center mr-3">
-                    <MaterialCommunityIcons name="stadium-variant" size={20} color="#3D4438" />
+                  <View className="w-10 h-10 rounded-lg bg-[#272C31] border border-white/10 items-center justify-center mr-3">
+                    <MaterialCommunityIcons name="stadium-variant" size={20} color="#E85D26" />
                   </View>
                   <View>
-                    <Text className="text-graphite text-base font-black uppercase tracking-tight">
+                    <Text className="text-[#F4F6F7] text-base font-bold uppercase tracking-tight">
                       {courtsCount} {courtsCount === 1 ? 'COURT / PITCH' : 'COURTS / PITCHES'}
                     </Text>
-                    <Text className="text-stone-muted text-[10px] font-medium">
-                      Configurable in Hub Courts
+                    <Text className="text-[#A0A5AD] text-[10px] font-medium">
+                      Manageable anytime in Hub Courts
                     </Text>
                   </View>
                 </View>
 
-                {/* Tactile Numeric Stepper Controls */}
+                {/* Numeric Stepper Controls */}
                 <View className="flex-row items-center space-x-2">
                   <Pressable
                     onPress={handleDecrementCourts}
                     disabled={courtsCount <= 1}
                     accessibilityRole="button"
                     accessibilityLabel="Decrease court count"
-                    className={`w-10 h-10 rounded-xl items-center justify-center border border-b-[3px] active:scale-95 ${
+                    className={`w-10 h-10 rounded-xl items-center justify-center border border-white/10 active:scale-95 ${
                       courtsCount <= 1
-                        ? 'bg-stone/10 border-stone/30 opacity-40'
-                        : 'bg-warm-white border-stone border-b-stone-muted/80'
+                        ? 'bg-[#272C31]/40 opacity-40'
+                        : 'bg-[#272C31]'
                     }`}
                   >
-                    <Ionicons name="remove" size={18} color="#242522" />
+                    <Ionicons name="remove" size={18} color="#F4F6F7" />
                   </Pressable>
 
-                  <View className="w-10 h-10 items-center justify-center bg-stone-light rounded-xl border border-stone">
-                    <Text className="text-graphite text-base font-black">
+                  <View className="w-10 h-10 items-center justify-center bg-[#272C31] rounded-xl border border-white/10">
+                    <Text className="text-[#F4F6F7] text-base font-bold">
                       {courtsCount}
                     </Text>
                   </View>
@@ -522,63 +522,63 @@ export default function HubSetupScreen() {
                     disabled={courtsCount >= 50}
                     accessibilityRole="button"
                     accessibilityLabel="Increase court count"
-                    className={`w-10 h-10 rounded-xl items-center justify-center border border-b-[3px] active:scale-95 ${
+                    className={`w-10 h-10 rounded-xl items-center justify-center border border-white/10 active:scale-95 ${
                       courtsCount >= 50
-                        ? 'bg-stone/10 border-stone/30 opacity-40'
-                        : 'bg-warm-white border-stone border-b-stone-muted/80'
+                        ? 'bg-[#272C31]/40 opacity-40'
+                        : 'bg-[#272C31]'
                     }`}
                   >
-                    <Ionicons name="add" size={18} color="#242522" />
+                    <Ionicons name="add" size={18} color="#F4F6F7" />
                   </Pressable>
                 </View>
               </View>
             </View>
 
-            {/* Section 7: Admin Verification Notice (Preserves actual verified state) */}
-            <View className="mb-6 p-4 rounded-xl bg-graphite border border-surface-border-dark">
+            {/* Section 7: Admin Verification Notice */}
+            <View className="mb-6 p-4 rounded-xl bg-[#1F2327] border border-white/10">
               <View className="flex-row items-center mb-1.5">
                 <Ionicons
                   name={hubOwnerProfile?.isVerified ? 'shield-checkmark' : 'shield-outline'}
                   size={15}
-                  color={hubOwnerProfile?.isVerified ? '#3D4438' : '#875646'}
+                  color={hubOwnerProfile?.isVerified ? '#E85D26' : '#F4A261'}
                 />
                 <Text
                   className={`text-[10px] font-black uppercase tracking-widest ml-1.5 ${
-                    hubOwnerProfile?.isVerified ? 'text-olive' : 'text-rust'
+                    hubOwnerProfile?.isVerified ? 'text-[#E85D26]' : 'text-[#F4A261]'
                   }`}
                 >
                   ADMIN VERIFICATION
                 </Text>
               </View>
 
-              <Text className="text-warm-white text-xs font-black uppercase tracking-tight">
+              <Text className="text-[#F4F6F7] text-xs font-bold uppercase tracking-tight">
                 {hubOwnerProfile?.isVerified
                   ? 'Official Verified Facility'
                   : 'Pending Review After Registration'}
               </Text>
-              <Text className="text-stone text-[11px] font-medium mt-1 leading-relaxed">
+              <Text className="text-[#A0A5AD] text-[11px] font-medium mt-1 leading-relaxed">
                 {hubOwnerProfile?.isVerified
-                  ? 'Your sports hub is verified by platform administrators. Facility specifications meet standard circuit specifications.'
+                  ? 'Your sports hub is verified by platform administrators. Facility specifications meet standard requirements.'
                   : 'Your sports hub will be reviewed by platform administrators before receiving verified status. You can manage court inventory immediately.'}
               </Text>
 
-              <View className="mt-2.5 pt-2 border-t border-stone/20 flex-row items-center justify-between">
-                <Text className="text-stone-muted text-[10px] font-bold uppercase tracking-wider">
+              <View className="mt-2.5 pt-2 border-t border-white/5 flex-row items-center justify-between">
+                <Text className="text-[#7F8993] text-[10px] font-bold uppercase tracking-wider">
                   {hubOwnerProfile?.isVerified
                     ? 'STATUS: VERIFIED'
                     : 'STATUS: UNVERIFIED (PENDING)'}
                 </Text>
-                <Text className="text-stone text-[10px] font-medium">
-                  {hubOwnerProfile?.isVerified ? 'Circuit Approved' : 'Screen 21 Review'}
+                <Text className="text-[#A0A5AD] text-[10px] font-medium">
+                  {hubOwnerProfile?.isVerified ? 'Approved' : 'Under Review'}
                 </Text>
               </View>
             </View>
 
-            {/* General Error in Rust */}
+            {/* General Error */}
             {generalError && (
-              <View className="mb-4 p-2.5 rounded-lg bg-rust/10 border border-rust/30 flex-row items-center">
-                <Ionicons name="alert-circle-outline" size={16} color="#875646" />
-                <Text className="text-rust text-xs font-bold ml-2 flex-1">
+              <View className="mb-4 p-3 rounded-xl bg-[#F4A261]/10 border border-[#F4A261]/30 flex-row items-center">
+                <Ionicons name="alert-circle-outline" size={16} color="#F4A261" />
+                <Text className="text-[#F4A261] text-xs font-semibold ml-2 flex-1">
                   {generalError}
                 </Text>
               </View>
@@ -587,7 +587,7 @@ export default function HubSetupScreen() {
             {/* Primary CTA */}
             <View className="pt-1 pb-6">
               <PrimaryButton
-                title={isEditMode ? 'SAVE PROFILE CHANGES' : 'FINISH HUB SETUP & ENTER ARENA'}
+                title={isEditMode ? 'SAVE PROFILE CHANGES' : 'COMPLETE HUB SETUP'}
                 onPress={handleFinishSetup}
                 loading={isSubmitting}
                 variant="primary"
@@ -595,8 +595,8 @@ export default function HubSetupScreen() {
               />
 
               <View className="flex-row items-center justify-center mt-3">
-                <Ionicons name="shield-checkmark-sharp" size={13} color="#3D4438" />
-                <Text className="text-stone-muted text-[10px] font-bold uppercase tracking-wider ml-1.5">
+                <Ionicons name="shield-checkmark-sharp" size={13} color="#E85D26" />
+                <Text className="text-[#7F8993] text-[10px] font-semibold tracking-wider ml-1.5">
                   Verified venue listing · Administrative governance
                 </Text>
               </View>
@@ -605,7 +605,7 @@ export default function HubSetupScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* Area Selector Modal (Reused pattern from Screen 04 & 25) */}
+      {/* Area Selector Modal */}
       <Modal
         visible={isAreaModalVisible}
         transparent
@@ -614,28 +614,28 @@ export default function HubSetupScreen() {
       >
         <Pressable
           onPress={() => setIsAreaModalVisible(false)}
-          className="flex-1 bg-graphite/75 justify-center items-center px-5"
+          className="flex-1 bg-black/75 justify-center items-center px-5"
         >
           <Pressable
             onPress={(e) => e.stopPropagation()}
-            className="w-full max-w-sm rounded-2xl bg-warm-white border border-stone border-b-[4px] border-b-stone-muted p-5 shadow-2xl"
+            className="w-full max-w-sm rounded-2xl bg-[#1F2327] border border-white/10 p-5 shadow-2xl"
           >
             {/* Modal Header */}
-            <View className="flex-row items-center justify-between mb-4 pb-3 border-b border-stone">
+            <View className="flex-row items-center justify-between mb-4 pb-3 border-b border-white/10">
               <View>
-                <Text className="text-rust text-[10px] font-black uppercase tracking-widest">
-                  LOCATION SELECTOR
+                <Text className="text-[#E85D26] text-[10px] font-black uppercase tracking-widest">
+                  LOCATION
                 </Text>
-                <Text className="text-graphite text-base font-black uppercase tracking-tight mt-0.5">
-                  Select Venue Circuit Location
+                <Text className="text-[#F4F6F7] text-base font-bold uppercase tracking-tight mt-0.5">
+                  Select Venue Area
                 </Text>
               </View>
               <Pressable
                 onPress={() => setIsAreaModalVisible(false)}
-                className="w-8 h-8 rounded-lg bg-stone-light items-center justify-center border border-stone active:scale-95"
+                className="w-8 h-8 rounded-lg bg-[#272C31] items-center justify-center border border-white/10 active:scale-95"
                 accessibilityLabel="Close area modal"
               >
-                <Ionicons name="close" size={18} color="#242522" />
+                <Ionicons name="close" size={18} color="#F4F6F7" />
               </Pressable>
             </View>
 
@@ -652,27 +652,27 @@ export default function HubSetupScreen() {
                     }}
                     className={`w-full p-3 rounded-xl border flex-row items-center justify-between my-1 transition-all active:scale-[0.99] ${
                       isSelected
-                        ? 'bg-stone-light border-2 border-olive border-b-[3px] border-b-olive-dark'
-                        : 'bg-warm-white border border-stone border-b-[2px] border-b-stone-muted/60'
+                        ? 'bg-[#272C31] border-[#E85D26]'
+                        : 'bg-[#171A1D] border-white/5'
                     }`}
                   >
                     <View className="flex-row items-center flex-1">
                       <Ionicons
                         name="location-sharp"
                         size={16}
-                        color={isSelected ? '#3D4438' : '#75796F'}
+                        color={isSelected ? '#E85D26' : '#7F8993'}
                       />
                       <Text
-                        className={`text-xs font-black uppercase tracking-tight ml-2.5 ${
-                          isSelected ? 'text-olive' : 'text-graphite'
+                        className={`text-xs font-bold uppercase tracking-tight ml-2.5 ${
+                          isSelected ? 'text-[#E85D26]' : 'text-[#F4F6F7]'
                         }`}
                       >
                         {item}
                       </Text>
                     </View>
                     {isSelected && (
-                      <View className="w-5 h-5 rounded-full bg-olive items-center justify-center">
-                        <Ionicons name="checkmark" size={13} color="#F4F1EA" />
+                      <View className="w-5 h-5 rounded-full bg-[#E85D26] items-center justify-center">
+                        <Ionicons name="checkmark" size={13} color="#171A1D" />
                       </View>
                     )}
                   </Pressable>

@@ -11,6 +11,7 @@ import hubRoutes from './routes/hubRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
 import coachRoutes from './routes/coachRoutes.js';
+import weatherRoutes from './routes/weatherRoutes.js';
 
 const app = express();
 
@@ -46,6 +47,7 @@ app.use('/api/hub', hubRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/coach', coachRoutes);
+app.use('/api/weather', weatherRoutes);
 
 // 404 handler for API routes
 app.use('/api/*', (_req, res) => {

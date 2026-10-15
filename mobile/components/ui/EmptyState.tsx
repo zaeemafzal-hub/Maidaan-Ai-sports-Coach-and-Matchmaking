@@ -13,8 +13,8 @@ interface EmptyStateProps {
 }
 
 export const EmptyState: React.FC<EmptyStateProps> = ({
-  title = 'NO MATCHES ON THE BOARD',
-  description = 'Try another area or organize the first game of the evening.',
+  title = 'No matches found',
+  description = 'Try adjusting your sport or area filters, or organize the first game.',
   actionTitle,
   onAction,
   iconName = 'football-outline',
@@ -22,23 +22,23 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
 }) => {
   return (
     <View
-      className={`w-full p-8 rounded-xl bg-warm-white border border-stone items-center justify-center text-center ${className}`}
+      className={`w-full p-8 rounded-2xl bg-[#141518] border border-[rgba(255,255,255,0.08)] items-center justify-center text-center ${className}`}
     >
-      {/* Tactical Icon Container */}
-      <View className="w-16 h-16 rounded-xl bg-stone/20 border border-stone items-center justify-center mb-4">
-        <Ionicons name={iconName} size={32} color="#3D4438" />
+      {/* Icon Container */}
+      <View className="w-16 h-16 rounded-2xl bg-[#1B1D22] border border-[rgba(255,255,255,0.08)] items-center justify-center mb-4">
+        <Ionicons name={iconName} size={30} color="#E85D26" />
       </View>
 
-      <Text className="text-graphite text-lg font-black uppercase tracking-tight text-center">
+      <Text className="text-white text-lg font-bold uppercase tracking-tight text-center">
         {title}
       </Text>
 
-      <Text className="text-stone-muted text-xs font-medium text-center mt-1.5 max-w-xs leading-relaxed">
+      <Text className="text-[#AEB6BE] text-xs font-normal text-center mt-2 max-w-xs leading-relaxed">
         {description}
       </Text>
 
       {actionTitle && onAction && (
-        <View className="mt-5 w-full max-w-xs">
+        <View className="mt-6 w-full max-w-xs">
           <PrimaryButton title={actionTitle} onPress={onAction} />
         </View>
       )}

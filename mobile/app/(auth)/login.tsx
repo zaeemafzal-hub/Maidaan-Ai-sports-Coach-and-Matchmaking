@@ -160,16 +160,16 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-warm-white" edges={['top', 'bottom']}>
+    <SafeAreaView className="flex-1 bg-[#0C0D0E]" edges={['top', 'bottom']}>
       <ArenaHeader
-        title="MAIDAAN"
-        subtitle="MATCH-DAY SIGN IN"
+        title="Sign In"
+        subtitle="Account Access"
         showBack
         fallbackRoute="/(auth)/welcome"
         rightAction={
-          <Pressable onPress={handleRegister} className="py-1 px-2.5">
-            <Text className="text-olive text-xs font-black uppercase tracking-wider">
-              REGISTER
+          <Pressable onPress={handleRegister} className="py-1.5 px-3 rounded-full bg-[#E85D26]/15 border border-[#E85D26]/30">
+            <Text className="text-[#E85D26] text-xs font-bold uppercase tracking-wider">
+              Register
             </Text>
           </Pressable>
         }
@@ -184,30 +184,35 @@ export default function LoginScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* Header Photography */}
-          <View className="h-40 w-full relative bg-graphite overflow-hidden">
+          {/* Header Photography with Cinematic Overlay */}
+          <View className="h-44 w-full relative bg-[#0C0D0E] overflow-hidden">
             <Image
               source={IMAGES.arenaMatch}
-              className="w-full h-full object-cover"
+              className="w-full h-full"
               resizeMode="cover"
             />
-            <View className="absolute inset-0 bg-graphite/45" />
+            {/* Cinematic multi-stop dark overlay */}
+            <View className="absolute inset-0 bg-[#0C0D0E]/40" />
+            <View className="absolute inset-x-0 bottom-0 h-24 bg-[#0C0D0E]/90" />
 
-            <View className="absolute bottom-3 left-6 right-6">
-              <Text className="text-stone text-[10px] font-black uppercase tracking-wider mb-0.5">
-                FIXTURE CHECK-IN
-              </Text>
-              <Text className="text-warm-white text-2xl font-black uppercase tracking-tight">
+            <View className="absolute bottom-4 left-5 right-5">
+              <View className="flex-row items-center mb-1">
+                <View className="w-2 h-2 rounded-full bg-[#E85D26] mr-2 shadow-xs shadow-[#E85D26]" />
+                <Text className="text-[#E85D26] text-[11px] font-bold uppercase tracking-wider">
+                  Match-Day Access
+                </Text>
+              </View>
+              <Text className="text-white text-2xl font-bold tracking-tight">
                 Welcome Back
               </Text>
             </View>
           </View>
 
           {/* Form Content */}
-          <View className="px-6 pt-5 pb-6">
+          <View className="px-5 pt-5 pb-6">
             {errors.general && (
-              <View className="mb-4 p-3 rounded-lg bg-rust/15 border border-rust">
-                <Text className="text-rust text-xs font-bold text-center">
+              <View className="mb-4 p-3.5 rounded-xl bg-[#EF4444]/15 border border-[#EF4444]/30">
+                <Text className="text-[#EF4444] text-xs font-medium text-center">
                   {errors.general}
                 </Text>
               </View>
@@ -215,7 +220,7 @@ export default function LoginScreen() {
 
             <View className="space-y-4">
               <FormInput
-                label="EMAIL ADDRESS"
+                label="Email Address"
                 value={email}
                 onChangeText={(text) => {
                   setEmail(text);
@@ -229,7 +234,7 @@ export default function LoginScreen() {
               />
 
               <FormInput
-                label="PASSWORD"
+                label="Password"
                 value={password}
                 onChangeText={(text) => {
                   setPassword(text);
@@ -249,7 +254,7 @@ export default function LoginScreen() {
                     <Ionicons
                       name={showPassword ? 'eye-off-outline' : 'eye-outline'}
                       size={20}
-                      color="#666B60"
+                      color="#A0A5AD"
                     />
                   </Pressable>
                 }
@@ -257,47 +262,48 @@ export default function LoginScreen() {
             </View>
 
             {/* Forgot Password Link */}
-            <View className="items-end mt-2.5 mb-5">
+            <View className="items-end mt-2 mb-6">
               <Pressable
                 onPress={handleForgotPassword}
                 accessibilityRole="button"
                 accessibilityLabel="Forgot password"
                 className="py-1 px-1"
               >
-                <Text className="text-stone-muted text-xs font-bold uppercase tracking-wider">
-                  FORGOT PASSWORD?
+                <Text className="text-[#A0A5AD] text-xs font-medium hover:text-[#E85D26]">
+                  Forgot Password?
                 </Text>
               </Pressable>
             </View>
 
             {/* Submit Button */}
             <PrimaryButton
-              title="LOG IN TO THE ARENA"
+              title="Sign In"
               onPress={handleLogin}
               loading={isSubmitting}
               variant="primary"
+              size="lg"
               testID="login-submit-button"
             />
 
             {/* Divider */}
             <View className="flex-row items-center my-6">
-              <View className="flex-1 h-[1px] bg-stone" />
-              <Text className="mx-3 text-stone-muted text-[11px] font-bold uppercase tracking-wider">
-                OR QUICK ACCESS
+              <View className="flex-1 h-[1px] bg-[rgba(255,255,255,0.08)]" />
+              <Text className="mx-3 text-[#5C616A] text-[10px] font-bold uppercase tracking-wider">
+                Or Continue With
               </Text>
-              <View className="flex-1 h-[1px] bg-stone" />
+              <View className="flex-1 h-[1px] bg-[rgba(255,255,255,0.08)]" />
             </View>
 
             {/* Social Logins */}
-            <View className="space-y-2.5">
+            <View className="space-y-3">
               <Pressable
                 onPress={() => handleSocialMockLogin('Google')}
                 accessibilityRole="button"
                 accessibilityLabel="Continue with Google"
-                className="w-full min-h-[48px] py-3.5 px-4 rounded-xl border border-stone bg-warm-white flex-row items-center justify-center active:bg-stone-light"
+                className="w-full min-h-[50px] py-3.5 px-4 rounded-[16px] border border-[rgba(255,255,255,0.08)] bg-[#141518] flex-row items-center justify-center active:bg-[#1B1D22]"
               >
-                <Ionicons name="logo-google" size={18} color="#242522" />
-                <Text className="text-graphite text-xs font-bold uppercase tracking-wider ml-2.5">
+                <Ionicons name="logo-google" size={18} color="#FFFFFF" />
+                <Text className="text-white text-sm font-semibold ml-2.5">
                   Continue with Google
                 </Text>
               </Pressable>
@@ -306,10 +312,10 @@ export default function LoginScreen() {
                 onPress={() => handleSocialMockLogin('Apple')}
                 accessibilityRole="button"
                 accessibilityLabel="Continue with Apple"
-                className="w-full min-h-[48px] py-3.5 px-4 rounded-xl border border-stone bg-warm-white flex-row items-center justify-center active:bg-stone-light mt-2.5"
+                className="w-full min-h-[50px] py-3.5 px-4 rounded-[16px] border border-[rgba(255,255,255,0.08)] bg-[#141518] flex-row items-center justify-center active:bg-[#1B1D22] mt-2.5"
               >
-                <Ionicons name="logo-apple" size={18} color="#242522" />
-                <Text className="text-graphite text-xs font-bold uppercase tracking-wider ml-2.5">
+                <Ionicons name="logo-apple" size={18} color="#FFFFFF" />
+                <Text className="text-white text-sm font-semibold ml-2.5">
                   Continue with Apple
                 </Text>
               </Pressable>
@@ -318,14 +324,14 @@ export default function LoginScreen() {
             {/* Bottom Register Redirect */}
             <Pressable
               onPress={handleRegister}
-              className="w-full py-4 items-center justify-center mt-4 active:opacity-70 min-h-[44px]"
+              className="w-full py-5 items-center justify-center mt-3 active:opacity-75 min-h-[44px]"
               accessibilityRole="button"
               accessibilityLabel="New player? Register"
             >
-              <Text className="text-stone-muted text-xs font-bold uppercase tracking-wider">
-                NEW TO MAIDAAN?{' '}
-                <Text className="text-graphite underline font-black">
-                  CHOOSE YOUR ROLE & JOIN
+              <Text className="text-[#5C616A] text-sm font-medium">
+                New to Maidaan?{' '}
+                <Text className="text-[#E85D26] font-bold">
+                  Create an Account
                 </Text>
               </Text>
             </Pressable>

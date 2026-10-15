@@ -1,50 +1,93 @@
 /**
- * Maidaan Theme Constants — CONCRETE ARENA DESIGN DIRECTION
- * Primary Graphite, Warm White, Arena Olive, Rust, Concrete Stone
+ * Maidaan Design System Tokens (Cinematic Obsidian & Solar Orange)
+ * Modern dark-neutral athletic base, solar orange energetic accents, polished card hierarchy.
  */
 
 export const COLORS = {
-  // Concrete Arena Core System
-  graphite: '#242522',
-  warmWhite: '#F4F1EA',
-  arenaOlive: '#3D4438',
-  oliveDark: '#2C3228',
-  oliveMuted: '#525C4B',
-  rust: '#875646',
-  rustDark: '#663F33',
-  rustMuted: '#9E6A58',
-  concreteStone: '#D6D1C6',
-  stoneLight: '#E8E4DC',
-  stoneMuted: '#B8B2A6',
+  // Base & Layered Obsidian Surfaces
+  canvas: '#0C0D0E',
+  background: '#0C0D0E',
+  surfaceDepth: '#101214',
+  surface: '#141518',
+  surfaceElevated: '#1B1D22',
+  surfaceGlossy: '#20232A',
+  surfaceCard: '#141518',
+  surfaceSoft: '#1B1D22',
+  surfaceHighlight: '#22252B',
+  surfaceTranslucent: 'rgba(20, 21, 24, 0.88)',
 
-  // Surfaces & Borders
-  ink: '#1A1C19',
-  surfaceDark: '#20221F',
-  surfaceCardDark: '#272A26',
-  surfaceBorderDark: '#353933',
-  surfaceCardBorder: '#D6D1C6',
+  // Borders
+  border: 'rgba(255, 255, 255, 0.08)',
+  borderLight: 'rgba(255, 255, 255, 0.12)',
+  borderSubtle: 'rgba(255, 255, 255, 0.06)',
+  borderActive: '#E85D26',
 
-  // Text Tokens
-  textPrimary: '#242522',
-  textSecondary: '#666B60',
-  textMuted: '#8D9287',
-  textLight: '#F4F1EA',
-  textLightSecondary: '#D6D1C6',
-  textLightMuted: '#9B9E95',
+  // Typography
+  textPrimary: '#FFFFFF',
+  textSecondary: '#A0A5AD',
+  textMuted: '#5C616A',
+  textInverse: '#0C0D0E',
 
-  // Functional Status
-  live: '#875646',
-  success: '#3D4438',
-  warning: '#C48A3F',
-  error: '#A34235',
+  // Brand Primary (Solar Orange)
+  brandPrimary: '#E85D26',
+  brandPressed: '#FF723A',
+  brandHover: '#FF723A',
+  brandGlow: 'rgba(232, 93, 38, 0.28)',
+  brandSoft: 'rgba(232, 93, 38, 0.14)',
+  brandAmbient: 'rgba(232, 93, 38, 0.08)',
+  brandAmbientStrong: 'rgba(232, 93, 38, 0.16)',
 
-  // Sports Identity
+  // Primary Sports Energetic Accent (Solar Orange)
+  accent: '#E85D26',
+  accentDark: '#D44A15',
+  accentSoft: 'rgba(232, 93, 38, 0.14)',
+  accentGlow: 'rgba(232, 93, 38, 0.28)',
+
+  // Semantic Status Tokens
+  outdoorSuitable: '#22C55E',
+  caution: '#F59E0B',
+  indoorPreferred: '#EF4444',
+  verifiedBadge: '#3B82F6',
+
+  // Standard Functional Statuses
+  success: '#22C55E',
+  warning: '#F59E0B',
+  error: '#EF4444',
+  info: '#3B82F6',
+
+  // The 4 Core Sports Identities
   sports: {
-    football: '#3D4438',
-    cricket: '#875646',
-    padel: '#5A6254',
-    badminton: '#7A6B56',
+    cricket: '#F4A261',
+    badminton: '#7FD1AE',
+    padel: '#64B5F6',
+    football: '#22C55E',
   },
+
+  // Legacy mappings for strict backwards compatibility
+  graphite: '#FFFFFF',
+  warmWhite: '#FFFFFF',
+  arenaOlive: '#22C55E',
+  oliveDark: '#16A34A',
+  oliveMuted: '#7FD1AE',
+  rust: '#E85D26',
+  rustDark: '#D44A15',
+  rustMuted: '#FF723A',
+  warm: '#E85D26',
+  warmSoft: 'rgba(232, 93, 38, 0.14)',
+  secondary: '#7FD1AE',
+  secondarySoft: 'rgba(127, 209, 174, 0.14)',
+  concreteStone: '#141518',
+  stoneLight: '#1B1D22',
+  stoneMuted: '#A0A5AD',
+  ink: '#0C0D0E',
+  surfaceDark: '#141518',
+  surfaceCardDark: '#141518',
+  surfaceBorderDark: 'rgba(255, 255, 255, 0.08)',
+  surfaceCardBorder: 'rgba(255, 255, 255, 0.08)',
+  textLight: '#FFFFFF',
+  textLightSecondary: '#AEB6BE',
+  textLightMuted: '#5C616A',
+  live: '#EF4444',
 } as const;
 
 export const SPACING = {
@@ -52,21 +95,60 @@ export const SPACING = {
   sm: 8,
   md: 12,
   lg: 16,
-  xl: 24,
-  '2xl': 32,
-  '3xl': 40,
-  '4xl': 48,
+  xl: 20,
+  '2xl': 24,
+  '3xl': 32,
+  '4xl': 40,
+  '5xl': 48,
+} as const;
+
+export const RADIUS = {
+  xs: 4,
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 20,
+  '2xl': 24,
+  '3xl': 28,
+  full: 9999,
 } as const;
 
 export const MOTION = {
-  fast: 140,
-  standard: 240,
-  slow: 380,
+  instant: 100,
+  fast: 180,
+  standard: 260,
+  slow: 360,
 } as const;
 
 export const TYPOGRAPHY = {
-  fontFamily: {
-    sans: 'System',
-    display: 'System',
+  display: {
+    fontSize: 32,
+    fontWeight: '800' as const,
+    letterSpacing: -0.5,
+  },
+  pageTitle: {
+    fontSize: 26,
+    fontWeight: '700' as const,
+    letterSpacing: -0.3,
+  },
+  sectionTitle: {
+    fontSize: 19,
+    fontWeight: '600' as const,
+    letterSpacing: -0.2,
+  },
+  body: {
+    fontSize: 15,
+    fontWeight: '400' as const,
+    lineHeight: 22,
+  },
+  secondary: {
+    fontSize: 13,
+    fontWeight: '400' as const,
+    lineHeight: 18,
+  },
+  caption: {
+    fontSize: 11,
+    fontWeight: '500' as const,
+    letterSpacing: 0.2,
   },
 } as const;

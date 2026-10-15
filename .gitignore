@@ -29,3 +29,7 @@ mobile/android/build/
 # Logs & System
 *.log
 .DS_Store
+
+# Local monorepo root junction
+/app
+

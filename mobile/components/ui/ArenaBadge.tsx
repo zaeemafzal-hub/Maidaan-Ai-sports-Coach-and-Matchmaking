@@ -1,7 +1,21 @@
 import React from 'react';
 import { View, Text } from 'react-native';
 
-export type BadgeVariant = 'live' | 'olive' | 'stone' | 'rust' | 'outline';
+export type BadgeVariant =
+  | 'live'
+  | 'olive'
+  | 'accent'
+  | 'brand'
+  | 'stone'
+  | 'neutral'
+  | 'rust'
+  | 'warm'
+  | 'outline'
+  | 'secondary'
+  | 'suitable'
+  | 'caution'
+  | 'indoor'
+  | 'verified';
 
 interface ArenaBadgeProps {
   label: string;
@@ -12,7 +26,7 @@ interface ArenaBadgeProps {
 
 export const ArenaBadge: React.FC<ArenaBadgeProps> = ({
   label,
-  variant = 'olive',
+  variant = 'brand',
   size = 'sm',
   className = '',
 }) => {
@@ -22,37 +36,70 @@ export const ArenaBadge: React.FC<ArenaBadgeProps> = ({
     switch (variant) {
       case 'live':
         return {
-          container: 'bg-rust/20 border border-rust',
-          text: 'text-rust font-extrabold',
+          container: 'bg-[#EF4444]/15 border border-[#EF4444]/30',
+          text: 'text-[#EF4444] font-bold',
           showDot: true,
-          dotColor: 'bg-rust',
+          dotColor: 'bg-[#EF4444]',
         };
-      case 'rust':
+      case 'suitable':
+      case 'olive':
         return {
-          container: 'bg-rust border border-rust-dark',
-          text: 'text-warm-white font-bold',
+          container: 'bg-[#22C55E]/15 border border-[#22C55E]/30',
+          text: 'text-[#22C55E] font-bold',
+          showDot: false,
+          dotColor: '',
+        };
+      case 'caution':
+        return {
+          container: 'bg-[#F59E0B]/15 border border-[#F59E0B]/30',
+          text: 'text-[#F59E0B] font-bold',
+          showDot: false,
+          dotColor: '',
+        };
+      case 'indoor':
+        return {
+          container: 'bg-[#EF4444]/15 border border-[#EF4444]/30',
+          text: 'text-[#EF4444] font-bold',
+          showDot: false,
+          dotColor: '',
+        };
+      case 'verified':
+        return {
+          container: 'bg-[#3B82F6]/15 border border-[#3B82F6]/30',
+          text: 'text-[#3B82F6] font-bold',
+          showDot: false,
+          dotColor: '',
+        };
+      case 'secondary':
+        return {
+          container: 'bg-[#7FD1AE]/15 border border-[#7FD1AE]/30',
+          text: 'text-[#7FD1AE] font-bold',
           showDot: false,
           dotColor: '',
         };
       case 'stone':
+      case 'neutral':
         return {
-          container: 'bg-stone/30 border border-stone',
-          text: 'text-graphite font-bold',
+          container: 'bg-[#1B1D22] border border-[rgba(255,255,255,0.08)]',
+          text: 'text-[#AEB6BE] font-medium',
           showDot: false,
           dotColor: '',
         };
       case 'outline':
         return {
-          container: 'bg-transparent border border-stone',
-          text: 'text-graphite font-semibold',
+          container: 'bg-transparent border border-[rgba(255,255,255,0.15)]',
+          text: 'text-white font-medium',
           showDot: false,
           dotColor: '',
         };
-      case 'olive':
+      case 'brand':
+      case 'rust':
+      case 'warm':
+      case 'accent':
       default:
         return {
-          container: 'bg-olive/15 border border-olive',
-          text: 'text-olive font-extrabold',
+          container: 'bg-[#E85D26]/15 border border-[#E85D26]/30',
+          text: 'text-[#E85D26] font-bold',
           showDot: false,
           dotColor: '',
         };
@@ -63,12 +110,12 @@ export const ArenaBadge: React.FC<ArenaBadgeProps> = ({
 
   return (
     <View
-      className={`flex-row items-center rounded-sm ${
-        isSm ? 'px-2 py-0.5' : 'px-3 py-1'
+      className={`flex-row items-center rounded-full ${
+        isSm ? 'px-2.5 py-0.5' : 'px-3.5 py-1'
       } ${container} ${className}`}
     >
       {showDot && (
-        <View className={`w-1.5 h-1.5 rounded-full ${dotColor} mr-1.5 animate-pulse`} />
+        <View className={`w-1.5 h-1.5 rounded-full ${dotColor} mr-1.5`} />
       )}
       <Text
         className={`tracking-wider uppercase ${
@@ -80,3 +127,5 @@ export const ArenaBadge: React.FC<ArenaBadgeProps> = ({
     </View>
   );
 };
+
+export const StatusBadge = ArenaBadge;

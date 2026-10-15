@@ -18,7 +18,7 @@ import { ArenaHeader } from '../../components/ui/ArenaHeader';
 import { ArenaBadge } from '../../components/ui/ArenaBadge';
 import { PrimaryButton } from '../../components/ui/PrimaryButton';
 import { IMAGES } from '../../constants/images';
-import { Sport, HubVerificationRequest, HubVerificationStatus } from '../../types';
+import { Sport, HubVerificationRequest } from '../../types';
 import { adminService } from '../../services/adminService';
 
 const SPORT_META: Record<
@@ -34,7 +34,6 @@ const SPORT_META: Record<
 export default function HubVerificationScreen() {
   const { currentUser } = useAuthStore();
 
-  // Strict Admin Role Guard
   const isAdmin = currentUser?.role === 'ADMIN';
 
   // Live state
@@ -52,7 +51,6 @@ export default function HubVerificationScreen() {
     submission: HubVerificationRequest;
   } | null>(null);
 
-  // Optional admin note for rejection/review decisions (max 300 chars)
   const [adminNoteInput, setAdminNoteInput] = useState<string>('');
 
   // Inspection modal state
@@ -87,25 +85,25 @@ export default function HubVerificationScreen() {
   // =========================================================================
   if (!isAdmin) {
     return (
-      <SafeAreaView className="flex-1 bg-warm-white" edges={['top']}>
+      <SafeAreaView className="flex-1 bg-[#171A1D]" edges={['top']}>
         <ArenaHeader
-          title="MAIDAAN"
-          subtitle="ADMIN DESK // ACCESS RESTRICTION"
+          title="Hub Verification"
+          subtitle="Access Restriction"
           showBack
           onBack={() => router.replace('/(tabs)/discover')}
         />
-        <View className="flex-1 items-center justify-center p-6 bg-warm-white">
-          <View className="w-16 h-16 rounded-full bg-rust/10 items-center justify-center border border-rust/30 mb-5">
-            <Ionicons name="shield-outline" size={28} color="#875646" />
+        <View className="flex-1 items-center justify-center p-6 bg-[#171A1D]">
+          <View className="w-16 h-16 rounded-full bg-[#F4A261]/10 items-center justify-center border border-[#F4A261]/30 mb-5">
+            <Ionicons name="shield-outline" size={28} color="#F4A261" />
           </View>
 
-          <ArenaBadge label="ADMIN ACCESS REQUIRED" variant="rust" size="md" />
+          <ArenaBadge label="ADMIN REQUIRED" variant="rust" size="md" />
 
-          <Text className="text-graphite text-lg font-black uppercase tracking-tight text-center mt-3">
-            ADMIN ACCESS REQUIRED
+          <Text className="text-[#F4F6F7] text-lg font-black uppercase tracking-tight text-center mt-3">
+            Admin Access Required
           </Text>
 
-          <Text className="text-stone-muted text-sm text-center mt-2 max-w-[310px] leading-5">
+          <Text className="text-[#A0A5AD] text-sm text-center mt-2 max-w-[310px] leading-5">
             This review desk is restricted to Maidaan administrators. Public accounts cannot access platform verification queues.
           </Text>
 
@@ -143,7 +141,7 @@ export default function HubVerificationScreen() {
   }, [submissions, activeFilter]);
 
   // =========================================================================
-  // 3. ACTION HANDLERS (LIVE BACKEND TRANSACTIONS)
+  // 3. ACTION HANDLERS
   // =========================================================================
   const handleOpenConfirm = (type: 'approve' | 'decline', submission: HubVerificationRequest) => {
     setConfirmModal({ type, submission });
@@ -183,7 +181,6 @@ export default function HubVerificationScreen() {
         return;
       }
 
-      // Success: refetch latest authoritative data from server
       await fetchSubmissions();
       setConfirmModal(null);
       setAdminNoteInput('');
@@ -197,44 +194,38 @@ export default function HubVerificationScreen() {
     }
   };
 
-  // =========================================================================
-  // 4. MAIN SCREEN RENDER
-  // =========================================================================
   return (
-    <SafeAreaView className="flex-1 bg-warm-white" edges={['top']}>
-      {/* Header */}
+    <SafeAreaView className="flex-1 bg-[#171A1D]" edges={['top']}>
+      {/* Modern Athletic Header */}
       <ArenaHeader
-        title="HUB VERIFICATION"
-        subtitle="ADMIN DESK // FACILITY REVIEWS"
+        title="Hub Verification"
+        subtitle="Facility Onboarding Reviews"
         showBack
         onBack={() => router.replace('/admin/dashboard')}
-        rightAction={
-          <ArenaBadge label="LIVE QUEUE" variant="stone" size="sm" />
-        }
       />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 56 }}
       >
-        {/* RESTRAINED FACILITY VERIFICATION BANNER */}
+        {/* Banner */}
         <View className="px-4 pt-3">
-          <View className="h-16 w-full rounded-sm overflow-hidden border border-stone relative bg-graphite">
+          <View className="h-18 w-full rounded-2xl overflow-hidden border border-white/10 relative bg-[#1F2327]">
             <Image
               source={IMAGES.arenaGround}
               className="w-full h-full opacity-35"
               resizeMode="cover"
             />
-            <View className="absolute inset-0 px-3.5 py-2 flex-row items-center justify-between">
+            <View className="absolute inset-0 px-4 py-3 flex-row items-center justify-between bg-gradient-to-r from-[#171A1D]/80 to-transparent">
               <View className="flex-1 pr-2">
-                <Text className="text-stone-muted text-[9px] font-mono uppercase tracking-widest font-bold">
-                  FACILITY APPROVAL DESK
+                <Text className="text-[#7F8993] text-[10px] font-mono uppercase tracking-widest font-bold">
+                  Facility Approval Desk
                 </Text>
                 <Text
                   numberOfLines={1}
-                  className="text-warm-white text-sm font-black uppercase tracking-tight"
+                  className="text-[#F4F6F7] text-base font-black uppercase tracking-tight"
                 >
-                  HUB SUBMISSION AUDIT
+                  Hub Submissions Audit
                 </Text>
               </View>
               <ArenaBadge
@@ -246,36 +237,36 @@ export default function HubVerificationScreen() {
           </View>
         </View>
 
-        {/* PAGE TITLE & INSTRUCTIONS */}
+        {/* Page Title & Context */}
         <View className="px-4 pt-3 pb-1">
-          <Text className="text-graphite text-xl font-black uppercase tracking-tight">
-            FACILITY SUBMISSIONS
+          <Text className="text-[#F4F6F7] text-xl font-black uppercase tracking-tight">
+            Facility Submissions
           </Text>
-          <Text className="text-stone-muted text-xs leading-4 mt-0.5">
+          <Text className="text-[#A0A5AD] text-xs leading-4 mt-0.5">
             Audit Hub Owner profile submissions for platform onboarding. Verify location details, declared court capacity, and supported sports.
           </Text>
         </View>
 
         {/* LOADING INDICATOR */}
         {loading && (
-          <View className="mx-4 mt-3 p-4 bg-white rounded-sm border border-stone flex-row items-center justify-center">
-            <ActivityIndicator size="small" color="#3D4438" />
-            <Text className="text-stone-muted text-xs font-mono ml-3">
-              RETRIEVING FACILITY SUBMISSIONS...
+          <View className="mx-4 mt-3 p-4 bg-[#1F2327] rounded-2xl border border-white/10 flex-row items-center justify-center">
+            <ActivityIndicator size="small" color="#E85D26" />
+            <Text className="text-[#A0A5AD] text-xs font-mono ml-3">
+              Retrieving facility submissions...
             </Text>
           </View>
         )}
 
         {/* ERROR STATE WITH RETRY */}
         {error && !loading && (
-          <View className="mx-4 mt-3 p-4 bg-rust/10 rounded-sm border border-rust/30">
+          <View className="mx-4 mt-3 p-4 bg-[#F4A261]/10 rounded-2xl border border-[#F4A261]/30">
             <View className="flex-row items-center mb-1.5">
-              <Ionicons name="alert-circle-outline" size={18} color="#875646" />
-              <Text className="text-rust text-xs font-black uppercase tracking-tight ml-2">
-                RETRIEVAL ERROR
+              <Ionicons name="alert-circle-outline" size={18} color="#F4A261" />
+              <Text className="text-[#F4A261] text-xs font-black uppercase tracking-tight ml-2">
+                Retrieval Error
               </Text>
             </View>
-            <Text className="text-stone-muted text-xs leading-4 mb-3">
+            <Text className="text-[#A0A5AD] text-xs leading-4 mb-3">
               {error}
             </Text>
             <PrimaryButton
@@ -286,27 +277,25 @@ export default function HubVerificationScreen() {
           </View>
         )}
 
-        {/* ================================================================= */}
         {/* SUMMARY STRIP */}
-        {/* ================================================================= */}
         <View className="px-4 mt-3">
           <View className="flex-row gap-2">
             {/* PENDING */}
             <Pressable
               onPress={() => setActiveFilter('PENDING')}
-              className={`flex-1 rounded-sm p-3 border ${
+              className={`flex-1 rounded-2xl p-3.5 border ${
                 activeFilter === 'PENDING'
-                  ? 'bg-rust/15 border-rust'
-                  : 'bg-stone/20 border-stone'
+                  ? 'bg-[#F4A261]/15 border-[#F4A261]'
+                  : 'bg-[#1F2327] border-white/10'
               }`}
             >
-              <Text className="text-stone-muted text-[9px] font-mono uppercase tracking-wider font-bold">
+              <Text className="text-[#7F8993] text-[10px] font-mono uppercase tracking-wider font-bold">
                 PENDING
               </Text>
-              <Text className="text-rust text-xl font-black tracking-tight mt-0.5">
+              <Text className="text-[#F4A261] text-2xl font-black tracking-tight mt-0.5">
                 {pendingCount}
               </Text>
-              <Text className="text-stone-muted text-[10px] font-medium">
+              <Text className="text-[#A0A5AD] text-[10px] font-medium">
                 Awaiting review
               </Text>
             </Pressable>
@@ -314,56 +303,54 @@ export default function HubVerificationScreen() {
             {/* APPROVED */}
             <Pressable
               onPress={() => setActiveFilter('APPROVED')}
-              className={`flex-1 rounded-sm p-3 border ${
+              className={`flex-1 rounded-2xl p-3.5 border ${
                 activeFilter === 'APPROVED'
-                  ? 'bg-arena-olive/20 border-arena-olive'
-                  : 'bg-stone/20 border-stone'
+                  ? 'bg-[#E85D26]/15 border-[#E85D26]'
+                  : 'bg-[#1F2327] border-white/10'
               }`}
             >
-              <Text className="text-stone-muted text-[9px] font-mono uppercase tracking-wider font-bold">
+              <Text className="text-[#7F8993] text-[10px] font-mono uppercase tracking-wider font-bold">
                 APPROVED
               </Text>
-              <Text className="text-arena-olive text-xl font-black tracking-tight mt-0.5">
+              <Text className="text-[#E85D26] text-2xl font-black tracking-tight mt-0.5">
                 {approvedCount}
               </Text>
-              <Text className="text-stone-muted text-[10px] font-medium">
-                Platform clear
+              <Text className="text-[#A0A5AD] text-[10px] font-medium">
+                Verified
               </Text>
             </Pressable>
 
             {/* REJECTED */}
             <Pressable
               onPress={() => setActiveFilter('REJECTED')}
-              className={`flex-1 rounded-sm p-3 border ${
+              className={`flex-1 rounded-2xl p-3.5 border ${
                 activeFilter === 'REJECTED'
-                  ? 'bg-stone/40 border-graphite'
-                  : 'bg-stone/20 border-stone'
+                  ? 'bg-[#272C31] border-white/30'
+                  : 'bg-[#1F2327] border-white/10'
               }`}
             >
-              <Text className="text-stone-muted text-[9px] font-mono uppercase tracking-wider font-bold">
+              <Text className="text-[#7F8993] text-[10px] font-mono uppercase tracking-wider font-bold">
                 DECLINED
               </Text>
-              <Text className="text-graphite text-xl font-black tracking-tight mt-0.5">
+              <Text className="text-[#A0A5AD] text-2xl font-black tracking-tight mt-0.5">
                 {declinedCount}
               </Text>
-              <Text className="text-stone-muted text-[10px] font-medium">
-                Needs revision
+              <Text className="text-[#7F8993] text-[10px] font-medium">
+                Rejected
               </Text>
             </Pressable>
           </View>
         </View>
 
-        {/* ================================================================= */}
         {/* FILTER CHIPS */}
-        {/* ================================================================= */}
         <View className="px-4 mt-4">
-          <View className="flex-row space-x-1.5 bg-stone/20 p-1 rounded-sm border border-stone">
+          <View className="flex-row space-x-1.5 bg-[#1F2327] p-1 rounded-xl border border-white/10">
             {(
               [
-                { id: 'PENDING', label: `PENDING (${pendingCount})` },
-                { id: 'APPROVED', label: `APPROVED (${approvedCount})` },
-                { id: 'REJECTED', label: `DECLINED (${declinedCount})` },
-                { id: 'ALL', label: `ALL (${submissions.length})` },
+                { id: 'PENDING', label: `Pending (${pendingCount})` },
+                { id: 'APPROVED', label: `Approved (${approvedCount})` },
+                { id: 'REJECTED', label: `Declined (${declinedCount})` },
+                { id: 'ALL', label: `All (${submissions.length})` },
               ] as const
             ).map((tab) => {
               const isSelected = activeFilter === tab.id;
@@ -373,14 +360,14 @@ export default function HubVerificationScreen() {
                   onPress={() => setActiveFilter(tab.id)}
                   accessibilityRole="button"
                   accessibilityLabel={`Filter by ${tab.label}`}
-                  className={`flex-1 py-1.5 items-center justify-center rounded-xs ${
-                    isSelected ? 'bg-graphite shadow-2xs' : 'bg-transparent'
+                  className={`flex-1 py-2 items-center justify-center rounded-lg ${
+                    isSelected ? 'bg-[#E85D26]' : 'bg-transparent'
                   }`}
                 >
                   <Text
                     numberOfLines={1}
-                    className={`text-[10px] font-mono uppercase tracking-wider ${
-                      isSelected ? 'text-warm-white font-black' : 'text-stone-muted font-bold'
+                    className={`text-[10px] uppercase font-bold ${
+                      isSelected ? 'text-[#171A1D]' : 'text-[#A0A5AD]'
                     }`}
                   >
                     {tab.label}
@@ -391,33 +378,31 @@ export default function HubVerificationScreen() {
           </View>
         </View>
 
-        {/* ================================================================= */}
         {/* SUBMISSION LISTING SECTION */}
-        {/* ================================================================= */}
         <View className="px-4 mt-4">
           <View className="flex-row items-center justify-between mb-2.5">
-            <Text className="text-graphite text-[11px] font-mono uppercase tracking-widest font-bold">
-              VERIFICATION SUBMISSIONS
+            <Text className="text-[#A0A5AD] text-xs font-mono uppercase tracking-wider font-bold">
+              Verification Submissions
             </Text>
-            <Text className="text-stone-muted text-[10px] font-mono">
-              {displayedSubmissions.length} LISTED
+            <Text className="text-[#7F8993] text-[10px] font-mono">
+              {displayedSubmissions.length} Listed
             </Text>
           </View>
 
           {/* EMPTY STATE */}
           {displayedSubmissions.length === 0 && !loading ? (
-            <View className="bg-white rounded-sm p-6 border border-stone items-center my-2 shadow-2xs">
-              <View className="w-12 h-12 rounded-full bg-stone/20 border border-stone items-center justify-center mb-3">
-                <Ionicons name="business-outline" size={24} color="#666B60" />
+            <View className="bg-[#1F2327] rounded-2xl p-6 border border-white/10 items-center my-2">
+              <View className="w-12 h-12 rounded-full bg-[#272C31] border border-white/10 items-center justify-center mb-3">
+                <Ionicons name="business-outline" size={24} color="#A0A5AD" />
               </View>
 
-              <Text className="text-graphite text-sm font-black uppercase tracking-tight text-center">
+              <Text className="text-[#F4F6F7] text-sm font-black uppercase tracking-tight text-center">
                 {activeFilter === 'PENDING'
-                  ? 'NO HUBS WAITING FOR REVIEW'
-                  : 'NO HUB SUBMISSIONS'}
+                  ? 'No Hubs Waiting for Review'
+                  : 'No Hub Submissions'}
               </Text>
 
-              <Text className="text-stone-muted text-xs text-center mt-1 max-w-[260px] leading-4">
+              <Text className="text-[#A0A5AD] text-xs text-center mt-1 max-w-[260px] leading-4">
                 {activeFilter === 'PENDING'
                   ? 'New Hub Owner verification submissions will appear here.'
                   : `No Hub submissions matching the "${activeFilter}" filter.`}
@@ -435,25 +420,24 @@ export default function HubVerificationScreen() {
             displayedSubmissions.map((sub) => {
               const isPending = sub.status === 'PENDING';
               const isApproved = sub.status === 'APPROVED';
-              const isRejected = sub.status === 'REJECTED';
               const isBusy = processingId === sub.id;
 
               return (
                 <View
                   key={sub.id}
-                  className="bg-white rounded-sm p-4 border border-stone mb-3 shadow-2xs"
+                  className="bg-[#1F2327] rounded-2xl p-4 border border-white/10 mb-3 shadow-sm"
                 >
                   {/* Top Bar: Hub Name & Status Badge */}
                   <View className="flex-row items-center justify-between mb-1.5">
                     <View className="flex-1 pr-2">
                       <Text
                         numberOfLines={1}
-                        className="text-graphite text-base font-black uppercase tracking-tight"
+                        className="text-[#F4F6F7] text-base font-black uppercase tracking-tight"
                       >
                         {sub.hubName}
                       </Text>
-                      <Text className="text-stone-muted text-xs font-mono">
-                        OWNER ID: {sub.hubOwnerId.substring(0, 8)}...
+                      <Text className="text-[#7F8993] text-xs font-mono">
+                        Owner ID: {sub.hubOwnerId.substring(0, 8)}...
                       </Text>
                     </View>
 
@@ -466,14 +450,14 @@ export default function HubVerificationScreen() {
 
                   {/* Location & Capacity */}
                   <View className="flex-row items-center mt-1 mb-2">
-                    <Ionicons name="location-outline" size={13} color="#666B60" />
-                    <Text className="text-graphite text-xs font-medium ml-1 flex-1" numberOfLines={1}>
+                    <Ionicons name="location-outline" size={14} color="#A0A5AD" />
+                    <Text className="text-[#A0A5AD] text-xs font-medium ml-1 flex-1" numberOfLines={1}>
                       {sub.location}
                     </Text>
-                    <View className="flex-row items-center ml-2 bg-stone/20 px-2 py-0.5 rounded-xs border border-stone">
-                      <Ionicons name="grid-outline" size={11} color="#242522" />
-                      <Text className="text-graphite text-[10px] font-mono font-bold ml-1">
-                        {sub.courtCount} COURTS
+                    <View className="flex-row items-center ml-2 bg-[#272C31] px-2.5 py-0.5 rounded-lg border border-white/10">
+                      <Ionicons name="grid-outline" size={11} color="#E85D26" />
+                      <Text className="text-[#E85D26] text-[10px] font-mono font-bold ml-1">
+                        {sub.courtCount} Courts
                       </Text>
                     </View>
                   </View>
@@ -485,14 +469,14 @@ export default function HubVerificationScreen() {
                       return (
                         <View
                           key={sport}
-                          className="flex-row items-center bg-stone/20 px-2 py-0.5 rounded-xs border border-stone/50"
+                          className="flex-row items-center bg-[#272C31] px-2.5 py-1 rounded-lg border border-white/10"
                         >
                           <MaterialCommunityIcons
                             name={meta?.icon || 'tennis'}
                             size={11}
-                            color="#242522"
+                            color="#E85D26"
                           />
-                          <Text className="text-graphite text-[10px] font-mono uppercase font-bold ml-1">
+                          <Text className="text-[#F4F6F7] text-[10px] font-bold ml-1">
                             {meta?.label || sport}
                           </Text>
                         </View>
@@ -503,8 +487,8 @@ export default function HubVerificationScreen() {
                   {/* Optional Contact Number */}
                   {sub.contactNumber ? (
                     <View className="flex-row items-center mb-2">
-                      <Ionicons name="call-outline" size={12} color="#666B60" />
-                      <Text className="text-stone-muted text-[11px] font-mono ml-1.5">
+                      <Ionicons name="call-outline" size={13} color="#A0A5AD" />
+                      <Text className="text-[#A0A5AD] text-xs font-mono ml-1.5">
                         {sub.contactNumber}
                       </Text>
                     </View>
@@ -512,88 +496,88 @@ export default function HubVerificationScreen() {
 
                   {/* Persisted Admin Note if present */}
                   {sub.adminNote ? (
-                    <View className="bg-stone/15 p-2 rounded-xs border border-stone/40 mb-2.5">
-                      <Text className="text-stone-muted text-[9px] font-mono uppercase font-bold">
-                        ADMIN AUDIT NOTE
+                    <View className="bg-[#272C31] p-2.5 rounded-xl border border-white/5 mb-2.5">
+                      <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold">
+                        Admin Note
                       </Text>
-                      <Text className="text-graphite text-xs leading-4 mt-0.5">
+                      <Text className="text-[#F4F6F7] text-xs leading-4 mt-0.5">
                         {sub.adminNote}
                       </Text>
                     </View>
                   ) : null}
 
                   {/* Timestamp & Metadata Footer */}
-                  <View className="flex-row items-center justify-between pt-2 border-t border-stone/20">
-                    <Text className="text-stone-muted text-[9px] font-mono">
+                  <View className="flex-row items-center justify-between pt-2 border-t border-white/5">
+                    <Text className="text-[#7F8993] text-[10px] font-mono">
                       REF: {sub.id.substring(0, 8).toUpperCase()}
                     </Text>
-                    <Text className="text-stone-muted text-[9px] font-mono">
+                    <Text className="text-[#7F8993] text-[10px] font-mono">
                       SUBMITTED: {sub.submittedAt ? new Date(sub.submittedAt).toLocaleDateString() : 'RECENT'}
                     </Text>
                   </View>
 
                   {/* ACTION CONTROLS */}
                   {isPending ? (
-                    <View className="flex-row gap-2 mt-3 pt-2.5 border-t border-stone/30">
+                    <View className="flex-row gap-2 mt-3 pt-2.5 border-t border-white/5">
                       <Pressable
                         onPress={() => setInspectSubmission(sub)}
                         disabled={isBusy}
-                        className="py-2.5 px-3 rounded-xs bg-stone/20 border border-stone items-center justify-center active:bg-stone/40"
+                        className="py-2.5 px-3.5 rounded-xl bg-[#272C31] border border-white/10 items-center justify-center active:bg-white/5"
                       >
-                        <Ionicons name="eye-outline" size={15} color="#242522" />
+                        <Ionicons name="eye-outline" size={16} color="#F4F6F7" />
                       </Pressable>
 
                       <Pressable
                         onPress={() => handleOpenConfirm('decline', sub)}
                         disabled={isBusy}
-                        className={`flex-1 py-2.5 rounded-xs border border-rust/40 items-center justify-center active:bg-rust/20 ${
-                          isBusy ? 'opacity-50' : 'bg-rust/10'
+                        className={`flex-1 py-2.5 rounded-xl border border-[#F4A261]/30 items-center justify-center active:bg-[#F4A261]/20 ${
+                          isBusy ? 'opacity-50' : 'bg-[#F4A261]/10'
                         }`}
                       >
-                        <Text className="text-rust text-xs font-bold uppercase tracking-wider">
-                          DECLINE
+                        <Text className="text-[#F4A261] text-xs font-bold uppercase tracking-wider">
+                          Decline
                         </Text>
                       </Pressable>
 
                       <Pressable
                         onPress={() => handleOpenConfirm('approve', sub)}
                         disabled={isBusy}
-                        className={`flex-1 py-2.5 rounded-xs border border-arena-olive items-center justify-center active:bg-olive-dark ${
-                          isBusy ? 'opacity-50' : 'bg-arena-olive'
+                        className={`flex-1 py-2.5 rounded-xl border border-[#E85D26] items-center justify-center active:opacity-90 ${
+                          isBusy ? 'opacity-50' : 'bg-[#E85D26]'
                         }`}
                       >
                         {isBusy ? (
-                          <ActivityIndicator size="small" color="#F4F1EA" />
+                          <ActivityIndicator size="small" color="#171A1D" />
                         ) : (
-                          <Text className="text-warm-white text-xs font-black uppercase tracking-wider">
-                            APPROVE
+                          <Text className="text-[#171A1D] text-xs font-black uppercase tracking-wider">
+                            Approve
                           </Text>
                         )}
                       </Pressable>
                     </View>
                   ) : (
-                    <View className="flex-row items-center justify-between mt-3 pt-2 border-t border-stone/30">
+                    <View className="flex-row items-center justify-between mt-3 pt-2 border-t border-white/5">
                       <View className="flex-row items-center">
                         <Ionicons
                           name={isApproved ? 'shield-checkmark-outline' : 'close-circle-outline'}
-                          size={14}
-                          color={isApproved ? '#3D4438' : '#875646'}
+                          size={15}
+                          color={isApproved ? '#E85D26' : '#F4A261'}
                         />
                         <Text
-                          className={`text-[10px] font-mono uppercase font-bold ml-1.5 ${
-                            isApproved ? 'text-arena-olive' : 'text-rust'
+                          className={`text-xs font-bold uppercase ml-1.5 ${
+                            isApproved ? 'text-[#E85D26]' : 'text-[#F4A261]'
                           }`}
                         >
-                          {isApproved ? 'VERIFIED VENUE' : 'DECLINED'}
+                          {isApproved ? 'Verified Venue' : 'Declined'}
                         </Text>
                       </View>
 
                       <Pressable
                         onPress={() => setInspectSubmission(sub)}
-                        className="py-1 px-2.5 rounded-xs bg-stone/20 border border-stone"
+                        className="py-1 px-3 rounded-lg bg-[#272C31] border border-white/10"
                       >
-                        <Text className="text-graphite text-[10px] font-mono font-bold uppercase">
-                          VIEW AUDIT SHEET
+                        <Text className="text-[#F4F6F7] text-xs font-bold">
+                          View Details
                         </Text>
                       </Pressable>
                     </View>
@@ -605,9 +589,7 @@ export default function HubVerificationScreen() {
         </View>
       </ScrollView>
 
-      {/* ===================================================================== */}
       {/* CONFIRMATION DECISION MODAL */}
-      {/* ===================================================================== */}
       <Modal
         visible={!!confirmModal}
         transparent
@@ -619,15 +601,15 @@ export default function HubVerificationScreen() {
           }
         }}
       >
-        <View className="flex-1 bg-graphite/80 items-center justify-center p-5">
-          <View className="w-full max-w-[340px] bg-warm-white rounded-sm p-5 border border-stone shadow-lg">
+        <View className="flex-1 bg-[#171A1D]/85 items-center justify-center p-5">
+          <View className="w-full max-w-[340px] bg-[#1F2327] rounded-2xl p-6 border border-white/10 shadow-2xl">
             {confirmModal ? (
               <>
                 <View
-                  className={`w-12 h-12 rounded-full items-center justify-center mb-3 border ${
+                  className={`w-12 h-12 rounded-xl items-center justify-center mb-3 ${
                     confirmModal.type === 'approve'
-                      ? 'bg-arena-olive border-arena-olive'
-                      : 'bg-rust/20 border-rust'
+                      ? 'bg-[#E85D26]'
+                      : 'bg-[#F4A261]/20 border border-[#F4A261]/30'
                   }`}
                 >
                   <Ionicons
@@ -637,47 +619,47 @@ export default function HubVerificationScreen() {
                         : 'close-outline'
                     }
                     size={24}
-                    color={confirmModal.type === 'approve' ? '#F4F1EA' : '#875646'}
+                    color={confirmModal.type === 'approve' ? '#171A1D' : '#F4A261'}
                   />
                 </View>
 
                 <ArenaBadge
                   label={
                     confirmModal.type === 'approve'
-                      ? 'ADMIN APPROVAL AUDIT'
+                      ? 'ADMIN APPROVAL'
                       : 'DECLINE SUBMISSION'
                   }
                   variant={confirmModal.type === 'approve' ? 'olive' : 'rust'}
                   size="sm"
                 />
 
-                <Text className="text-graphite text-lg font-black uppercase tracking-tight mt-2">
+                <Text className="text-[#F4F6F7] text-lg font-black uppercase tracking-tight mt-2">
                   {confirmModal.type === 'approve'
-                    ? `APPROVE ${confirmModal.submission.hubName}?`
-                    : `DECLINE SUBMISSION?`}
+                    ? `Approve ${confirmModal.submission.hubName}?`
+                    : `Decline Submission?`}
                 </Text>
 
-                <Text className="text-stone-muted text-xs leading-4 mt-1">
+                <Text className="text-[#A0A5AD] text-xs leading-4 mt-1">
                   {confirmModal.type === 'approve'
                     ? 'This will verify the hub in the database. The hub profile is cleared for discovery.'
                     : `Decline ${confirmModal.submission.hubName}'s onboarding verification request.`}
                 </Text>
 
                 {/* Submissions summary snapshot */}
-                <View className="my-3 p-2.5 bg-white rounded-xs border border-stone">
-                  <Text className="text-graphite text-xs font-black uppercase" numberOfLines={1}>
+                <View className="my-3 p-3 bg-[#272C31] rounded-xl border border-white/10">
+                  <Text className="text-[#F4F6F7] text-xs font-black uppercase" numberOfLines={1}>
                     {confirmModal.submission.hubName}
                   </Text>
-                  <Text className="text-stone-muted text-[10px] font-mono mt-0.5">
-                    {confirmModal.submission.location} • {confirmModal.submission.courtCount} COURTS
+                  <Text className="text-[#A0A5AD] text-xs font-mono mt-0.5">
+                    {confirmModal.submission.location} • {confirmModal.submission.courtCount} Courts
                   </Text>
                 </View>
 
                 {/* Optional Admin Note input if declining */}
                 {confirmModal.type === 'decline' ? (
                   <View className="mb-3">
-                    <Text className="text-stone-muted text-[10px] font-mono uppercase font-bold mb-1">
-                      ADMIN NOTE (OPTIONAL)
+                    <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold mb-1.5">
+                      Admin Note (Optional)
                     </Text>
                     <TextInput
                       value={adminNoteInput}
@@ -685,10 +667,10 @@ export default function HubVerificationScreen() {
                       maxLength={300}
                       editable={!processingId}
                       placeholder="e.g. Venue details need clarification..."
-                      placeholderTextColor="#A0A59A"
-                      className="bg-white border border-stone p-2 rounded-xs text-graphite text-xs min-h-[38px]"
+                      placeholderTextColor="#7F8993"
+                      className="bg-[#272C31] border border-white/10 p-2.5 rounded-xl text-[#F4F6F7] text-xs min-h-[42px]"
                     />
-                    <Text className="text-stone-muted text-[9px] font-mono text-right mt-0.5">
+                    <Text className="text-[#7F8993] text-[9px] font-mono text-right mt-1">
                       {adminNoteInput.length}/300
                     </Text>
                   </View>
@@ -716,10 +698,10 @@ export default function HubVerificationScreen() {
                       }
                     }}
                     disabled={!!processingId}
-                    className="py-2.5 items-center mt-1"
+                    className="py-3 items-center mt-1"
                   >
-                    <Text className="text-stone-muted text-xs font-bold uppercase tracking-wider">
-                      CANCEL
+                    <Text className="text-[#A0A5AD] text-xs font-bold uppercase tracking-wider">
+                      Cancel
                     </Text>
                   </Pressable>
                 </View>
@@ -729,95 +711,93 @@ export default function HubVerificationScreen() {
         </View>
       </Modal>
 
-      {/* ===================================================================== */}
       {/* INLINE SUBMISSION SHEET INSPECTION MODAL */}
-      {/* ===================================================================== */}
       <Modal
         visible={!!inspectSubmission}
         transparent
         animationType="slide"
         onRequestClose={() => setInspectSubmission(null)}
       >
-        <View className="flex-1 bg-graphite/80 justify-end">
-          <View className="bg-warm-white rounded-t-lg p-5 border-t border-stone max-h-[85%]">
+        <View className="flex-1 bg-[#171A1D]/85 justify-end">
+          <View className="bg-[#1F2327] rounded-t-3xl p-6 border-t border-white/10 max-h-[85%]">
             {inspectSubmission ? (
               <ScrollView showsVerticalScrollIndicator={false}>
-                <View className="flex-row items-center justify-between pb-3 border-b border-stone/30">
+                <View className="flex-row items-center justify-between pb-3 border-b border-white/5">
                   <View className="flex-1 pr-2">
-                    <Text className="text-stone-muted text-[9px] font-mono uppercase font-bold">
-                      SUBMISSION AUDIT SHEET
+                    <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold">
+                      Submission Audit Sheet
                     </Text>
-                    <Text className="text-graphite text-base font-black uppercase tracking-tight mt-0.5">
+                    <Text className="text-[#F4F6F7] text-lg font-black uppercase tracking-tight mt-0.5">
                       {inspectSubmission.hubName}
                     </Text>
                   </View>
                   <Pressable
                     onPress={() => setInspectSubmission(null)}
-                    className="w-8 h-8 rounded-xs bg-stone/20 items-center justify-center border border-stone"
+                    className="w-9 h-9 rounded-xl bg-[#272C31] items-center justify-center border border-white/10"
                   >
-                    <Ionicons name="close" size={18} color="#242522" />
+                    <Ionicons name="close" size={20} color="#F4F6F7" />
                   </Pressable>
                 </View>
 
                 {/* Fields Table */}
-                <View className="mt-3 bg-white rounded-sm border border-stone p-3.5 space-y-2.5">
+                <View className="mt-4 bg-[#272C31] rounded-2xl border border-white/10 p-4 space-y-3">
                   <View>
-                    <Text className="text-stone-muted text-[9px] font-mono uppercase font-bold">
-                      HUB IDENTIFIER
+                    <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold">
+                      Hub Identifier
                     </Text>
-                    <Text className="text-graphite text-xs font-mono font-bold mt-0.5">
+                    <Text className="text-[#F4F6F7] text-xs font-mono font-bold mt-0.5">
                       {inspectSubmission.id}
                     </Text>
                   </View>
 
-                  <View className="pt-2 border-t border-stone/20">
-                    <Text className="text-stone-muted text-[9px] font-mono uppercase font-bold">
-                      VENUE OPERATOR USER ID
+                  <View className="pt-2 border-t border-white/5">
+                    <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold">
+                      Venue Operator ID
                     </Text>
-                    <Text className="text-graphite text-xs font-mono mt-0.5">
+                    <Text className="text-[#F4F6F7] text-xs font-mono mt-0.5">
                       {inspectSubmission.hubOwnerId}
                     </Text>
                     {inspectSubmission.contactNumber ? (
-                      <Text className="text-stone-muted text-[11px] font-mono mt-0.5">
+                      <Text className="text-[#A0A5AD] text-xs font-mono mt-0.5">
                         TEL: {inspectSubmission.contactNumber}
                       </Text>
                     ) : null}
                   </View>
 
-                  <View className="pt-2 border-t border-stone/20">
-                    <Text className="text-stone-muted text-[9px] font-mono uppercase font-bold">
-                      GROUND LOCALITY
+                  <View className="pt-2 border-t border-white/5">
+                    <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold">
+                      Ground Locality
                     </Text>
-                    <Text className="text-graphite text-xs font-bold mt-0.5">
+                    <Text className="text-[#F4F6F7] text-xs font-bold mt-0.5">
                       {inspectSubmission.location}
                     </Text>
                   </View>
 
-                  <View className="pt-2 border-t border-stone/20">
-                    <Text className="text-stone-muted text-[9px] font-mono uppercase font-bold">
-                      DECLARED PLAYING SPACES
+                  <View className="pt-2 border-t border-white/5">
+                    <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold">
+                      Declared Playing Spaces
                     </Text>
-                    <Text className="text-graphite text-xs font-bold mt-0.5">
+                    <Text className="text-[#F4F6F7] text-xs font-bold mt-0.5">
                       {inspectSubmission.courtCount} Playing Courts / Pitches
                     </Text>
                   </View>
 
-                  <View className="pt-2 border-t border-stone/20">
-                    <Text className="text-stone-muted text-[9px] font-mono uppercase font-bold mb-1">
-                      SUPPORTED SPORTS
+                  <View className="pt-2 border-t border-white/5">
+                    <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold mb-1.5">
+                      Supported Sports
                     </Text>
                     <View className="flex-row flex-wrap gap-1.5">
                       {inspectSubmission.sports.map((sp) => (
                         <View
                           key={sp}
-                          className="flex-row items-center bg-stone/20 px-2 py-0.5 rounded-xs border border-stone/60"
+                          className="flex-row items-center bg-[#1F2327] px-2.5 py-1 rounded-lg border border-white/10"
                         >
                           <MaterialCommunityIcons
                             name={SPORT_META[sp]?.icon || 'tennis'}
                             size={12}
-                            color="#242522"
+                            color="#E85D26"
                           />
-                          <Text className="text-graphite text-[10px] font-mono uppercase font-bold ml-1">
+                          <Text className="text-[#F4F6F7] text-[10px] font-bold ml-1">
                             {SPORT_META[sp]?.label || sp}
                           </Text>
                         </View>
@@ -826,11 +806,11 @@ export default function HubVerificationScreen() {
                   </View>
 
                   {inspectSubmission.adminNote ? (
-                    <View className="pt-2 border-t border-stone/20">
-                      <Text className="text-stone-muted text-[9px] font-mono uppercase font-bold">
-                        RECORDED AUDIT NOTE
+                    <View className="pt-2 border-t border-white/5">
+                      <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold">
+                        Recorded Audit Note
                       </Text>
-                      <Text className="text-graphite text-xs mt-0.5">
+                      <Text className="text-[#F4F6F7] text-xs mt-0.5">
                         {inspectSubmission.adminNote}
                       </Text>
                     </View>
@@ -838,9 +818,9 @@ export default function HubVerificationScreen() {
                 </View>
 
                 {/* Audit Context notice */}
-                <View className="mt-3 p-3 bg-stone/20 rounded-sm border border-stone">
-                  <Text className="text-stone-muted text-[10px] font-mono leading-4">
-                    NOTE: Maidaan Hub verification clears the Hub profile submission for platform discovery and matchmaking. It verifies declared court parameters under platform standards.
+                <View className="mt-3 p-3.5 bg-[#272C31] rounded-xl border border-white/5">
+                  <Text className="text-[#7F8993] text-xs leading-4">
+                    Maidaan Hub verification clears the Hub profile submission for platform discovery and matchmaking.
                   </Text>
                 </View>
 
@@ -851,10 +831,10 @@ export default function HubVerificationScreen() {
                       onPress={() => {
                         handleOpenConfirm('decline', inspectSubmission);
                       }}
-                      className="flex-1 py-3 rounded-xs bg-warm-white border border-stone items-center justify-center active:bg-stone/20"
+                      className="flex-1 py-3 rounded-xl bg-[#272C31] border border-white/10 items-center justify-center active:bg-white/5"
                     >
-                      <Text className="text-graphite text-xs font-bold uppercase tracking-wide">
-                        DECLINE
+                      <Text className="text-[#F4F6F7] text-xs font-bold uppercase tracking-wide">
+                        Decline
                       </Text>
                     </Pressable>
 
@@ -862,10 +842,10 @@ export default function HubVerificationScreen() {
                       onPress={() => {
                         handleOpenConfirm('approve', inspectSubmission);
                       }}
-                      className="flex-1 py-3 rounded-xs bg-arena-olive border border-arena-olive items-center justify-center active:bg-olive-dark"
+                      className="flex-1 py-3 rounded-xl bg-[#E85D26] border border-[#E85D26] items-center justify-center active:opacity-90"
                     >
-                      <Text className="text-warm-white text-xs font-black uppercase tracking-wider">
-                        APPROVE
+                      <Text className="text-[#171A1D] text-xs font-black uppercase tracking-wider">
+                        Approve
                       </Text>
                     </Pressable>
                   </View>

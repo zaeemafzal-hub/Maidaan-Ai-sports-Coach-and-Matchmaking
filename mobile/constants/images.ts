@@ -13,4 +13,5 @@ export const IMAGES = {
   arenaGround: require('../assets/images/arena_ground.jpg'),
   arenaTeam: require('../assets/images/arena_team.jpg'),
   arenaPlayer: require('../assets/images/arena_player.jpg'),
+  welcomeAthletes: require('../assets/images/welcome_athletes.jpg'),
 } as const;

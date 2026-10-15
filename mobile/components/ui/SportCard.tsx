@@ -31,41 +31,44 @@ export const SportCard: React.FC<SportCardProps> = ({
       accessibilityRole="checkbox"
       accessibilityState={{ checked: selected }}
       accessibilityLabel={`${label} sport ${selected ? 'selected' : 'not selected'}`}
-      className={`flex-1 py-3 px-1 rounded-xl items-center justify-center min-h-[98px] border relative transition-all ${
-        isPressed ? 'scale-[0.96] opacity-90' : 'scale-100'
+      className={`flex-1 py-3 px-1 rounded-2xl items-center justify-center min-h-[96px] border relative transition-all ${
+        isPressed ? 'scale-[0.96]' : 'scale-100'
       } ${
         selected
-          ? 'bg-stone-light border-2 border-olive border-b-[4px] border-b-olive-dark shadow-sm'
-          : 'bg-warm-white border border-stone border-b-[3px] border-b-stone-muted/60'
+          ? 'bg-[#1B1D22] border-2 border-[#E85D26] shadow-sm shadow-[#E85D26]/20'
+          : 'bg-[#141518] border border-white/[0.08]'
       }`}
     >
-      {/* Selected Indicator Badge */}
+      {/* Orange Selection Indicator Badge */}
       {selected && (
-        <View className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-olive items-center justify-center shadow-xs">
-          <Ionicons name="checkmark" size={11} color="#F4F1EA" />
+        <View className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-[#E85D26] items-center justify-center">
+          <Ionicons name="checkmark" size={10} color="#FFFFFF" />
         </View>
       )}
 
-      {/* Tactile Equipment Icon Well */}
+      {/* Equipment Icon Container */}
       <View
-        className={`w-11 h-11 rounded-lg items-center justify-center mb-1 ${
+        className={`w-11 h-11 rounded-xl items-center justify-center mb-1.5 ${
           selected
-            ? 'bg-olive/15 border border-olive/30'
-            : 'bg-stone/20 border border-stone/40'
+            ? 'bg-[#E85D26]/15 border border-[#E85D26]/30'
+            : 'bg-[#101214] border border-white/[0.06]'
         }`}
       >
         <MaterialCommunityIcons
           name={iconName}
           size={22}
-          color={selected ? '#3D4438' : '#666B60'}
+          color={selected ? '#E85D26' : '#A0A5AD'}
         />
       </View>
 
-      {/* Athletic Sport Label */}
+      {/* Sport Label with zero truncation */}
       <Text
         numberOfLines={1}
-        className={`text-[11px] text-center tracking-tight uppercase ${
-          selected ? 'text-graphite font-black' : 'text-stone-muted font-bold'
+        adjustsFontSizeToFit
+        minimumFontScale={0.7}
+        style={{ color: selected ? '#FFFFFF' : '#A0A5AD' }}
+        className={`text-[10px] text-center tracking-wide uppercase font-bold px-0.5 ${
+          selected ? 'text-white font-extrabold' : 'text-[#A0A5AD]'
         }`}
       >
         {label}

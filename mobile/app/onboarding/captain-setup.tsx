@@ -47,19 +47,19 @@ const SKILL_TIERS: SkillTierConfig[] = [
     key: 'beginner',
     label: 'Beginner',
     tagline: 'Grassroots & friendly casual fixtures',
-    badge: 'DIV 03',
+    badge: 'TIER 1',
   },
   {
     key: 'intermediate',
     label: 'Intermediate',
     tagline: 'Club regular & structured competitive play',
-    badge: 'DIV 02',
+    badge: 'TIER 2',
   },
   {
     key: 'advanced',
     label: 'Advanced',
     tagline: 'Premier tournament & league pace',
-    badge: 'DIV 01',
+    badge: 'TIER 3',
   },
 ];
 
@@ -171,21 +171,21 @@ export default function CaptainSetupScreen() {
 
   if (!isInitialized || isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-warm-white items-center justify-center">
-        <ActivityIndicator size="large" color="#3D4438" />
-        <Text className="text-stone-muted text-xs font-bold uppercase tracking-widest mt-3">
-          Restoring Arena Session...
+      <SafeAreaView className="flex-1 bg-[#171A1D] items-center justify-center">
+        <ActivityIndicator size="large" color="#E85D26" />
+        <Text className="text-[#A0A5AD] text-xs font-semibold tracking-wider mt-3">
+          Loading session...
         </Text>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-warm-white" edges={['top', 'bottom']}>
-      {/* Concrete Arena Match-Day Header */}
+    <SafeAreaView className="flex-1 bg-[#171A1D]" edges={['top', 'bottom']}>
+      {/* Modern Header */}
       <ArenaHeader
-        title="MAIDAAN"
-        subtitle="MATCH-DAY ROSTER // STEP 01 OF 01"
+        title="Captain Setup"
+        subtitle="Establish your squad identity"
         showBack
         fallbackRoute="/(auth)/role-selection"
       />
@@ -200,35 +200,35 @@ export default function CaptainSetupScreen() {
           showsVerticalScrollIndicator={false}
           className="flex-1"
         >
-          {/* Sports Photography Match-Day Hero Section */}
-          <View className="relative w-full h-44 bg-graphite overflow-hidden border-b border-stone">
+          {/* Sports Photography Hero Section */}
+          <View className="relative w-full h-44 bg-[#1F2327] overflow-hidden border-b border-white/5">
             <Image
               source={IMAGES.arenaTeam}
               className="w-full h-full"
               resizeMode="cover"
             />
-            {/* Gritty Vignette & Atmospheric Stadium Lighting Overlay */}
-            <View className="absolute inset-0 bg-graphite/60" />
-            <View className="absolute inset-0 bg-gradient-to-t from-graphite via-graphite/40 to-transparent" />
+            {/* Atmospheric Stadium Lighting Overlay */}
+            <View className="absolute inset-0 bg-[#171A1D]/65" />
+            <View className="absolute inset-0 bg-gradient-to-t from-[#171A1D] via-[#171A1D]/40 to-transparent" />
 
             {/* Hero Content Overlay */}
             <View className="absolute bottom-3 left-5 right-5 z-10">
               <View className="flex-row items-center mb-1">
-                <Text className="text-rust text-[10px] font-black uppercase tracking-widest">
-                  CIRCUIT ONBOARDING
+                <Text className="text-[#E85D26] text-[10px] font-black uppercase tracking-widest">
+                  TEAM CAPTAIN SETUP
                 </Text>
-                <Text className="text-stone-muted text-[10px] font-bold mx-1.5">
-                  //
+                <Text className="text-[#7F8993] text-[10px] font-bold mx-1.5">
+                  ·
                 </Text>
-                <Text className="text-stone text-[10px] font-black uppercase tracking-wider">
-                  CAPTAIN ACCESS
+                <Text className="text-[#A0A5AD] text-[10px] font-bold uppercase tracking-wider">
+                  SQUAD MANAGEMENT
                 </Text>
               </View>
-              <Text className="text-warm-white text-xl font-black uppercase tracking-tight">
-                Set Up Your Captain Profile
+              <Text className="text-[#F4F6F7] text-xl font-black uppercase tracking-tight">
+                Set Up Your Squad
               </Text>
-              <Text className="text-stone text-[11px] font-medium mt-0.5 tracking-tight">
-                Establish your team identity and competitive tier to organize fixtures.
+              <Text className="text-[#A0A5AD] text-[11px] font-medium mt-0.5 tracking-tight">
+                Establish your team identity and competitive tier to organize matches.
               </Text>
             </View>
           </View>
@@ -237,23 +237,23 @@ export default function CaptainSetupScreen() {
           <View className="px-5 py-4">
             {/* Edit Notice Toast if triggered */}
             {editNotice && (
-              <View className="mb-4 p-3 rounded-xl bg-stone-light border border-olive flex-row items-center shadow-xs">
-                <Ionicons name="information-circle-sharp" size={18} color="#3D4438" />
-                <Text className="text-olive text-xs font-bold ml-2 flex-1">
+              <View className="mb-4 p-3 rounded-xl bg-[#1F2327] border border-[#E85D26]/30 flex-row items-center shadow-xs">
+                <Ionicons name="information-circle-sharp" size={18} color="#E85D26" />
+                <Text className="text-[#E85D26] text-xs font-semibold ml-2 flex-1">
                   {editNotice}
                 </Text>
               </View>
             )}
 
             {/* Section 1: Captain Credential Card */}
-            <View className="bg-warm-white border border-stone border-b-[3px] border-b-stone-muted/70 rounded-xl p-3.5 mb-5 shadow-xs">
+            <View className="bg-[#1F2327] border border-white/10 rounded-2xl p-3.5 mb-5 shadow-sm">
               <View className="flex-row items-center justify-between">
                 <View className="flex-row items-center flex-1 mr-3">
-                  {/* 3D Armband / Captain Shield Well */}
-                  <View className="w-12 h-12 rounded-lg bg-stone-light border border-stone border-b-[2px] border-b-stone-muted items-center justify-center mr-3 relative">
-                    <MaterialCommunityIcons name="shield-star" size={24} color="#3D4438" />
-                    <View className="absolute -bottom-1 -right-1 px-1 py-0.2 bg-rust rounded-sm">
-                      <Text className="text-warm-white text-[8px] font-black tracking-tighter">
+                  {/* Captain Shield Badge */}
+                  <View className="w-12 h-12 rounded-xl bg-[#272C31] border border-white/10 items-center justify-center mr-3 relative">
+                    <MaterialCommunityIcons name="shield-star" size={24} color="#E85D26" />
+                    <View className="absolute -bottom-1 -right-1 px-1 py-0.2 bg-[#E85D26] rounded-xs">
+                      <Text className="text-[#171A1D] text-[8px] font-black tracking-tighter">
                         CPT
                       </Text>
                     </View>
@@ -263,19 +263,19 @@ export default function CaptainSetupScreen() {
                   <View className="flex-1">
                     <Text
                       numberOfLines={1}
-                      className="text-graphite text-sm font-black uppercase tracking-tight"
+                      className="text-[#F4F6F7] text-sm font-bold uppercase tracking-tight"
                     >
                       {teamName.trim() || currentUser?.name || 'Squad Captain'}
                     </Text>
                     <View className="flex-row items-center mt-0.5">
-                      <Text className="text-olive text-[11px] font-extrabold uppercase tracking-wide">
+                      <Text className="text-[#E85D26] text-[11px] font-bold uppercase tracking-wide">
                         TEAM CAPTAIN
                       </Text>
-                      <Text className="text-stone-muted text-[10px] font-bold mx-1.5">
+                      <Text className="text-[#7F8993] text-[10px] font-bold mx-1.5">
                         ·
                       </Text>
-                      <Text className="text-stone-muted text-[10px] font-medium tracking-tight">
-                        Ready to manage fixtures
+                      <Text className="text-[#A0A5AD] text-[10px] font-medium tracking-tight">
+                        Ready to organize matches
                       </Text>
                     </View>
                   </View>
@@ -286,9 +286,9 @@ export default function CaptainSetupScreen() {
                   onPress={handleEditPress}
                   accessibilityRole="button"
                   accessibilityLabel="Edit captain credential"
-                  className="py-1.5 px-3 rounded-lg bg-stone-light border border-stone border-b-[2px] border-b-stone-muted active:scale-95"
+                  className="py-1.5 px-3 rounded-lg bg-[#272C31] border border-white/10 active:scale-95"
                 >
-                  <Text className="text-graphite text-[10px] font-black tracking-wider uppercase">
+                  <Text className="text-[#A0A5AD] text-[10px] font-bold tracking-wider uppercase">
                     INFO
                   </Text>
                 </Pressable>
@@ -315,11 +315,11 @@ export default function CaptainSetupScreen() {
             {/* Section 3: Primary Sport (Single Select) */}
             <View className="mb-5">
               <View className="flex-row items-center justify-between mb-2">
-                <Text className="text-graphite text-xs font-black tracking-wider uppercase">
+                <Text className="text-[#F4F6F7] text-xs font-bold tracking-wider uppercase">
                   PRIMARY SPORT
                 </Text>
-                <Text className="text-stone-muted text-[10px] font-bold uppercase tracking-wide">
-                  SINGLE SELECT
+                <Text className="text-[#7F8993] text-[10px] font-bold uppercase tracking-wide">
+                  SELECT ONE
                 </Text>
               </View>
 
@@ -345,21 +345,21 @@ export default function CaptainSetupScreen() {
               </View>
             </View>
 
-            {/* Section 4: Default Skill Range (Tactical Competitive Divisions) */}
+            {/* Section 4: Default Skill Range */}
             <View className="mb-5">
-              <View className="flex-row items-center justify-between mb-1.5">
-                <Text className="text-graphite text-xs font-black tracking-wider uppercase">
-                  DEFAULT SKILL RANGE
+              <View className="flex-row items-center justify-between mb-1">
+                <Text className="text-[#F4F6F7] text-xs font-bold tracking-wider uppercase">
+                  DEFAULT SKILL TIER
                 </Text>
-                <Text className="text-stone-muted text-[10px] font-bold uppercase tracking-wide">
-                  FIXTURE TIER
+                <Text className="text-[#7F8993] text-[10px] font-bold uppercase tracking-wide">
+                  COMPETITIVE LEVEL
                 </Text>
               </View>
-              <Text className="text-stone-muted text-[11px] font-medium mb-2.5">
-                Establishes the default matchmaking tier when you host fixtures.
+              <Text className="text-[#A0A5AD] text-[11px] font-medium mb-2.5">
+                Sets default matchmaking level when hosting matches.
               </Text>
 
-              {/* Tactical Division Cards */}
+              {/* Division Cards */}
               <View className="space-y-2">
                 {SKILL_TIERS.map((tier) => {
                   const isSelected = skillLevel === tier.key;
@@ -370,11 +370,11 @@ export default function CaptainSetupScreen() {
                       onPress={() => setSkillLevel(tier.key)}
                       accessibilityRole="radio"
                       accessibilityState={{ selected: isSelected }}
-                      accessibilityLabel={`${tier.label} fixture tier`}
-                      className={`w-full p-3 rounded-xl border flex-row items-center justify-between my-1 transition-all active:scale-[0.99] ${
+                      accessibilityLabel={`${tier.label} competitive tier`}
+                      className={`w-full p-3.5 rounded-xl border flex-row items-center justify-between my-1 transition-all active:scale-[0.99] ${
                         isSelected
-                          ? 'bg-stone-light border-2 border-olive border-b-[4px] border-b-olive-dark shadow-sm'
-                          : 'bg-warm-white border border-stone border-b-[2px] border-b-stone-muted/60'
+                          ? 'bg-[#272C31] border-[#E85D26] shadow-sm'
+                          : 'bg-[#1F2327] border-white/5'
                       }`}
                     >
                       <View className="flex-row items-center flex-1 mr-3">
@@ -382,13 +382,13 @@ export default function CaptainSetupScreen() {
                         <View
                           className={`w-10 h-10 rounded-lg items-center justify-center mr-3 border ${
                             isSelected
-                              ? 'bg-olive border-olive-dark'
-                              : 'bg-stone/20 border-stone/50'
+                              ? 'bg-[#E85D26]/15 border-[#E85D26]/40'
+                              : 'bg-[#272C31] border-white/10'
                           }`}
                         >
                           <Text
                             className={`text-[10px] font-black uppercase ${
-                              isSelected ? 'text-warm-white' : 'text-stone-muted'
+                              isSelected ? 'text-[#E85D26]' : 'text-[#7F8993]'
                             }`}
                           >
                             {tier.badge}
@@ -398,13 +398,13 @@ export default function CaptainSetupScreen() {
                         {/* Tier Label and Description */}
                         <View className="flex-1">
                           <Text
-                            className={`text-sm font-black uppercase tracking-tight ${
-                              isSelected ? 'text-graphite' : 'text-graphite/85'
+                            className={`text-sm font-bold uppercase tracking-tight ${
+                              isSelected ? 'text-[#F4F6F7]' : 'text-[#A0A5AD]'
                             }`}
                           >
                             {tier.label}
                           </Text>
-                          <Text className="text-stone-muted text-[11px] font-medium mt-0.5">
+                          <Text className="text-[#7F8993] text-[11px] font-medium mt-0.5">
                             {tier.tagline}
                           </Text>
                         </View>
@@ -414,12 +414,12 @@ export default function CaptainSetupScreen() {
                       <View
                         className={`w-5 h-5 rounded-full border items-center justify-center ${
                           isSelected
-                            ? 'border-olive bg-olive'
-                            : 'border-stone bg-warm-white'
+                            ? 'border-[#E85D26] bg-[#E85D26]'
+                            : 'border-white/20 bg-[#272C31]'
                         }`}
                       >
                         {isSelected && (
-                          <View className="w-2 h-2 rounded-full bg-warm-white" />
+                          <View className="w-2 h-2 rounded-full bg-[#171A1D]" />
                         )}
                       </View>
                     </Pressable>
@@ -428,29 +428,29 @@ export default function CaptainSetupScreen() {
               </View>
             </View>
 
-            {/* Section 5: Home Circuit / Area */}
+            {/* Section 5: Home Ground / Area */}
             <View className="mb-6">
               <View className="flex-row items-center justify-between mb-1.5">
-                <Text className="text-graphite text-xs font-black tracking-wider uppercase">
-                  HOME CIRCUIT // ZONE
+                <Text className="text-[#F4F6F7] text-xs font-bold tracking-wider uppercase">
+                  HOME AREA & NEIGHBORHOOD
                 </Text>
-                <Text className="text-stone-muted text-[10px] font-bold uppercase tracking-wide">
+                <Text className="text-[#7F8993] text-[10px] font-bold uppercase tracking-wide">
                   FIXTURE BASE
                 </Text>
               </View>
 
-              <View className="bg-warm-white border border-stone border-b-[3px] border-b-stone-muted/70 rounded-xl p-3.5 flex-row items-center justify-between shadow-xs">
+              <View className="bg-[#1F2327] border border-white/10 rounded-xl p-3.5 flex-row items-center justify-between shadow-xs">
                 <View className="flex-row items-center flex-1 mr-3">
-                  <View className="w-10 h-10 rounded-lg bg-olive/10 border border-olive/30 border-b-[2px] border-b-olive/50 items-center justify-center mr-3">
-                    <Ionicons name="location-sharp" size={20} color="#3D4438" />
+                  <View className="w-10 h-10 rounded-lg bg-[#E85D26]/10 border border-[#E85D26]/25 items-center justify-center mr-3">
+                    <Ionicons name="location-sharp" size={20} color="#E85D26" />
                   </View>
 
                   <View className="flex-1">
-                    <Text className="text-graphite text-sm font-black uppercase tracking-tight">
+                    <Text className="text-[#F4F6F7] text-sm font-bold uppercase tracking-tight">
                       {area}
                     </Text>
-                    <Text className="text-stone-muted text-[11px] font-medium mt-0.5">
-                      Default neighborhood for hosting fixtures
+                    <Text className="text-[#A0A5AD] text-[11px] font-medium mt-0.5">
+                      Default neighborhood for hosting matches
                     </Text>
                   </View>
                 </View>
@@ -459,20 +459,20 @@ export default function CaptainSetupScreen() {
                   onPress={() => setIsAreaModalVisible(true)}
                   accessibilityRole="button"
                   accessibilityLabel="Change home area"
-                  className="py-1.5 px-3 rounded-lg bg-stone-light border border-stone border-b-[2px] border-b-stone-muted active:scale-95"
+                  className="py-1.5 px-3 rounded-lg bg-[#272C31] border border-white/10 active:scale-95"
                 >
-                  <Text className="text-graphite text-[10px] font-black tracking-wider uppercase">
+                  <Text className="text-[#E85D26] text-[10px] font-bold tracking-wider uppercase">
                     CHANGE
                   </Text>
                 </Pressable>
               </View>
             </View>
 
-            {/* General Validation Error in Rust */}
+            {/* General Validation Error */}
             {generalError && (
-              <View className="mb-4 p-2.5 rounded-lg bg-rust/10 border border-rust/30 flex-row items-center">
-                <Ionicons name="alert-circle-outline" size={16} color="#875646" />
-                <Text className="text-rust text-xs font-bold ml-2 flex-1">
+              <View className="mb-4 p-3 rounded-xl bg-[#F4A261]/10 border border-[#F4A261]/30 flex-row items-center">
+                <Ionicons name="alert-circle-outline" size={16} color="#F4A261" />
+                <Text className="text-[#F4A261] text-xs font-semibold ml-2 flex-1">
                   {generalError}
                 </Text>
               </View>
@@ -481,7 +481,7 @@ export default function CaptainSetupScreen() {
             {/* Primary CTA */}
             <View className="pt-1 pb-6">
               <PrimaryButton
-                title="FINISH SETUP & ENTER ARENA"
+                title="COMPLETE CAPTAIN SETUP"
                 onPress={handleFinishSetup}
                 loading={isSubmitting}
                 variant="primary"
@@ -489,9 +489,9 @@ export default function CaptainSetupScreen() {
               />
 
               <View className="flex-row items-center justify-center mt-3">
-                <Ionicons name="shield-checkmark-sharp" size={13} color="#3D4438" />
-                <Text className="text-stone-muted text-[10px] font-bold uppercase tracking-wider ml-1.5">
-                  Verified fixture hosting · Real-time squad recruitment
+                <Ionicons name="shield-checkmark-sharp" size={13} color="#E85D26" />
+                <Text className="text-[#7F8993] text-[10px] font-semibold tracking-wider ml-1.5">
+                  Verified match hosting · Real-time squad recruitment
                 </Text>
               </View>
             </View>
@@ -499,7 +499,7 @@ export default function CaptainSetupScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* Area Selector Modal (Reused pattern from Screen 04) */}
+      {/* Area Selector Modal */}
       <Modal
         visible={isAreaModalVisible}
         transparent
@@ -508,28 +508,28 @@ export default function CaptainSetupScreen() {
       >
         <Pressable
           onPress={() => setIsAreaModalVisible(false)}
-          className="flex-1 bg-graphite/75 justify-center items-center px-5"
+          className="flex-1 bg-black/75 justify-center items-center px-5"
         >
           <Pressable
             onPress={(e) => e.stopPropagation()}
-            className="w-full max-w-sm rounded-2xl bg-warm-white border border-stone border-b-[4px] border-b-stone-muted p-5 shadow-2xl"
+            className="w-full max-w-sm rounded-2xl bg-[#1F2327] border border-white/10 p-5 shadow-2xl"
           >
             {/* Modal Header */}
-            <View className="flex-row items-center justify-between mb-4 pb-3 border-b border-stone">
+            <View className="flex-row items-center justify-between mb-4 pb-3 border-b border-white/10">
               <View>
-                <Text className="text-rust text-[10px] font-black uppercase tracking-widest">
-                  LOCATION SELECTOR
+                <Text className="text-[#E85D26] text-[10px] font-black uppercase tracking-widest">
+                  LOCATION
                 </Text>
-                <Text className="text-graphite text-base font-black uppercase tracking-tight mt-0.5">
-                  Select Team Home Circuit
+                <Text className="text-[#F4F6F7] text-base font-bold uppercase tracking-tight mt-0.5">
+                  Select Team Home Area
                 </Text>
               </View>
               <Pressable
                 onPress={() => setIsAreaModalVisible(false)}
-                className="w-8 h-8 rounded-lg bg-stone-light items-center justify-center border border-stone active:scale-95"
+                className="w-8 h-8 rounded-lg bg-[#272C31] items-center justify-center border border-white/10 active:scale-95"
                 accessibilityLabel="Close area modal"
               >
-                <Ionicons name="close" size={18} color="#242522" />
+                <Ionicons name="close" size={18} color="#F4F6F7" />
               </Pressable>
             </View>
 
@@ -546,27 +546,27 @@ export default function CaptainSetupScreen() {
                     }}
                     className={`w-full p-3 rounded-xl border flex-row items-center justify-between my-1 transition-all active:scale-[0.99] ${
                       isSelected
-                        ? 'bg-stone-light border-2 border-olive border-b-[3px] border-b-olive-dark'
-                        : 'bg-warm-white border border-stone border-b-[2px] border-b-stone-muted/60'
+                        ? 'bg-[#272C31] border-[#E85D26]'
+                        : 'bg-[#171A1D] border-white/5'
                     }`}
                   >
                     <View className="flex-row items-center flex-1">
                       <Ionicons
                         name="location-sharp"
                         size={16}
-                        color={isSelected ? '#3D4438' : '#75796F'}
+                        color={isSelected ? '#E85D26' : '#7F8993'}
                       />
                       <Text
-                        className={`text-xs font-black uppercase tracking-tight ml-2.5 ${
-                          isSelected ? 'text-olive' : 'text-graphite'
+                        className={`text-xs font-bold uppercase tracking-tight ml-2.5 ${
+                          isSelected ? 'text-[#E85D26]' : 'text-[#F4F6F7]'
                         }`}
                       >
                         {item}
                       </Text>
                     </View>
                     {isSelected && (
-                      <View className="w-5 h-5 rounded-full bg-olive items-center justify-center">
-                        <Ionicons name="checkmark" size={13} color="#F4F1EA" />
+                      <View className="w-5 h-5 rounded-full bg-[#E85D26] items-center justify-center">
+                        <Ionicons name="checkmark" size={13} color="#171A1D" />
                       </View>
                     )}
                   </Pressable>

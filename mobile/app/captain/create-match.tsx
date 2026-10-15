@@ -19,6 +19,8 @@ import { ArenaHeader } from '../../components/ui/ArenaHeader';
 import { ArenaBadge } from '../../components/ui/ArenaBadge';
 import { PrimaryButton } from '../../components/ui/PrimaryButton';
 import { Sport, SkillLevel } from '../../types';
+import { weatherService, WeatherOutlook } from '../../services/weatherService';
+import { WeatherOutlookCard } from '../../components/ui/WeatherOutlookCard';
 
 // Sport display metadata
 interface SportMeta {
@@ -84,35 +86,31 @@ const SPORTS_CONFIG: Record<Sport, SportMeta> = {
   },
 };
 
-// Skill tier metadata conforming to Concrete Arena system
+// Skill tier metadata
 const SKILL_METAS: Record<
   SkillLevel,
   { label: string; badge: string; subtitle: string; variant: 'stone' | 'olive' | 'rust' }
 > = {
   beginner: {
     label: 'Beginner',
-    badge: 'DIV 03',
+    badge: 'Tier 3',
     subtitle: 'Grassroots Casual',
     variant: 'stone',
   },
   intermediate: {
     label: 'Intermediate',
-    badge: 'DIV 02',
+    badge: 'Tier 2',
     subtitle: 'Club Regular',
     variant: 'olive',
   },
   advanced: {
     label: 'Advanced',
-    badge: 'DIV 01',
+    badge: 'Tier 1',
     subtitle: 'Premier Circuit',
     variant: 'rust',
   },
 };
 
-// Deterministic demo venue labels with schematic canvas positions for quick selection.
-// mapPosition represents presentation-only schematic canvas placement (0-100 percentage values).
-// Not latitude/longitude, not GPS, and not suitable for physical navigation.
-// No booking relationship or live venue inventory is implied.
 const VENUE_PRESETS: {
   name: string;
   area: string;
@@ -194,8 +192,8 @@ export default function CreateMatchScreen() {
   const captainTeamName = captainProfile?.teamName?.trim();
 
   // Display strings for neutral presentation when not set
-  const displayCaptainName = captainName || 'CAPTAIN NAME NOT SET';
-  const displayTeamName = captainTeamName || 'TEAM NAME NOT SET';
+  const displayCaptainName = captainName || 'Captain Name Not Set';
+  const displayTeamName = captainTeamName || 'Team Name Not Set';
 
   // Initial prefill values from captain profile
   const initialSport: Sport =
@@ -239,6 +237,38 @@ export default function CreateMatchScreen() {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [createdFixture, setCreatedFixture] = useState<MatchSlotItem | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState<boolean>(false);
+  const [weather, setWeather] = useState<WeatherOutlook | null>(null);
+  const [weatherLoading, setWeatherLoading] = useState<boolean>(false);
+
+  // Debounced weather outlook fetcher based on area, date, time, and sport
+  React.useEffect(() => {
+    let isCancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        setWeatherLoading(true);
+        const data = await weatherService.getWeather({
+          area,
+          date,
+          time,
+          sport,
+        });
+        if (!isCancelled) {
+          setWeather(data);
+        }
+      } catch {
+        // Non-critical: failure leaves weather as null / fallback
+      } finally {
+        if (!isCancelled) {
+          setWeatherLoading(false);
+        }
+      }
+    }, 400);
+
+    return () => {
+      isCancelled = true;
+      clearTimeout(timer);
+    };
+  }, [area, date, time, sport]);
 
   // Handle Sport Change: updates defaults intelligently
   const handleSelectSport = (newSport: Sport) => {
@@ -289,27 +319,26 @@ export default function CreateMatchScreen() {
   // =========================================================================
   if (!isCaptain) {
     return (
-      <SafeAreaView className="flex-1 bg-warm-white" edges={['top']}>
+      <SafeAreaView className="flex-1 bg-[#171A1D]" edges={['top']}>
         <ArenaHeader
-          title="MAIDAAN"
-          subtitle="MATCH CREATION // ROLE RESTRICTION"
+          title="Create Match"
+          subtitle="Role Restriction"
           showBack
           onBack={() => router.replace('/(tabs)/discover')}
         />
-        <View className="flex-1 items-center justify-center p-6 bg-warm-white">
-          <View className="w-16 h-16 rounded-full bg-rust/10 items-center justify-center border border-rust/30 mb-5">
-            <Ionicons name="lock-closed" size={28} color="#875646" />
+        <View className="flex-1 items-center justify-center p-6 bg-[#171A1D]">
+          <View className="w-16 h-16 rounded-full bg-[#F4A261]/10 items-center justify-center border border-[#F4A261]/30 mb-5">
+            <Ionicons name="lock-closed" size={28} color="#F4A261" />
           </View>
 
-          <ArenaBadge label="CAPTAIN ACCOUNT REQUIRED" variant="rust" size="md" />
+          <ArenaBadge label="CAPTAIN REQUIRED" variant="rust" size="md" />
 
-          <Text className="text-graphite text-lg font-black uppercase tracking-tight text-center mt-3">
-            CAPTAIN PRIVILEGES REQUIRED
+          <Text className="text-[#F4F6F7] text-lg font-black uppercase tracking-tight text-center mt-3">
+            Captain Privileges Required
           </Text>
 
-          <Text className="text-stone-muted text-sm text-center mt-2 max-w-[310px] leading-5">
-            Only Team Captain accounts can schedule matches and open player slots on the Maidaan
-            matchmaking board.
+          <Text className="text-[#A0A5AD] text-sm text-center mt-2 max-w-[310px] leading-5">
+            Only Team Captain accounts can schedule matches and open player slots on the Maidaan board.
           </Text>
 
           <View className="w-full mt-6 space-y-3">
@@ -393,7 +422,6 @@ export default function CreateMatchScreen() {
     setFormErrors({});
 
     try {
-      // Resolve schematic canvas position from demo presets or neutral center.
       const matchingPreset = VENUE_PRESETS.find(
         (v) => v.name.toLowerCase() === groundName.trim().toLowerCase()
       );
@@ -401,7 +429,6 @@ export default function CreateMatchScreen() {
         ? matchingPreset.mapPosition
         : { x: 50, y: 50 };
 
-      // Parse numerical contribution if entered
       let numericContribution: number | null = null;
       const digits = feePerPlayer.replace(/[^0-9]/g, '');
       if (digits) {
@@ -456,15 +483,15 @@ export default function CreateMatchScreen() {
   const reservedCount = totalSlots - slotsOpen;
 
   return (
-    <SafeAreaView className="flex-1 bg-warm-white" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-[#171A1D]" edges={['top']}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         className="flex-1"
       >
-        {/* Concrete Arena Header */}
+        {/* Modern Athletic Header */}
         <ArenaHeader
-          title="MAIDAAN"
-          subtitle="CAPTAIN DESK // CREATE MATCH"
+          title="Schedule Match"
+          subtitle="Open Player Slots"
           showBack
           fallbackRoute="/captain/dashboard"
           onBack={() => {
@@ -474,39 +501,36 @@ export default function CreateMatchScreen() {
               router.replace('/captain/dashboard');
             }
           }}
-          rightAction={
-            <ArenaBadge label="SCREEN 17" variant="stone" size="sm" />
-          }
         />
 
         <ScrollView
-          className="flex-1 bg-warm-white"
+          className="flex-1 bg-[#171A1D]"
           contentContainerStyle={{ paddingBottom: 64 }}
           keyboardShouldPersistTaps="handled"
         >
           {/* TOP BANNER: CAPTAIN CREDENTIAL CONTEXT */}
-          <View className="px-4 py-3 bg-stone/20 border-b border-stone flex-row items-center justify-between">
+          <View className="px-4 py-3 bg-[#1F2327] border-b border-white/10 flex-row items-center justify-between">
             <View className="flex-row items-center flex-1 pr-2">
-              <View className="w-2.5 h-2.5 rounded-full bg-arena-olive mr-2" />
+              <View className="w-2.5 h-2.5 rounded-full bg-[#E85D26] mr-2" />
               <View>
-                <Text className="text-graphite text-xs font-black uppercase tracking-tight">
+                <Text className="text-[#F4F6F7] text-xs font-black uppercase tracking-tight">
                   {displayTeamName}
                 </Text>
-                <Text className="text-stone-muted text-[10px] font-mono">
-                  ORGANIZER: {displayCaptainName} {captainUserId ? `• ${captainUserId}` : ''}
+                <Text className="text-[#A0A5AD] text-[10px] font-mono">
+                  Captain: {displayCaptainName}
                 </Text>
               </View>
             </View>
-            <ArenaBadge label="TEAM CAPTAIN" variant="olive" size="sm" />
+            <ArenaBadge label="CAPTAIN" variant="olive" size="sm" />
           </View>
 
           {/* MISSING CAPTAIN ID ERROR BANNER */}
           {formErrors.auth ? (
-            <View className="mx-4 mt-3 p-3 bg-rust/10 border border-rust/40 rounded-sm">
-              <Text className="text-rust text-xs font-bold uppercase tracking-wider">
-                CAPTAIN IDENTITY UNAVAILABLE
+            <View className="mx-4 mt-3 p-3 bg-[#F4A261]/10 border border-[#F4A261]/30 rounded-xl">
+              <Text className="text-[#F4A261] text-xs font-bold uppercase tracking-wider">
+                Captain Identity Unavailable
               </Text>
-              <Text className="text-graphite text-xs mt-1">
+              <Text className="text-[#F4F6F7] text-xs mt-1">
                 {formErrors.auth}
               </Text>
             </View>
@@ -514,10 +538,10 @@ export default function CreateMatchScreen() {
 
           {/* PAGE TITLE & INSTRUCTIONS */}
           <View className="px-4 pt-4 pb-2">
-            <Text className="text-graphite text-xl font-black uppercase tracking-tight">
-              OPEN PLAYER SLOTS
+            <Text className="text-[#F4F6F7] text-xl font-black uppercase tracking-tight">
+              Open Player Slots
             </Text>
-            <Text className="text-stone-muted text-xs leading-4 mt-0.5">
+            <Text className="text-[#A0A5AD] text-xs leading-4 mt-0.5">
               Configure a recreational match and list open slots for players.
             </Text>
           </View>
@@ -527,11 +551,11 @@ export default function CreateMatchScreen() {
           {/* ================================================================= */}
           <View className="px-4 mt-4">
             <View className="flex-row items-center justify-between mb-2">
-              <Text className="text-graphite text-[11px] font-mono uppercase tracking-widest font-bold">
-                1. SELECT SPORT
+              <Text className="text-[#A0A5AD] text-xs font-mono uppercase tracking-wider font-bold">
+                1. Select Sport
               </Text>
-              <Text className="text-stone-muted text-[10px] font-mono">
-                {activeSportConfig.label.toUpperCase()} SELECTED
+              <Text className="text-[#E85D26] text-[10px] font-mono uppercase font-bold">
+                {activeSportConfig.label}
               </Text>
             </View>
 
@@ -545,20 +569,20 @@ export default function CreateMatchScreen() {
                     onPress={() => handleSelectSport(s)}
                     accessibilityRole="button"
                     accessibilityLabel={`Select ${conf.label}`}
-                    className={`flex-1 py-3 px-1 items-center rounded-sm border ${
+                    className={`flex-1 py-3 px-1 items-center rounded-xl border ${
                       isSelected
-                        ? 'bg-graphite border-graphite shadow-2xs'
-                        : 'bg-white border-stone active:bg-stone/10'
+                        ? 'bg-[#E85D26] border-[#E85D26] shadow-sm'
+                        : 'bg-[#1F2327] border-white/10 active:bg-[#272C31]'
                     }`}
                   >
                     <MaterialCommunityIcons
                       name={conf.icon}
                       size={22}
-                      color={isSelected ? '#F4F1EA' : '#3D4438'}
+                      color={isSelected ? '#171A1D' : '#A0A5AD'}
                     />
                     <Text
                       className={`text-[11px] font-bold uppercase tracking-wider mt-1.5 ${
-                        isSelected ? 'text-warm-white' : 'text-graphite'
+                        isSelected ? 'text-[#171A1D]' : 'text-[#A0A5AD]'
                       }`}
                     >
                       {conf.label}
@@ -573,14 +597,14 @@ export default function CreateMatchScreen() {
           {/* STEP 2: FIXTURE TITLE & FORMAT */}
           {/* ================================================================= */}
           <View className="px-4 mt-6">
-            <Text className="text-graphite text-[11px] font-mono uppercase tracking-widest font-bold mb-2">
-              2. MATCH TITLE & FORMAT
+            <Text className="text-[#A0A5AD] text-xs font-mono uppercase tracking-wider font-bold mb-2">
+              2. Match Title & Format
             </Text>
 
             {/* Title Input */}
-            <View className="bg-white p-3.5 rounded-sm border border-stone mb-3">
-              <Text className="text-stone-muted text-[10px] font-mono uppercase mb-1 font-bold">
-                MATCH LISTING TITLE
+            <View className="bg-[#1F2327] p-4 rounded-2xl border border-white/10 mb-3">
+              <Text className="text-[#7F8993] text-[10px] font-mono uppercase mb-2 font-bold">
+                Match Listing Title
               </Text>
               <TextInput
                 value={title}
@@ -591,20 +615,20 @@ export default function CreateMatchScreen() {
                   }
                 }}
                 placeholder="e.g. Model Town 7v7 Floodlit Friendly"
-                placeholderTextColor="#A0A59A"
-                className="text-graphite text-sm font-bold p-0"
+                placeholderTextColor="#7F8993"
+                className="text-[#F4F6F7] text-sm font-bold bg-[#272C31] p-3 rounded-xl border border-white/10"
               />
               {formErrors.title ? (
-                <Text className="text-rust text-[10px] font-bold mt-1">
+                <Text className="text-[#F4A261] text-xs font-medium mt-1">
                   {formErrors.title}
                 </Text>
               ) : null}
             </View>
 
             {/* Format Selector */}
-            <View className="bg-white p-3.5 rounded-sm border border-stone">
-              <Text className="text-stone-muted text-[10px] font-mono uppercase mb-2 font-bold">
-                SPORT FORMAT PRESETS
+            <View className="bg-[#1F2327] p-4 rounded-2xl border border-white/10">
+              <Text className="text-[#7F8993] text-[10px] font-mono uppercase mb-2 font-bold">
+                Sport Format Presets
               </Text>
               <View className="flex-row flex-wrap">
                 {activeSportConfig.formats.map((fmt) => {
@@ -613,15 +637,15 @@ export default function CreateMatchScreen() {
                     <Pressable
                       key={fmt}
                       onPress={() => setFormat(fmt)}
-                      className={`mr-2 mb-2 px-2.5 py-1.5 rounded-xs border ${
+                      className={`mr-2 mb-2 px-3 py-1.5 rounded-xl border ${
                         isSelected
-                          ? 'bg-arena-olive border-arena-olive'
-                          : 'bg-warm-white border-stone active:bg-stone/20'
+                          ? 'bg-[#E85D26] border-[#E85D26]'
+                          : 'bg-[#272C31] border-white/10 active:bg-white/5'
                       }`}
                     >
                       <Text
-                        className={`text-[11px] font-medium ${
-                          isSelected ? 'text-warm-white font-bold' : 'text-graphite'
+                        className={`text-xs ${
+                          isSelected ? 'text-[#171A1D] font-bold' : 'text-[#A0A5AD]'
                         }`}
                       >
                         {fmt}
@@ -637,15 +661,15 @@ export default function CreateMatchScreen() {
           {/* STEP 3: SCHEDULE & TIMING */}
           {/* ================================================================= */}
           <View className="px-4 mt-6">
-            <Text className="text-graphite text-[11px] font-mono uppercase tracking-widest font-bold mb-2">
-              3. SCHEDULE & DURATION
+            <Text className="text-[#A0A5AD] text-xs font-mono uppercase tracking-wider font-bold mb-2">
+              3. Schedule & Duration
             </Text>
 
-            <View className="bg-white p-3.5 rounded-sm border border-stone space-y-3">
+            <View className="bg-[#1F2327] p-4 rounded-2xl border border-white/10 space-y-3">
               {/* Date Selector */}
               <View>
-                <Text className="text-stone-muted text-[10px] font-mono uppercase mb-2 font-bold">
-                  MATCH DATE
+                <Text className="text-[#7F8993] text-[10px] font-mono uppercase mb-2 font-bold">
+                  Match Date
                 </Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
                   {DATE_PRESETS.map((d) => {
@@ -654,15 +678,15 @@ export default function CreateMatchScreen() {
                       <Pressable
                         key={d}
                         onPress={() => setDate(d)}
-                        className={`mr-2 px-3 py-1.5 rounded-xs border ${
+                        className={`mr-2 px-3.5 py-2 rounded-xl border ${
                           isSelected
-                            ? 'bg-graphite border-graphite'
-                            : 'bg-warm-white border-stone'
+                            ? 'bg-[#E85D26] border-[#E85D26]'
+                            : 'bg-[#272C31] border-white/10'
                         }`}
                       >
                         <Text
                           className={`text-xs font-bold uppercase tracking-wider ${
-                            isSelected ? 'text-warm-white' : 'text-graphite'
+                            isSelected ? 'text-[#171A1D]' : 'text-[#A0A5AD]'
                           }`}
                         >
                           {d}
@@ -674,9 +698,9 @@ export default function CreateMatchScreen() {
               </View>
 
               {/* Time Window Selector */}
-              <View className="pt-2 border-t border-stone/30">
-                <Text className="text-stone-muted text-[10px] font-mono uppercase mb-2 font-bold">
-                  TIME WINDOW
+              <View className="pt-3 border-t border-white/5">
+                <Text className="text-[#7F8993] text-[10px] font-mono uppercase mb-2 font-bold">
+                  Time Window
                 </Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
                   {TIME_PRESETS.map((t) => {
@@ -685,15 +709,15 @@ export default function CreateMatchScreen() {
                       <Pressable
                         key={t}
                         onPress={() => setTime(t)}
-                        className={`mr-2 px-3 py-1.5 rounded-xs border ${
+                        className={`mr-2 px-3.5 py-2 rounded-xl border ${
                           isSelected
-                            ? 'bg-arena-olive border-arena-olive'
-                            : 'bg-warm-white border-stone'
+                            ? 'bg-[#E85D26] border-[#E85D26]'
+                            : 'bg-[#272C31] border-white/10'
                         }`}
                       >
                         <Text
-                          className={`text-xs font-mono font-medium ${
-                            isSelected ? 'text-warm-white font-bold' : 'text-graphite'
+                          className={`text-xs font-mono ${
+                            isSelected ? 'text-[#171A1D] font-bold' : 'text-[#A0A5AD]'
                           }`}
                         >
                           {t}
@@ -705,9 +729,9 @@ export default function CreateMatchScreen() {
               </View>
 
               {/* Duration Selector */}
-              <View className="pt-2 border-t border-stone/30 flex-row items-center justify-between">
-                <Text className="text-stone-muted text-[10px] font-mono uppercase font-bold">
-                  ESTIMATED DURATION
+              <View className="pt-3 border-t border-white/5 flex-row items-center justify-between">
+                <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold">
+                  Estimated Duration
                 </Text>
                 <View className="flex-row space-x-1.5">
                   {['60 Mins', '90 Mins', '120 Mins'].map((dur) => {
@@ -716,15 +740,15 @@ export default function CreateMatchScreen() {
                       <Pressable
                         key={dur}
                         onPress={() => setDuration(dur)}
-                        className={`px-2.5 py-1 rounded-xs border ${
+                        className={`px-3 py-1.5 rounded-xl border ${
                           isSelected
-                            ? 'bg-graphite border-graphite'
-                            : 'bg-warm-white border-stone'
+                            ? 'bg-[#E85D26] border-[#E85D26]'
+                            : 'bg-[#272C31] border-white/10'
                         }`}
                       >
                         <Text
-                          className={`text-[10px] font-mono font-bold ${
-                            isSelected ? 'text-warm-white' : 'text-graphite'
+                          className={`text-xs font-mono font-bold ${
+                            isSelected ? 'text-[#171A1D]' : 'text-[#A0A5AD]'
                           }`}
                         >
                           {dur}
@@ -742,17 +766,17 @@ export default function CreateMatchScreen() {
           {/* ================================================================= */}
           <View className="px-4 mt-6">
             <View className="flex-row items-center justify-between mb-2">
-              <Text className="text-graphite text-[11px] font-mono uppercase tracking-widest font-bold">
-                4. VENUE & LOCALITY
+              <Text className="text-[#A0A5AD] text-xs font-mono uppercase tracking-wider font-bold">
+                4. Venue & Locality
               </Text>
-              <Text className="text-stone-muted text-[10px] font-mono">
-                LAHORE CIRCUIT
+              <Text className="text-[#7F8993] text-[10px] font-mono">
+                Lahore Circuit
               </Text>
             </View>
 
-            <View className="bg-white p-3.5 rounded-sm border border-stone mb-2">
-              <Text className="text-stone-muted text-[10px] font-mono uppercase mb-1 font-bold">
-                GROUND / VENUE NAME
+            <View className="bg-[#1F2327] p-4 rounded-2xl border border-white/10 mb-2">
+              <Text className="text-[#7F8993] text-[10px] font-mono uppercase mb-2 font-bold">
+                Ground / Venue Name
               </Text>
               <TextInput
                 value={groundName}
@@ -763,17 +787,17 @@ export default function CreateMatchScreen() {
                   }
                 }}
                 placeholder="e.g. Model Town Football Turf, Pitch 1"
-                placeholderTextColor="#A0A59A"
-                className="text-graphite text-sm font-bold p-0 mb-3"
+                placeholderTextColor="#7F8993"
+                className="text-[#F4F6F7] text-sm font-bold bg-[#272C31] p-3 rounded-xl border border-white/10 mb-3"
               />
               {formErrors.groundName ? (
-                <Text className="text-rust text-[10px] font-bold mb-2">
+                <Text className="text-[#F4A261] text-xs font-medium mb-2">
                   {formErrors.groundName}
                 </Text>
               ) : null}
 
-              <Text className="text-stone-muted text-[10px] font-mono uppercase mb-1 font-bold">
-                AREA / NEIGHBORHOOD
+              <Text className="text-[#7F8993] text-[10px] font-mono uppercase mb-2 font-bold">
+                Area / Neighborhood
               </Text>
               <TextInput
                 value={area}
@@ -784,29 +808,29 @@ export default function CreateMatchScreen() {
                   }
                 }}
                 placeholder="e.g. Model Town, Lahore"
-                placeholderTextColor="#A0A59A"
-                className="text-graphite text-sm font-bold p-0"
+                placeholderTextColor="#7F8993"
+                className="text-[#F4F6F7] text-sm font-bold bg-[#272C31] p-3 rounded-xl border border-white/10"
               />
               {formErrors.area ? (
-                <Text className="text-rust text-[10px] font-bold mt-1">
+                <Text className="text-[#F4A261] text-xs font-medium mt-1">
                   {formErrors.area}
                 </Text>
               ) : null}
             </View>
 
             {/* Quick Demo Venue Labels */}
-            <Text className="text-stone-muted text-[10px] font-mono uppercase mb-1.5 px-0.5 font-bold">
-              DEMO VENUE PRESETS (TAP TO FILL)
+            <Text className="text-[#7F8993] text-[10px] font-mono uppercase mb-2 px-0.5 font-bold">
+              Venue Presets (Tap to Fill)
             </Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
               {VENUE_PRESETS.filter((v) => v.sport === sport).map((v) => (
                 <Pressable
                   key={v.name}
                   onPress={() => handleSelectVenuePreset(v)}
-                  className="mr-2 bg-stone/20 px-2.5 py-1.5 rounded-xs border border-stone active:bg-stone/40"
+                  className="mr-2 bg-[#272C31] px-3 py-2 rounded-xl border border-white/10 active:bg-white/5"
                 >
-                  <Text className="text-graphite text-[10px] font-bold">{v.name}</Text>
-                  <Text className="text-stone-muted text-[9px]">{v.area}</Text>
+                  <Text className="text-[#F4F6F7] text-xs font-bold">{v.name}</Text>
+                  <Text className="text-[#7F8993] text-[10px]">{v.area}</Text>
                 </Pressable>
               ))}
             </ScrollView>
@@ -817,8 +841,8 @@ export default function CreateMatchScreen() {
           {/* ================================================================= */}
           <View className="px-4 mt-6">
             <View className="flex-row items-center justify-between mb-2">
-              <Text className="text-graphite text-[11px] font-mono uppercase tracking-widest font-bold">
-                5. SQUAD SLOTS & VACANCY
+              <Text className="text-[#A0A5AD] text-xs font-mono uppercase tracking-wider font-bold">
+                5. Squad Slots & Vacancy
               </Text>
               <ArenaBadge
                 label={`${slotsOpen} VACANCIES`}
@@ -827,15 +851,15 @@ export default function CreateMatchScreen() {
               />
             </View>
 
-            <View className="bg-white p-4 rounded-sm border border-stone">
+            <View className="bg-[#1F2327] p-4 rounded-2xl border border-white/10">
               {/* Stepper Row: Total Slots */}
-              <View className="flex-row items-center justify-between pb-3 border-b border-stone/30">
+              <View className="flex-row items-center justify-between pb-3 border-b border-white/5">
                 <View className="flex-1 pr-3">
-                  <Text className="text-graphite text-xs font-black uppercase">
-                    TOTAL SQUAD CAPACITY
+                  <Text className="text-[#F4F6F7] text-xs font-black uppercase">
+                    Total Squad Capacity
                   </Text>
-                  <Text className="text-stone-muted text-[10px]">
-                    Total players required for match fixture (both sides or full roster)
+                  <Text className="text-[#7F8993] text-[10px] mt-0.5">
+                    Total players required for match fixture
                   </Text>
                 </View>
 
@@ -844,13 +868,13 @@ export default function CreateMatchScreen() {
                     onPress={() => handleAdjustTotalSlots(-1)}
                     accessibilityRole="button"
                     accessibilityLabel="Decrease total squad size"
-                    className="w-8 h-8 rounded-xs bg-stone/20 items-center justify-center border border-stone active:bg-stone/40"
+                    className="w-9 h-9 rounded-xl bg-[#272C31] items-center justify-center border border-white/10 active:bg-white/5"
                   >
-                    <Ionicons name="remove" size={16} color="#242522" />
+                    <Ionicons name="remove" size={16} color="#F4F6F7" />
                   </Pressable>
 
                   <View className="w-10 items-center">
-                    <Text className="text-graphite text-base font-black font-mono">
+                    <Text className="text-[#F4F6F7] text-base font-black font-mono">
                       {totalSlots}
                     </Text>
                   </View>
@@ -859,9 +883,9 @@ export default function CreateMatchScreen() {
                     onPress={() => handleAdjustTotalSlots(1)}
                     accessibilityRole="button"
                     accessibilityLabel="Increase total squad size"
-                    className="w-8 h-8 rounded-xs bg-stone/20 items-center justify-center border border-stone active:bg-stone/40"
+                    className="w-9 h-9 rounded-xl bg-[#272C31] items-center justify-center border border-white/10 active:bg-white/5"
                   >
-                    <Ionicons name="add" size={16} color="#242522" />
+                    <Ionicons name="add" size={16} color="#F4F6F7" />
                   </Pressable>
                 </View>
               </View>
@@ -869,11 +893,11 @@ export default function CreateMatchScreen() {
               {/* Stepper Row: Open Slots Wanted */}
               <View className="flex-row items-center justify-between pt-3">
                 <View className="flex-1 pr-3">
-                  <Text className="text-graphite text-xs font-black uppercase">
-                    OPEN PLAYER SLOTS WANTED
+                  <Text className="text-[#F4F6F7] text-xs font-black uppercase">
+                    Open Player Slots Wanted
                   </Text>
-                  <Text className="text-stone-muted text-[10px]">
-                    Replacement players discoverable on Maidaan board
+                  <Text className="text-[#7F8993] text-[10px] mt-0.5">
+                    Replacement players discoverable on board
                   </Text>
                 </View>
 
@@ -882,13 +906,13 @@ export default function CreateMatchScreen() {
                     onPress={() => handleAdjustOpenSlots(-1)}
                     accessibilityRole="button"
                     accessibilityLabel="Decrease open player slots"
-                    className="w-8 h-8 rounded-xs bg-stone/20 items-center justify-center border border-stone active:bg-stone/40"
+                    className="w-9 h-9 rounded-xl bg-[#272C31] items-center justify-center border border-white/10 active:bg-white/5"
                   >
-                    <Ionicons name="remove" size={16} color="#242522" />
+                    <Ionicons name="remove" size={16} color="#F4F6F7" />
                   </Pressable>
 
                   <View className="w-10 items-center">
-                    <Text className="text-rust text-base font-black font-mono">
+                    <Text className="text-[#E85D26] text-base font-black font-mono">
                       {slotsOpen}
                     </Text>
                   </View>
@@ -897,52 +921,52 @@ export default function CreateMatchScreen() {
                     onPress={() => handleAdjustOpenSlots(1)}
                     accessibilityRole="button"
                     accessibilityLabel="Increase open player slots"
-                    className="w-8 h-8 rounded-xs bg-stone/20 items-center justify-center border border-stone active:bg-stone/40"
+                    className="w-9 h-9 rounded-xl bg-[#272C31] items-center justify-center border border-white/10 active:bg-white/5"
                   >
-                    <Ionicons name="add" size={16} color="#242522" />
+                    <Ionicons name="add" size={16} color="#F4F6F7" />
                   </Pressable>
                 </View>
               </View>
 
               {formErrors.slotsOpen ? (
-                <Text className="text-rust text-[10px] font-bold mt-2">
+                <Text className="text-[#F4A261] text-xs font-medium mt-2">
                   {formErrors.slotsOpen}
                 </Text>
               ) : null}
 
               {/* Visual Breakdown Strip */}
-              <View className="mt-4 pt-3 border-t border-stone/30">
-                <View className="flex-row justify-between text-[11px] font-mono mb-1.5">
-                  <Text className="text-stone-muted text-[10px]">
-                    ROSTER STATUS ({reservedCount} FILLED + {slotsOpen} OPEN = {totalSlots})
+              <View className="mt-4 pt-3 border-t border-white/5">
+                <View className="flex-row justify-between text-[11px] font-mono mb-2">
+                  <Text className="text-[#A0A5AD] text-xs">
+                    Roster Status ({reservedCount} filled + {slotsOpen} open)
                   </Text>
-                  <Text className="text-arena-olive text-[10px] font-bold">
-                    {Math.round((reservedCount / totalSlots) * 100)}% SQUAD READY
+                  <Text className="text-[#E85D26] text-xs font-bold">
+                    {Math.round((reservedCount / totalSlots) * 100)}% Ready
                   </Text>
                 </View>
 
                 {/* Progress Bar */}
-                <View className="h-2 w-full bg-stone/30 rounded-xs overflow-hidden flex-row">
+                <View className="h-2 w-full bg-[#272C31] rounded-full overflow-hidden flex-row">
                   <View
                     style={{ width: `${(reservedCount / totalSlots) * 100}%` }}
-                    className="h-full bg-graphite"
+                    className="h-full bg-[#7FD1AE]"
                   />
                   <View
                     style={{ width: `${(slotsOpen / totalSlots) * 100}%` }}
-                    className="h-full bg-rust"
+                    className="h-full bg-[#E85D26]"
                   />
                 </View>
 
-                <View className="flex-row items-center justify-between mt-2">
+                <View className="flex-row items-center justify-between mt-2.5">
                   <View className="flex-row items-center">
-                    <View className="w-2 h-2 rounded-xs bg-graphite mr-1" />
-                    <Text className="text-stone-muted text-[10px]">
-                      {reservedCount} Reserved / Existing
+                    <View className="w-2.5 h-2.5 rounded-full bg-[#7FD1AE] mr-1.5" />
+                    <Text className="text-[#A0A5AD] text-xs">
+                      {reservedCount} Reserved
                     </Text>
                   </View>
                   <View className="flex-row items-center">
-                    <View className="w-2 h-2 rounded-xs bg-rust mr-1" />
-                    <Text className="text-rust text-[10px] font-bold">
+                    <View className="w-2.5 h-2.5 rounded-full bg-[#E85D26] mr-1.5" />
+                    <Text className="text-[#E85D26] text-xs font-bold">
                       {slotsOpen} Open for Discovery
                     </Text>
                   </View>
@@ -956,8 +980,8 @@ export default function CreateMatchScreen() {
           {/* ================================================================= */}
           <View className="px-4 mt-6">
             <View className="flex-row items-center justify-between mb-2">
-              <Text className="text-graphite text-[11px] font-mono uppercase tracking-widest font-bold">
-                6. SKILL TIER SPECIFICATION
+              <Text className="text-[#A0A5AD] text-xs font-mono uppercase tracking-wider font-bold">
+                6. Skill Tier Specification
               </Text>
               <ArenaBadge
                 label={activeSkillConfig.badge}
@@ -974,23 +998,22 @@ export default function CreateMatchScreen() {
                   <Pressable
                     key={lvl}
                     onPress={() => setSkillLevel(lvl)}
-                    className={`flex-1 p-3 rounded-sm border ${
+                    className={`flex-1 p-3.5 rounded-2xl border ${
                       isSelected
-                        ? 'bg-white border-arena-olive shadow-2xs'
-                        : 'bg-warm-white border-stone active:bg-stone/10'
+                        ? 'bg-[#272C31] border-[#E85D26] shadow-sm'
+                        : 'bg-[#1F2327] border-white/10 active:bg-[#272C31]'
                     }`}
                   >
                     <View className="flex-row items-center justify-between mb-1">
                       <Text
                         className={`text-xs font-black uppercase ${
-                          isSelected ? 'text-arena-olive' : 'text-graphite'
+                          isSelected ? 'text-[#E85D26]' : 'text-[#F4F6F7]'
                         }`}
                       >
                         {conf.label}
                       </Text>
-                      <ArenaBadge label={conf.badge} variant={conf.variant} size="sm" />
                     </View>
-                    <Text className="text-stone-muted text-[10px] leading-3">
+                    <Text className="text-[#7F8993] text-[10px] leading-3 mt-0.5">
                       {conf.subtitle}
                     </Text>
                   </Pressable>
@@ -1003,37 +1026,37 @@ export default function CreateMatchScreen() {
           {/* STEP 7: RECREATIONAL SPLIT & NOTES */}
           {/* ================================================================= */}
           <View className="px-4 mt-6">
-            <Text className="text-graphite text-[11px] font-mono uppercase tracking-widest font-bold mb-2">
-              7. RECREATIONAL SPLIT & DETAILS
+            <Text className="text-[#A0A5AD] text-xs font-mono uppercase tracking-wider font-bold mb-2">
+              7. Split & Details
             </Text>
 
-            <View className="bg-white p-3.5 rounded-sm border border-stone space-y-3">
+            <View className="bg-[#1F2327] p-4 rounded-2xl border border-white/10 space-y-3">
               {/* Fee per player */}
               <View>
-                <View className="flex-row items-center justify-between mb-1">
-                  <Text className="text-stone-muted text-[10px] font-mono uppercase font-bold">
-                    PITCH FEE PER PLAYER
+                <View className="flex-row items-center justify-between mb-1.5">
+                  <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold">
+                    Pitch Fee Per Player
                   </Text>
-                  <Text className="text-stone-muted text-[9px] font-mono">
-                    ON-SITE SPLIT ONLY
+                  <Text className="text-[#7F8993] text-[9px] font-mono">
+                    On-Site Split Only
                   </Text>
                 </View>
                 <TextInput
                   value={feePerPlayer}
                   onChangeText={setFeePerPlayer}
                   placeholder="e.g. Rs. 450 or Free"
-                  placeholderTextColor="#A0A59A"
-                  className="text-graphite text-sm font-bold p-0 mb-1"
+                  placeholderTextColor="#7F8993"
+                  className="text-[#F4F6F7] text-sm font-bold bg-[#272C31] p-3 rounded-xl border border-white/10 mb-1"
                 />
-                <Text className="text-stone-muted text-[9px] leading-3">
+                <Text className="text-[#7F8993] text-[10px] leading-3.5">
                   Recreational venue cost sharing. Collected directly at ground — no in-app billing.
                 </Text>
               </View>
 
               {/* Match Description */}
-              <View className="pt-2 border-t border-stone/30">
-                <Text className="text-stone-muted text-[10px] font-mono uppercase mb-1 font-bold">
-                  MATCH DESCRIPTION & REQUIREMENTS
+              <View className="pt-3 border-t border-white/5">
+                <Text className="text-[#7F8993] text-[10px] font-mono uppercase mb-1.5 font-bold">
+                  Match Description & Requirements
                 </Text>
                 <TextInput
                   value={description}
@@ -1041,41 +1064,52 @@ export default function CreateMatchScreen() {
                   multiline
                   numberOfLines={2}
                   placeholder="Notes about footwear, bibs, squad expectations..."
-                  placeholderTextColor="#A0A59A"
-                  className="text-graphite text-xs leading-4 p-0 min-h-[44px]"
+                  placeholderTextColor="#7F8993"
+                  className="text-[#F4F6F7] text-xs leading-4 bg-[#272C31] p-3 rounded-xl border border-white/10 min-h-[50px]"
                 />
               </View>
 
               {/* Venue / Parking Notes */}
-              <View className="pt-2 border-t border-stone/30">
-                <Text className="text-stone-muted text-[10px] font-mono uppercase mb-1 font-bold">
-                  VENUE ARRIVAL NOTES
+              <View className="pt-3 border-t border-white/5">
+                <Text className="text-[#7F8993] text-[10px] font-mono uppercase mb-1.5 font-bold">
+                  Venue Arrival Notes
                 </Text>
                 <TextInput
                   value={venueNotes}
                   onChangeText={setVenueNotes}
                   placeholder="e.g. Meet by pitch 1 entrance; changing rooms on left"
-                  placeholderTextColor="#A0A59A"
-                  className="text-graphite text-xs leading-4 p-0"
+                  placeholderTextColor="#7F8993"
+                  className="text-[#F4F6F7] text-xs leading-4 bg-[#272C31] p-3 rounded-xl border border-white/10"
                 />
               </View>
             </View>
           </View>
 
           {/* ================================================================= */}
+          {/* WEATHER OUTLOOK ADVISORY */}
+          {/* ================================================================= */}
+          <View className="px-4 mt-6">
+            <WeatherOutlookCard
+              weather={weather}
+              loading={weatherLoading}
+              timeContext={`${date} • ${time}`}
+              sport={sport}
+            />
+          </View>
+
+          {/* ================================================================= */}
           {/* CTA BAR */}
           {/* ================================================================= */}
-          <View className="px-4 mt-8">
-            {/* API submission error — keep form values, allow retry */}
+          <View className="px-4 mt-6">
             {formErrors.submit ? (
-              <View className="mb-3 p-3 bg-rust/10 border border-rust/40 rounded-sm">
-                <Text className="text-rust text-xs font-bold uppercase tracking-wider mb-0.5">
-                  FIXTURE CREATION FAILED
+              <View className="mb-3 p-3 bg-[#F4A261]/10 border border-[#F4A261]/30 rounded-xl">
+                <Text className="text-[#F4A261] text-xs font-bold uppercase tracking-wider mb-0.5">
+                  Fixture Creation Failed
                 </Text>
-                <Text className="text-graphite text-xs leading-4">
+                <Text className="text-[#F4F6F7] text-xs leading-4">
                   {formErrors.submit}
                 </Text>
-                <Text className="text-stone-muted text-[10px] mt-1">
+                <Text className="text-[#A0A5AD] text-[10px] mt-1">
                   Your form values are preserved — review and retry.
                 </Text>
               </View>
@@ -1089,14 +1123,14 @@ export default function CreateMatchScreen() {
               onPress={handlePublishMatch}
             />
 
-            <Text className="text-stone-muted text-[10px] text-center mt-2.5">
+            <Text className="text-[#7F8993] text-xs text-center mt-2.5">
               Configured fixture validates squad requirements and slots according to Maidaan standards.
             </Text>
           </View>
         </ScrollView>
 
         {/* ================================================================= */}
-        {/* SUCCESS MODAL: FIXTURE PERSISTED VIA POST /api/matches */}
+        {/* SUCCESS MODAL */}
         {/* ================================================================= */}
         <Modal
           visible={showSuccessModal}
@@ -1107,31 +1141,31 @@ export default function CreateMatchScreen() {
             handleResetForm();
           }}
         >
-          <View className="flex-1 bg-graphite/80 items-center justify-center p-5">
-            <View className="w-full max-w-sm bg-warm-white rounded-sm p-5 border border-stone shadow-xl">
-              <View className="w-12 h-12 rounded-sm bg-arena-olive items-center justify-center border border-warm-white/20 mb-3">
-                <Ionicons name="checkmark-sharp" size={26} color="#F4F1EA" />
+          <View className="flex-1 bg-[#171A1D]/85 items-center justify-center p-5">
+            <View className="w-full max-w-sm bg-[#1F2327] rounded-2xl p-6 border border-white/10 shadow-2xl">
+              <View className="w-12 h-12 rounded-xl bg-[#E85D26] items-center justify-center mb-3">
+                <Ionicons name="checkmark-sharp" size={26} color="#171A1D" />
               </View>
 
-              <ArenaBadge label="FIXTURE CREATED" variant="olive" size="sm" />
+              <ArenaBadge label="MATCH SCHEDULED" variant="olive" size="sm" />
 
-              <Text className="text-graphite text-lg font-black uppercase tracking-tight mt-2">
-                FIXTURE CREATED
+              <Text className="text-[#F4F6F7] text-lg font-black uppercase tracking-tight mt-2">
+                Fixture Created
               </Text>
 
-              <Text className="text-stone-muted text-xs leading-4 mt-1">
-                Your match is now available in Maidaan.
+              <Text className="text-[#A0A5AD] text-xs leading-4 mt-1">
+                Your match is now open for player discovery on the Maidaan board.
               </Text>
 
               {/* Fixture Summary Card */}
               {createdFixture ? (
-                <View className="my-4 p-3 bg-white rounded-sm border border-stone">
-                  <Text className="text-graphite text-xs font-black uppercase" numberOfLines={1}>
+                <View className="my-4 p-3.5 bg-[#272C31] rounded-xl border border-white/10">
+                  <Text className="text-[#F4F6F7] text-xs font-black uppercase" numberOfLines={1}>
                     {createdFixture.title}
                   </Text>
 
-                  <View className="flex-row items-center justify-between mt-1 pt-1 border-t border-stone/30">
-                    <Text className="text-stone-muted text-[10px] font-mono">
+                  <View className="flex-row items-center justify-between mt-2 pt-2 border-t border-white/5">
+                    <Text className="text-[#A0A5AD] text-xs font-mono">
                       {createdFixture.date} • {createdFixture.time}
                     </Text>
                     <ArenaBadge
@@ -1142,7 +1176,7 @@ export default function CreateMatchScreen() {
                   </View>
 
                   <Text
-                    className="text-stone-muted text-[10px] mt-1"
+                    className="text-[#7F8993] text-xs mt-1"
                     numberOfLines={1}
                   >
                     {createdFixture.groundName}
@@ -1150,7 +1184,7 @@ export default function CreateMatchScreen() {
                 </View>
               ) : null}
 
-              {/* Action Buttons: View Match Details, Return to Captain Board, View in Discover */}
+              {/* Action Buttons */}
               <View className="space-y-2 mt-2">
                 <PrimaryButton
                   title="VIEW MATCH DETAILS"
@@ -1166,7 +1200,7 @@ export default function CreateMatchScreen() {
                 />
 
                 <PrimaryButton
-                  title="RETURN TO CAPTAIN BOARD"
+                  title="RETURN TO CAPTAIN DESK"
                   variant="outline"
                   onPress={() => {
                     setShowSuccessModal(false);
@@ -1180,10 +1214,10 @@ export default function CreateMatchScreen() {
                     setShowSuccessModal(false);
                     handleResetForm();
                   }}
-                  className="py-2.5 items-center bg-stone/20 rounded-sm border border-stone active:bg-stone/40 mt-1"
+                  className="py-3 items-center bg-[#272C31] rounded-xl border border-white/10 active:bg-white/5 mt-1"
                 >
-                  <Text className="text-graphite text-xs font-bold uppercase tracking-wider">
-                    CREATE ANOTHER
+                  <Text className="text-[#F4F6F7] text-xs font-bold uppercase tracking-wider">
+                    Create Another
                   </Text>
                 </Pressable>
               </View>

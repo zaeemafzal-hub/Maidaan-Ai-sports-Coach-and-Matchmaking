@@ -186,44 +186,44 @@ export default function ChatRoomScreen() {
   if (!loading && authError) {
     const isForbidden = authError === 'FORBIDDEN';
     return (
-      <SafeAreaView className="flex-1 bg-warm-white" edges={['top', 'bottom']}>
+      <SafeAreaView className="flex-1 bg-[#171A1D]" edges={['top', 'bottom']}>
         {/* Header */}
-        <View className="w-full px-4 py-3.5 bg-graphite border-b border-surface-border-dark flex-row items-center">
+        <View className="w-full px-4 py-3.5 bg-[#1F2327] border-b border-white/5 flex-row items-center">
           <Pressable
             onPress={handleBack}
             accessibilityRole="button"
             accessibilityLabel="Back to chat channels"
-            className="w-10 h-10 rounded-lg items-center justify-center mr-3 bg-surface-card-dark border border-surface-border-dark active:scale-95"
+            className="w-10 h-10 rounded-xl items-center justify-center mr-3 bg-[#272C31] border border-white/10 active:scale-95"
           >
-            <Ionicons name="chevron-back" size={20} color="#F4F1EA" />
+            <Ionicons name="chevron-back" size={20} color="#F4F6F7" />
           </Pressable>
-          <Text className="text-warm-white text-base font-black uppercase tracking-tight">
+          <Text className="text-[#F4F6F7] text-base font-bold uppercase tracking-tight">
             CHAT CHANNEL
           </Text>
         </View>
 
         {/* Access Denied / Not Found View */}
         <View className="flex-1 items-center justify-center px-6">
-          <View className="w-16 h-16 rounded-full bg-stone/30 border border-stone items-center justify-center mb-4">
+          <View className="w-16 h-16 rounded-full bg-[#272C31] border border-white/10 items-center justify-center mb-4">
             <Ionicons
               name={isForbidden ? 'lock-closed-outline' : 'alert-circle-outline'}
               size={32}
-              color="#666B60"
+              color="#F4A261"
             />
           </View>
-          <Text className="text-graphite text-xl font-black uppercase tracking-tight text-center">
+          <Text className="text-[#F4F6F7] text-xl font-black uppercase tracking-tight text-center">
             {isForbidden ? 'CHANNEL ACCESS DENIED' : 'CHANNEL NOT FOUND'}
           </Text>
-          <Text className="text-stone-muted text-xs font-medium text-center mt-2 max-w-[280px] leading-5">
+          <Text className="text-[#A0A5AD] text-xs font-medium text-center mt-2 max-w-[280px] leading-5">
             {errorMessage}
           </Text>
           <Pressable
             onPress={handleBack}
             accessibilityRole="button"
             accessibilityLabel="Back to chat inbox"
-            className="mt-6 py-3.5 px-6 rounded-xl bg-olive border-b-[3px] border-olive-dark items-center justify-center active:opacity-90"
+            className="mt-6 py-3.5 px-6 rounded-xl bg-[#E85D26] items-center justify-center active:opacity-90 shadow-sm"
           >
-            <Text className="text-warm-white text-xs font-black uppercase tracking-wider">
+            <Text className="text-[#171A1D] text-xs font-black uppercase tracking-wider">
               BACK TO CHAT
             </Text>
           </Pressable>
@@ -239,9 +239,9 @@ export default function ChatRoomScreen() {
     if (item.senderId === 'system') {
       return (
         <View className="w-full my-3 items-center">
-          <View className="px-3.5 py-1.5 rounded-sm bg-olive/15 border border-olive/30 flex-row items-center">
-            <Ionicons name="shield-checkmark" size={13} color="#3D4438" />
-            <Text className="text-olive text-[10px] font-black uppercase tracking-wider ml-1.5">
+          <View className="px-3.5 py-1.5 rounded-full bg-[#E85D26]/15 border border-[#E85D26]/30 flex-row items-center">
+            <Ionicons name="shield-checkmark" size={13} color="#E85D26" />
+            <Text className="text-[#E85D26] text-[10px] font-bold uppercase tracking-wider ml-1.5">
               {item.body}
             </Text>
           </View>
@@ -262,24 +262,24 @@ export default function ChatRoomScreen() {
           style={{ maxWidth: '82%' }}
           className={`p-3.5 rounded-2xl ${
             isOutgoing
-              ? 'bg-olive border border-olive-dark border-b-[2px] rounded-tr-sm'
-              : 'bg-warm-white border border-stone border-b-[2px] border-b-stone-muted/70 rounded-tl-sm shadow-xs'
+              ? 'bg-[#E85D26] rounded-tr-xs'
+              : 'bg-[#1F2327] border border-white/10 rounded-tl-xs shadow-xs'
           }`}
         >
           {/* In Group Chat: Show Sender Name and Role Distinction for incoming messages */}
           {!isOutgoing && isGroup && (
             <View className="flex-row items-center mb-1 flex-wrap">
-              <Text className="text-graphite text-[11px] font-black uppercase tracking-wide mr-1.5">
+              <Text className="text-[#F4F6F7] text-[11px] font-bold uppercase tracking-wide mr-1.5">
                 {item.senderName}
               </Text>
               {isCaptain ? (
-                <View className="bg-olive/15 border border-olive px-1.5 py-0.2 rounded-xs">
-                  <Text className="text-olive text-[8px] font-black uppercase tracking-wider">
+                <View className="bg-[#E85D26]/15 border border-[#E85D26] px-1.5 py-0.2 rounded-xs">
+                  <Text className="text-[#E85D26] text-[8px] font-black uppercase tracking-wider">
                     TEAM CAPTAIN
                   </Text>
                 </View>
               ) : (
-                <Text className="text-stone-muted text-[9px] font-bold uppercase tracking-wider">
+                <Text className="text-[#7F8993] text-[9px] font-bold uppercase tracking-wider">
                   • PLAYER
                 </Text>
               )}
@@ -289,7 +289,7 @@ export default function ChatRoomScreen() {
           {/* Message Text Body */}
           <Text
             className={`text-sm leading-relaxed ${
-              isOutgoing ? 'text-warm-white font-medium' : 'text-graphite font-medium'
+              isOutgoing ? 'text-[#171A1D] font-semibold' : 'text-[#F4F6F7] font-medium'
             }`}
           >
             {item.body}
@@ -298,7 +298,7 @@ export default function ChatRoomScreen() {
           {/* Timestamp Footer */}
           <Text
             className={`text-[10px] font-bold mt-1 text-right ${
-              isOutgoing ? 'text-warm-white/70' : 'text-stone-muted'
+              isOutgoing ? 'text-[#171A1D]/70' : 'text-[#7F8993]'
             }`}
           >
             {formatMessageTime(item.createdAt)}
@@ -309,32 +309,32 @@ export default function ChatRoomScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-warm-white" edges={['top', 'bottom']}>
-      {/* Concrete Arena Match Comms Top Header */}
-      <View className="w-full px-4 py-3 bg-graphite border-b border-surface-border-dark flex-row items-center justify-between">
+    <SafeAreaView className="flex-1 bg-[#171A1D]" edges={['top', 'bottom']}>
+      {/* Top Header */}
+      <View className="w-full px-4 py-3 bg-[#1F2327] border-b border-white/5 flex-row items-center justify-between">
         <View className="flex-row items-center flex-1 mr-2">
           {/* Back Action */}
           <Pressable
             onPress={handleBack}
             accessibilityRole="button"
             accessibilityLabel="Go back"
-            className="w-10 h-10 rounded-lg items-center justify-center mr-2.5 bg-surface-card-dark border border-surface-border-dark active:scale-95"
+            className="w-10 h-10 rounded-xl items-center justify-center mr-2.5 bg-[#272C31] border border-white/10 active:scale-95"
           >
             <Ionicons name="chevron-back" size={20} color="#F4F1EA" />
           </Pressable>
 
           {/* Room Identity Avatar Well */}
           <View
-            className={`w-10 h-10 rounded-lg items-center justify-center mr-3 border ${
+            className={`w-10 h-10 rounded-xl items-center justify-center mr-3 border ${
               isGroup
-                ? 'bg-olive/20 border-olive/50'
-                : 'bg-graphite border-surface-border-dark'
+                ? 'bg-[#E85D26]/15 border-[#E85D26]/40'
+                : 'bg-[#272C31] border-white/10'
             }`}
           >
             <Ionicons
               name={isGroup ? 'people' : 'person'}
               size={19}
-              color="#F4F1EA"
+              color="#E85D26"
             />
           </View>
 
@@ -342,20 +342,20 @@ export default function ChatRoomScreen() {
           <View className="flex-1">
             <Text
               numberOfLines={1}
-              className="text-warm-white text-base font-black uppercase tracking-tight"
+              className="text-[#F4F6F7] text-base font-bold uppercase tracking-tight"
             >
               {room?.title || 'MATCH CHANNEL'}
             </Text>
             <View className="flex-row items-center mt-0.5">
-              <Text className="text-stone-muted text-[10px] font-black uppercase tracking-wider">
-                {isGroup ? 'MATCH SQUAD' : 'DIRECT CHANNEL'}
+              <Text className="text-[#E85D26] text-[10px] font-bold uppercase tracking-wider">
+                {isGroup ? 'MATCH SQUAD' : 'DIRECT'}
               </Text>
-              <Text className="text-surface-border-dark text-[10px] font-bold mx-1">
-                //
+              <Text className="text-[#7F8993] text-[10px] font-bold mx-1">
+                ·
               </Text>
               <Text
                 numberOfLines={1}
-                className="text-stone text-[10px] font-semibold tracking-tight"
+                className="text-[#A0A5AD] text-[10px] font-medium tracking-tight"
               >
                 {room?.members ? `${room.members.length} PARTICIPANTS` : 'CONFIRMED LINEUP'}
               </Text>
@@ -364,25 +364,25 @@ export default function ChatRoomScreen() {
         </View>
 
         {/* Status Indicator */}
-        <View className="px-2.5 py-1 rounded-sm bg-surface-card-dark border border-surface-border-dark">
-          <Text className="text-stone text-[9px] font-black uppercase tracking-wider">
+        <View className="px-2.5 py-1 rounded-full bg-[#272C31] border border-white/10">
+          <Text className="text-[#E85D26] text-[9px] font-bold uppercase tracking-wider">
             {isGroup ? 'SQUAD' : 'DIRECT'}
           </Text>
         </View>
       </View>
 
-      {/* Associated Match Context Strip (If room has match reference) */}
+      {/* Associated Match Context Strip */}
       {room?.matchId && (
-        <View className="w-full px-4 py-2.5 bg-stone-light border-b border-stone flex-row items-center justify-between">
+        <View className="w-full px-4 py-2.5 bg-[#272C31] border-b border-white/5 flex-row items-center justify-between">
           <View className="flex-1 mr-3">
             <View className="flex-row items-center mb-0.5">
-              <Text className="text-rust text-[9px] font-black uppercase tracking-widest mr-1.5">
-                FIXTURE CONTEXT
+              <Text className="text-[#E85D26] text-[9px] font-bold uppercase tracking-widest mr-1.5">
+                FIXTURE
               </Text>
             </View>
             <Text
               numberOfLines={1}
-              className="text-graphite text-xs font-black uppercase tracking-tight"
+              className="text-[#F4F6F7] text-xs font-bold uppercase tracking-tight"
             >
               {room.title}
             </Text>
@@ -392,9 +392,9 @@ export default function ChatRoomScreen() {
             onPress={handleViewMatch}
             accessibilityRole="button"
             accessibilityLabel="View associated match fixture"
-            className="py-1.5 px-3 rounded-lg bg-warm-white border border-stone border-b-[2px] border-b-stone-muted active:scale-95"
+            className="py-1.5 px-3 rounded-lg bg-[#1F2327] border border-white/10 active:scale-95"
           >
-            <Text className="text-graphite text-[10px] font-black uppercase tracking-wider">
+            <Text className="text-[#E85D26] text-[10px] font-bold uppercase tracking-wider">
               VIEW FIXTURE →
             </Text>
           </Pressable>
@@ -409,25 +409,25 @@ export default function ChatRoomScreen() {
       >
         {loading ? (
           <View className="flex-1 items-center justify-center p-8">
-            <ActivityIndicator size="large" color="#3D4438" />
-            <Text className="text-graphite text-xs font-black uppercase tracking-wider mt-3">
-              LOADING CHANNEL MESSAGES...
+            <ActivityIndicator size="large" color="#E85D26" />
+            <Text className="text-[#A0A5AD] text-xs font-bold uppercase tracking-wider mt-3">
+              LOADING MESSAGES...
             </Text>
           </View>
         ) : messages.length === 0 ? (
           /* Empty Channel State */
           <View className="flex-1 items-center justify-center px-8">
-            <View className="w-14 h-14 rounded-2xl bg-stone-light border border-stone items-center justify-center mb-3">
+            <View className="w-14 h-14 rounded-2xl bg-[#1F2327] border border-white/10 items-center justify-center mb-3">
               <Ionicons
                 name={isGroup ? 'people-outline' : 'chatbubble-ellipses-outline'}
                 size={26}
-                color="#3D4438"
+                color="#E85D26"
               />
             </View>
-            <Text className="text-graphite text-base font-black uppercase tracking-tight text-center">
+            <Text className="text-[#F4F6F7] text-base font-bold uppercase tracking-tight text-center">
               {isGroup ? 'SQUAD CHANNEL OPEN' : 'DIRECT CHANNEL OPEN'}
             </Text>
-            <Text className="text-stone-muted text-xs font-semibold uppercase tracking-wider text-center mt-1 max-w-xs leading-relaxed">
+            <Text className="text-[#A0A5AD] text-xs font-medium text-center mt-1 max-w-xs leading-relaxed">
               {isGroup
                 ? 'Coordinate arrival, equipment and match-day details here.'
                 : 'Direct player-captain communication open for this fixture.'}
@@ -451,19 +451,19 @@ export default function ChatRoomScreen() {
 
         {/* Message Send Error Alert */}
         {sendError && (
-          <View className="px-4 py-1.5 bg-rust/10 border-t border-rust/30 flex-row items-center justify-between">
-            <Text className="text-rust text-xs font-semibold flex-1 mr-2">
+          <View className="px-4 py-1.5 bg-[#F4A261]/10 border-t border-[#F4A261]/30 flex-row items-center justify-between">
+            <Text className="text-[#F4A261] text-xs font-semibold flex-1 mr-2">
               {sendError}
             </Text>
             <Pressable onPress={() => setSendError(null)}>
-              <Ionicons name="close" size={16} color="#875646" />
+              <Ionicons name="close" size={16} color="#F4A261" />
             </Pressable>
           </View>
         )}
 
         {/* Message Composer Strip */}
-        <View className="p-3 bg-warm-white border-t border-stone flex-row items-center space-x-2">
-          <View className="flex-1 flex-row items-center px-3.5 py-2 rounded-xl bg-stone-light/60 border border-stone mr-2">
+        <View className="p-3 bg-[#1F2327] border-t border-white/5 flex-row items-center space-x-2">
+          <View className="flex-1 flex-row items-center px-3.5 py-2 rounded-xl bg-[#272C31] border border-white/10 mr-2">
             <TextInput
               value={inputText}
               onChangeText={(text) => {
@@ -471,16 +471,16 @@ export default function ChatRoomScreen() {
                 if (sendError) setSendError(null);
               }}
               placeholder={isGroup ? 'Message squad...' : 'Message captain...'}
-              placeholderTextColor="#75796F"
+              placeholderTextColor="#7F8993"
               multiline
               maxLength={500}
               editable={!sending}
-              className="flex-1 text-graphite text-sm p-0 max-h-24"
+              className="flex-1 text-[#F4F6F7] text-sm p-0 max-h-24"
               accessibilityLabel={isGroup ? 'Message squad' : 'Message captain'}
             />
           </View>
 
-          {/* Tactile Send Button */}
+          {/* Send Button */}
           <Pressable
             onPress={handleSend}
             disabled={!inputText.trim() || sending}
@@ -488,17 +488,17 @@ export default function ChatRoomScreen() {
             accessibilityLabel="Send message"
             className={`w-11 h-11 rounded-xl items-center justify-center transition-all ${
               inputText.trim() && !sending
-                ? 'bg-olive border border-olive-dark border-b-[3px] active:scale-95'
-                : 'bg-stone/30 border border-stone/50 opacity-40'
+                ? 'bg-[#E85D26] active:scale-95'
+                : 'bg-[#272C31] border border-white/10 opacity-50'
             }`}
           >
             {sending ? (
-              <ActivityIndicator size="small" color="#F4F1EA" />
+              <ActivityIndicator size="small" color="#171A1D" />
             ) : (
               <Ionicons
                 name="send"
                 size={18}
-                color={inputText.trim() ? '#F4F1EA' : '#75796F'}
+                color={inputText.trim() ? '#171A1D' : '#7F8993'}
               />
             )}
           </Pressable>

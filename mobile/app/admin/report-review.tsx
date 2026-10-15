@@ -21,10 +21,7 @@ import { IMAGES } from '../../constants/images';
 import { AdminReport, ReportCategory, ReportStatus } from '../../types';
 import { adminService } from '../../services/adminService';
 
-// =============================================================================
-// DOMAIN METADATA CONFIGURATION
-// =============================================================================
-
+// Domain Metadata
 const CATEGORY_META: Record<
   ReportCategory,
   { label: string; badgeVariant: 'rust' | 'stone' | 'olive'; description: string }
@@ -103,7 +100,6 @@ function formatTimeAgo(dateString: string): string {
 export default function ReportReviewScreen() {
   const { currentUser } = useAuthStore();
 
-  // Strict Admin Role Guard
   const isAdmin = currentUser?.role === 'ADMIN';
 
   // Live state
@@ -114,17 +110,15 @@ export default function ReportReviewScreen() {
   // Filters
   const [activeFilter, setActiveFilter] = useState<'OPEN' | 'FOLLOW_UP' | 'RESOLVED' | 'DISMISSED' | 'ALL'>('OPEN');
 
-  // Confirmation dialog state (resolve, dismiss, or follow_up)
+  // Confirmation dialog state
   const [confirmModal, setConfirmModal] = useState<{
     action: 'RESOLVE' | 'DISMISS' | 'FOLLOW_UP';
     report: AdminReport;
   } | null>(null);
 
-  // Optional local admin review note state & submission loading
   const [adminNoteInput, setAdminNoteInput] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  // Inline detail inspection modal state
   const [inspectReport, setInspectReport] = useState<AdminReport | null>(null);
 
   const fetchReports = useCallback(async () => {
@@ -158,25 +152,25 @@ export default function ReportReviewScreen() {
   // =========================================================================
   if (!isAdmin) {
     return (
-      <SafeAreaView className="flex-1 bg-warm-white" edges={['top']}>
+      <SafeAreaView className="flex-1 bg-[#171A1D]" edges={['top']}>
         <ArenaHeader
-          title="MAIDAAN"
-          subtitle="ADMIN DESK // ACCESS RESTRICTION"
+          title="Report Review"
+          subtitle="Access Restriction"
           showBack
           onBack={() => router.replace('/(tabs)/discover')}
         />
-        <View className="flex-1 items-center justify-center p-6 bg-warm-white">
-          <View className="w-16 h-16 rounded-full bg-rust/10 items-center justify-center border border-rust/30 mb-5">
-            <Ionicons name="shield-outline" size={28} color="#875646" />
+        <View className="flex-1 items-center justify-center p-6 bg-[#171A1D]">
+          <View className="w-16 h-16 rounded-full bg-[#F4A261]/10 items-center justify-center border border-[#F4A261]/30 mb-5">
+            <Ionicons name="shield-outline" size={28} color="#F4A261" />
           </View>
 
-          <ArenaBadge label="ADMIN ACCESS REQUIRED" variant="rust" size="md" />
+          <ArenaBadge label="ADMIN REQUIRED" variant="rust" size="md" />
 
-          <Text className="text-graphite text-lg font-black uppercase tracking-tight text-center mt-3">
-            ADMIN ACCESS REQUIRED
+          <Text className="text-[#F4F6F7] text-lg font-black uppercase tracking-tight text-center mt-3">
+            Admin Access Required
           </Text>
 
-          <Text className="text-stone-muted text-sm text-center mt-2 max-w-[310px] leading-5">
+          <Text className="text-[#A0A5AD] text-sm text-center mt-2 max-w-[310px] leading-5">
             This review desk is restricted to Maidaan administrators.
           </Text>
 
@@ -274,44 +268,38 @@ export default function ReportReviewScreen() {
     }
   };
 
-  // =========================================================================
-  // 4. MAIN SCREEN RENDER
-  // =========================================================================
   return (
-    <SafeAreaView className="flex-1 bg-warm-white" edges={['top']}>
-      {/* Header */}
+    <SafeAreaView className="flex-1 bg-[#171A1D]" edges={['top']}>
+      {/* Modern Athletic Header */}
       <ArenaHeader
-        title="REPORT REVIEW"
-        subtitle="ADMIN DESK // CONDUCT REVIEWS"
+        title="Report Review"
+        subtitle="Fair Play & Conduct"
         showBack
         onBack={() => router.replace('/admin/dashboard')}
-        rightAction={
-          <ArenaBadge label="SCREEN 22" variant="stone" size="sm" />
-        }
       />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 56 }}
       >
-        {/* RESTRAINED CONDUCT AUDIT BANNER */}
+        {/* Banner */}
         <View className="px-4 pt-3">
-          <View className="h-16 w-full rounded-sm overflow-hidden border border-stone relative bg-graphite">
+          <View className="h-18 w-full rounded-2xl overflow-hidden border border-white/10 relative bg-[#1F2327]">
             <Image
               source={IMAGES.arenaGround}
               className="w-full h-full opacity-35"
               resizeMode="cover"
             />
-            <View className="absolute inset-0 px-3.5 py-2 flex-row items-center justify-between">
+            <View className="absolute inset-0 px-4 py-3 flex-row items-center justify-between bg-gradient-to-r from-[#171A1D]/80 to-transparent">
               <View className="flex-1 pr-2">
-                <Text className="text-stone-muted text-[9px] font-mono uppercase tracking-widest font-bold">
-                  FAIR PLAY GOVERNANCE DESK
+                <Text className="text-[#7F8993] text-[10px] font-mono uppercase tracking-widest font-bold">
+                  Fair Play Governance
                 </Text>
                 <Text
                   numberOfLines={1}
-                  className="text-warm-white text-sm font-black uppercase tracking-tight"
+                  className="text-[#F4F6F7] text-base font-black uppercase tracking-tight"
                 >
-                  CONDUCT & SAFETY AUDIT
+                  Conduct & Safety Audit
                 </Text>
               </View>
               <ArenaBadge
@@ -323,37 +311,35 @@ export default function ReportReviewScreen() {
           </View>
         </View>
 
-        {/* PAGE TITLE & CONTEXT */}
+        {/* Page Title & Context */}
         <View className="px-4 pt-3 pb-1">
-          <Text className="text-graphite text-xl font-black uppercase tracking-tight">
-            USER CONDUCT REPORTS
+          <Text className="text-[#F4F6F7] text-xl font-black uppercase tracking-tight">
+            User Conduct Reports
           </Text>
-          <Text className="text-stone-muted text-xs leading-4 mt-0.5">
+          <Text className="text-[#A0A5AD] text-xs leading-4 mt-0.5">
             Audit user-submitted conduct and safety concerns. Review incident summaries, verify match context, and resolve platform reports.
           </Text>
         </View>
 
-        {/* ================================================================= */}
         {/* SUMMARY STRIP */}
-        {/* ================================================================= */}
         <View className="px-4 mt-3">
           <View className="flex-row gap-2">
             {/* OPEN */}
             <Pressable
               onPress={() => setActiveFilter('OPEN')}
-              className={`flex-1 rounded-sm p-3 border ${
+              className={`flex-1 rounded-2xl p-3.5 border ${
                 activeFilter === 'OPEN'
-                  ? 'bg-rust/15 border-rust'
-                  : 'bg-stone/20 border-stone'
+                  ? 'bg-[#F4A261]/15 border-[#F4A261]'
+                  : 'bg-[#1F2327] border-white/10'
               }`}
             >
-              <Text className="text-stone-muted text-[9px] font-mono uppercase tracking-wider font-bold">
+              <Text className="text-[#7F8993] text-[10px] font-mono uppercase tracking-wider font-bold">
                 OPEN
               </Text>
-              <Text className="text-rust text-xl font-black tracking-tight mt-0.5">
+              <Text className="text-[#F4A261] text-2xl font-black tracking-tight mt-0.5">
                 {openCount}
               </Text>
-              <Text className="text-stone-muted text-[10px] font-medium">
+              <Text className="text-[#A0A5AD] text-[10px] font-medium mt-0.5">
                 Unreviewed
               </Text>
             </Pressable>
@@ -361,19 +347,19 @@ export default function ReportReviewScreen() {
             {/* FOLLOW-UP */}
             <Pressable
               onPress={() => setActiveFilter('FOLLOW_UP')}
-              className={`flex-1 rounded-sm p-3 border ${
+              className={`flex-1 rounded-2xl p-3.5 border ${
                 activeFilter === 'FOLLOW_UP'
-                  ? 'bg-stone/40 border-graphite'
-                  : 'bg-stone/20 border-stone'
+                  ? 'bg-[#272C31] border-white/30'
+                  : 'bg-[#1F2327] border-white/10'
               }`}
             >
-              <Text className="text-stone-muted text-[9px] font-mono uppercase tracking-wider font-bold">
+              <Text className="text-[#7F8993] text-[10px] font-mono uppercase tracking-wider font-bold">
                 FOLLOW-UP
               </Text>
-              <Text className="text-graphite text-xl font-black tracking-tight mt-0.5">
+              <Text className="text-[#F4F6F7] text-2xl font-black tracking-tight mt-0.5">
                 {followUpCount}
               </Text>
-              <Text className="text-stone-muted text-[10px] font-medium">
+              <Text className="text-[#A0A5AD] text-[10px] font-medium mt-0.5">
                 Clarification
               </Text>
             </Pressable>
@@ -381,38 +367,36 @@ export default function ReportReviewScreen() {
             {/* RESOLVED */}
             <Pressable
               onPress={() => setActiveFilter('RESOLVED')}
-              className={`flex-1 rounded-sm p-3 border ${
+              className={`flex-1 rounded-2xl p-3.5 border ${
                 activeFilter === 'RESOLVED'
-                  ? 'bg-arena-olive/20 border-arena-olive'
-                  : 'bg-stone/20 border-stone'
+                  ? 'bg-[#E85D26]/15 border-[#E85D26]'
+                  : 'bg-[#1F2327] border-white/10'
               }`}
             >
-              <Text className="text-stone-muted text-[9px] font-mono uppercase tracking-wider font-bold">
+              <Text className="text-[#7F8993] text-[10px] font-mono uppercase tracking-wider font-bold">
                 RESOLVED
               </Text>
-              <Text className="text-arena-olive text-xl font-black tracking-tight mt-0.5">
+              <Text className="text-[#E85D26] text-2xl font-black tracking-tight mt-0.5">
                 {resolvedCount}
               </Text>
-              <Text className="text-stone-muted text-[10px] font-medium">
+              <Text className="text-[#A0A5AD] text-[10px] font-medium mt-0.5">
                 Complete
               </Text>
             </Pressable>
           </View>
         </View>
 
-        {/* ================================================================= */}
         {/* FILTER CHIPS */}
-        {/* ================================================================= */}
         <View className="px-4 mt-4">
           <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
-            <View className="flex-row space-x-1.5 bg-stone/20 p-1 rounded-sm border border-stone">
+            <View className="flex-row space-x-1.5 bg-[#1F2327] p-1 rounded-xl border border-white/10">
               {(
                 [
-                  { id: 'OPEN', label: `OPEN (${openCount})` },
-                  { id: 'FOLLOW_UP', label: `FOLLOW-UP (${followUpCount})` },
-                  { id: 'RESOLVED', label: `RESOLVED (${resolvedCount})` },
-                  { id: 'DISMISSED', label: `DISMISSED (${dismissedCount})` },
-                  { id: 'ALL', label: `ALL (${reports.length})` },
+                  { id: 'OPEN', label: `Open (${openCount})` },
+                  { id: 'FOLLOW_UP', label: `Follow-Up (${followUpCount})` },
+                  { id: 'RESOLVED', label: `Resolved (${resolvedCount})` },
+                  { id: 'DISMISSED', label: `Dismissed (${dismissedCount})` },
+                  { id: 'ALL', label: `All (${reports.length})` },
                 ] as const
               ).map((tab) => {
                 const isSelected = activeFilter === tab.id;
@@ -422,14 +406,14 @@ export default function ReportReviewScreen() {
                     onPress={() => setActiveFilter(tab.id)}
                     accessibilityRole="button"
                     accessibilityLabel={`Filter by ${tab.label}`}
-                    className={`px-2.5 py-1.5 items-center justify-center rounded-xs ${
-                      isSelected ? 'bg-graphite shadow-2xs' : 'bg-transparent'
+                    className={`px-3 py-2 items-center justify-center rounded-lg ${
+                      isSelected ? 'bg-[#E85D26]' : 'bg-transparent'
                     }`}
                   >
                     <Text
                       numberOfLines={1}
-                      className={`text-[10px] font-mono uppercase tracking-wider ${
-                        isSelected ? 'text-warm-white font-black' : 'text-stone-muted font-bold'
+                      className={`text-xs uppercase font-bold ${
+                        isSelected ? 'text-[#171A1D]' : 'text-[#A0A5AD]'
                       }`}
                     >
                       {tab.label}
@@ -441,38 +425,35 @@ export default function ReportReviewScreen() {
           </ScrollView>
         </View>
 
-        {/* ================================================================= */}
         {/* REPORT LISTING SECTION */}
-        {/* ================================================================= */}
         <View className="px-4 mt-4">
           <View className="flex-row items-center justify-between mb-2.5">
             <Text
               accessibilityRole="header"
-              className="text-graphite text-[11px] font-mono uppercase tracking-widest font-bold"
+              className="text-[#A0A5AD] text-xs font-mono uppercase tracking-wider font-bold"
             >
-              CONDUCT REPORTS
+              Conduct Reports
             </Text>
-            <Text className="text-stone-muted text-[10px] font-mono">
-              {displayedReports.length} LISTED
+            <Text className="text-[#7F8993] text-[10px] font-mono">
+              {displayedReports.length} Listed
             </Text>
           </View>
 
           {/* LOADING STATE */}
           {loading ? (
-            <View className="bg-white rounded-sm p-8 border border-stone items-center my-2 shadow-2xs">
-              <ActivityIndicator size="small" color="#242522" />
-              <Text className="text-stone-muted text-xs font-mono mt-3 uppercase tracking-wider">
-                LOADING CONDUCT REPORTS...
+            <View className="bg-[#1F2327] rounded-2xl p-8 border border-white/10 items-center my-2">
+              <ActivityIndicator size="small" color="#E85D26" />
+              <Text className="text-[#A0A5AD] text-xs font-mono mt-3 uppercase tracking-wider">
+                Loading Conduct Reports...
               </Text>
             </View>
           ) : error ? (
-            /* ERROR STATE */
-            <View className="bg-white rounded-sm p-6 border border-rust/40 items-center my-2 shadow-2xs">
-              <Ionicons name="alert-circle-outline" size={28} color="#875646" />
-              <Text className="text-graphite text-sm font-black uppercase tracking-tight text-center mt-2">
-                FAILED TO LOAD REPORTS
+            <View className="bg-[#1F2327] rounded-2xl p-6 border border-[#F4A261]/30 items-center my-2">
+              <Ionicons name="alert-circle-outline" size={28} color="#F4A261" />
+              <Text className="text-[#F4F6F7] text-sm font-black uppercase tracking-tight text-center mt-2">
+                Failed to Load Reports
               </Text>
-              <Text className="text-stone-muted text-xs text-center mt-1 leading-4">
+              <Text className="text-[#A0A5AD] text-xs text-center mt-1 leading-4">
                 {error}
               </Text>
               <View className="mt-4 w-full max-w-[200px]">
@@ -484,19 +465,18 @@ export default function ReportReviewScreen() {
               </View>
             </View>
           ) : displayedReports.length === 0 ? (
-            /* EMPTY STATE */
-            <View className="bg-white rounded-sm p-6 border border-stone items-center my-2 shadow-2xs">
-              <View className="w-12 h-12 rounded-full bg-stone/20 border border-stone items-center justify-center mb-3">
-                <Ionicons name="shield-checkmark-outline" size={24} color="#666B60" />
+            <View className="bg-[#1F2327] rounded-2xl p-6 border border-white/10 items-center my-2">
+              <View className="w-12 h-12 rounded-full bg-[#272C31] border border-white/10 items-center justify-center mb-3">
+                <Ionicons name="shield-checkmark-outline" size={24} color="#A0A5AD" />
               </View>
 
-              <Text className="text-graphite text-sm font-black uppercase tracking-tight text-center">
+              <Text className="text-[#F4F6F7] text-sm font-black uppercase tracking-tight text-center">
                 {activeFilter === 'OPEN'
-                  ? 'NO REPORTS WAITING'
-                  : 'NO REPORTS IN THIS STATUS'}
+                  ? 'No Reports Waiting'
+                  : 'No Reports in this Status'}
               </Text>
 
-              <Text className="text-stone-muted text-xs text-center mt-1 max-w-[260px] leading-4">
+              <Text className="text-[#A0A5AD] text-xs text-center mt-1 max-w-[260px] leading-4">
                 {activeFilter === 'OPEN'
                   ? 'New conduct and safety reports will appear here for review.'
                   : `No conduct reports matching the "${activeFilter}" filter.`}
@@ -518,21 +498,20 @@ export default function ReportReviewScreen() {
               const isOpen = item.status === 'OPEN';
               const isFollowUp = item.status === 'FOLLOW_UP';
               const isResolved = item.status === 'RESOLVED';
-              const isDismissed = item.status === 'DISMISSED';
 
-              const reporterDisplay = item.reporterName || 'ANONYMOUS';
-              const reportedDisplay = item.reportedUserName || 'UNKNOWN ACCOUNT';
+              const reporterDisplay = item.reporterName || 'Anonymous';
+              const reportedDisplay = item.reportedUserName || 'Unknown Account';
 
               return (
                 <View
                   key={item.id}
-                  className="bg-white rounded-sm border border-stone p-4 mb-3 shadow-2xs"
+                  className="bg-[#1F2327] rounded-2xl border border-white/10 p-4 mb-3 shadow-sm"
                 >
                   {/* Top Bar: Category & Status Badges */}
                   <View className="flex-row items-center justify-between">
                     <View className="flex-row items-center">
-                      <View className="bg-stone/20 px-2 py-0.5 rounded-xs border border-stone/60 mr-2">
-                        <Text className="text-graphite text-[9px] font-mono font-bold uppercase">
+                      <View className="bg-[#272C31] px-2.5 py-0.5 rounded-lg border border-white/10 mr-2">
+                        <Text className="text-[#A0A5AD] text-[10px] font-mono font-bold uppercase">
                           {item.id.slice(0, 8).toUpperCase()}
                         </Text>
                       </View>
@@ -551,26 +530,26 @@ export default function ReportReviewScreen() {
                   </View>
 
                   {/* Parties Strip: Reporter & Reported Account */}
-                  <View className="mt-3 pt-2.5 border-t border-stone/30 flex-row items-center justify-between">
+                  <View className="mt-3 pt-2.5 border-t border-white/5 flex-row items-center justify-between">
                     <View className="flex-1 pr-2">
-                      <Text className="text-stone-muted text-[9px] font-mono uppercase font-bold">
-                        REPORTER
+                      <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold">
+                        Reporter
                       </Text>
                       <Text
                         numberOfLines={1}
-                        className="text-graphite text-xs font-bold uppercase mt-0.5"
+                        className="text-[#F4F6F7] text-xs font-bold uppercase mt-0.5"
                       >
                         {reporterDisplay}
                       </Text>
                     </View>
 
                     <View className="flex-1 pl-2 items-end">
-                      <Text className="text-stone-muted text-[9px] font-mono uppercase font-bold">
-                        REPORTED ACCOUNT
+                      <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold">
+                        Reported Account
                       </Text>
                       <Text
                         numberOfLines={1}
-                        className="text-graphite text-xs font-bold uppercase mt-0.5 text-right"
+                        className="text-[#F4F6F7] text-xs font-bold uppercase mt-0.5 text-right"
                       >
                         {reportedDisplay}
                       </Text>
@@ -578,53 +557,52 @@ export default function ReportReviewScreen() {
                   </View>
 
                   {/* Incident Summary */}
-                  <View className="mt-2.5 p-3 bg-stone/15 rounded-xs border border-stone/30">
-                    <Text className="text-stone-muted text-[9px] font-mono uppercase font-bold mb-1">
-                      INCIDENT SUMMARY
+                  <View className="mt-2.5 p-3 bg-[#272C31] rounded-xl border border-white/5">
+                    <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold mb-1">
+                      Incident Summary
                     </Text>
-                    <Text className="text-graphite text-xs leading-4 font-medium">
+                    <Text className="text-[#F4F6F7] text-xs leading-4 font-medium">
                       {item.description}
                     </Text>
-                    <Text className="text-stone-muted text-[9px] font-mono mt-2">
-                      SUBMITTED {formatTimeAgo(item.createdAt).toUpperCase()}
+                    <Text className="text-[#7F8993] text-[10px] font-mono mt-2">
+                      Submitted {formatTimeAgo(item.createdAt)}
                     </Text>
                   </View>
 
-                  {/* Match Context Box (if valid match info exists) */}
+                  {/* Match Context Box */}
                   {item.matchId ? (
-                    <View className="mt-2.5 p-2.5 bg-white rounded-xs border border-stone/60">
+                    <View className="mt-2.5 p-3 bg-[#272C31] rounded-xl border border-white/10">
                       <View className="flex-row items-center justify-between mb-1">
-                        <Text className="text-stone-muted text-[9px] font-mono uppercase font-bold">
-                          ASSOCIATED MATCH
+                        <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold">
+                          Associated Match
                         </Text>
-                        <Text className="text-stone-muted text-[9px] font-mono">
+                        <Text className="text-[#E85D26] text-[10px] font-mono">
                           {item.matchId.slice(0, 8).toUpperCase()}
                         </Text>
                       </View>
 
                       <Text
-                        className="text-graphite text-xs font-black uppercase tracking-tight"
+                        className="text-[#F4F6F7] text-xs font-black uppercase tracking-tight"
                         numberOfLines={1}
                       >
-                        {item.matchTitle || 'UNNAMED MATCH'}
+                        {item.matchTitle || 'Unnamed Match'}
                       </Text>
 
-                      <View className="flex-row items-center justify-between mt-1 pt-1 border-t border-stone/20">
-                        <Text className="text-stone-muted text-[10px] font-mono" numberOfLines={1}>
-                          {(item.matchSport || 'SPORTS').toUpperCase()} • MATCH REF
+                      <View className="flex-row items-center justify-between mt-1.5 pt-1.5 border-t border-white/5">
+                        <Text className="text-[#A0A5AD] text-[10px] font-mono" numberOfLines={1}>
+                          {(item.matchSport || 'SPORTS').toUpperCase()} • Match Ref
                         </Text>
 
-                        {/* View Match Details CTA */}
                         <Pressable
                           onPress={() => router.push(`/match/${item.matchId}`)}
                           accessibilityRole="button"
                           accessibilityLabel={`View match ${item.matchTitle || item.matchId}`}
                           className="flex-row items-center"
                         >
-                          <Text className="text-graphite text-[10px] font-mono uppercase font-bold mr-0.5">
-                            VIEW MATCH
+                          <Text className="text-[#E85D26] text-[10px] font-bold uppercase mr-1">
+                            View Match
                           </Text>
-                          <Ionicons name="chevron-forward" size={10} color="#242522" />
+                          <Ionicons name="chevron-forward" size={11} color="#E85D26" />
                         </Pressable>
                       </View>
                     </View>
@@ -632,18 +610,18 @@ export default function ReportReviewScreen() {
 
                   {/* Admin Note if already added */}
                   {item.adminNote ? (
-                    <View className="mt-2.5 p-2 bg-stone/20 rounded-xs border border-stone/50">
-                      <Text className="text-stone-muted text-[9px] font-mono uppercase font-bold">
-                        ADMIN NOTE:
+                    <View className="mt-2.5 p-2.5 bg-[#272C31] rounded-xl border border-white/5">
+                      <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold">
+                        Admin Note:
                       </Text>
-                      <Text className="text-graphite text-[11px] leading-4 mt-0.5">
+                      <Text className="text-[#F4F6F7] text-xs leading-4 mt-0.5">
                         {item.adminNote}
                       </Text>
                     </View>
                   ) : null}
 
-                  {/* Review Actions & Status Transition Strip */}
-                  <View className="mt-3 pt-2.5 border-t border-stone/30">
+                  {/* Review Actions */}
+                  <View className="mt-3 pt-2.5 border-t border-white/5">
                     {isOpen ? (
                       <View>
                         <View className="flex-row gap-2">
@@ -652,10 +630,10 @@ export default function ReportReviewScreen() {
                             onPress={() => handleOpenConfirm('RESOLVE', item)}
                             accessibilityRole="button"
                             accessibilityLabel={`Resolve report ${item.id}`}
-                            className="flex-1 py-2.5 rounded-xs bg-arena-olive border border-arena-olive items-center justify-center active:bg-olive-dark"
+                            className="flex-1 py-3 rounded-xl bg-[#E85D26] border border-[#E85D26] items-center justify-center active:opacity-90"
                           >
-                            <Text className="text-warm-white text-xs font-black uppercase tracking-wider">
-                              RESOLVE REPORT
+                            <Text className="text-[#171A1D] text-xs font-black uppercase tracking-wider">
+                              Resolve Report
                             </Text>
                           </Pressable>
 
@@ -664,10 +642,10 @@ export default function ReportReviewScreen() {
                             onPress={() => handleOpenConfirm('DISMISS', item)}
                             accessibilityRole="button"
                             accessibilityLabel={`Dismiss report ${item.id}`}
-                            className="flex-1 py-2.5 rounded-xs bg-warm-white border border-stone items-center justify-center active:bg-stone/20"
+                            className="flex-1 py-3 rounded-xl bg-[#272C31] border border-white/10 items-center justify-center active:bg-white/5"
                           >
-                            <Text className="text-graphite text-xs font-bold uppercase tracking-wide">
-                              DISMISS REPORT
+                            <Text className="text-[#F4F6F7] text-xs font-bold uppercase tracking-wide">
+                              Dismiss
                             </Text>
                           </Pressable>
                         </View>
@@ -677,24 +655,24 @@ export default function ReportReviewScreen() {
                           onPress={() => handleOpenConfirm('FOLLOW_UP', item)}
                           accessibilityRole="button"
                           accessibilityLabel={`Mark report ${item.id} as needing follow up`}
-                          className="mt-2 py-2 rounded-xs bg-stone/20 border border-stone items-center justify-center active:bg-stone/30"
+                          className="mt-2 py-2.5 rounded-xl bg-[#272C31] border border-white/10 items-center justify-center active:bg-white/5"
                         >
-                          <Text className="text-graphite text-[10px] font-mono uppercase font-bold">
-                            NEEDS FOLLOW-UP
+                          <Text className="text-[#A0A5AD] text-xs font-bold uppercase">
+                            Needs Follow-Up
                           </Text>
                         </Pressable>
                       </View>
                     ) : isFollowUp ? (
                       <View>
-                        <View className="p-2.5 bg-rust/10 rounded-xs border border-rust/30 mb-2.5 flex-row items-center justify-between">
+                        <View className="p-3 bg-[#F4A261]/10 rounded-xl border border-[#F4A261]/30 mb-2.5 flex-row items-center justify-between">
                           <View className="flex-row items-center flex-1 pr-2">
-                            <Ionicons name="time-outline" size={16} color="#875646" />
+                            <Ionicons name="time-outline" size={16} color="#F4A261" />
                             <View className="ml-2 flex-1">
-                              <Text className="text-rust text-xs font-black uppercase tracking-tight">
-                                FOLLOW-UP REQUIRED
+                              <Text className="text-[#F4A261] text-xs font-black uppercase tracking-tight">
+                                Follow-up Required
                               </Text>
-                              <Text className="text-stone-muted text-[9px] font-mono">
-                                This means additional platform review is needed later.
+                              <Text className="text-[#A0A5AD] text-[10px]">
+                                Additional platform review is needed later.
                               </Text>
                             </View>
                           </View>
@@ -706,51 +684,49 @@ export default function ReportReviewScreen() {
                             onPress={() => handleOpenConfirm('RESOLVE', item)}
                             accessibilityRole="button"
                             accessibilityLabel={`Resolve report ${item.id}`}
-                            className="flex-1 py-2 rounded-xs bg-arena-olive border border-arena-olive items-center justify-center active:bg-olive-dark"
+                            className="flex-1 py-3 rounded-xl bg-[#E85D26] border border-[#E85D26] items-center justify-center active:opacity-90"
                           >
-                            <Text className="text-warm-white text-xs font-black uppercase tracking-wider">
-                              RESOLVE REPORT
+                            <Text className="text-[#171A1D] text-xs font-black uppercase tracking-wider">
+                              Resolve
                             </Text>
                           </Pressable>
                           <Pressable
                             onPress={() => handleOpenConfirm('DISMISS', item)}
                             accessibilityRole="button"
                             accessibilityLabel={`Dismiss report ${item.id}`}
-                            className="flex-1 py-2 rounded-xs bg-warm-white border border-stone items-center justify-center active:bg-stone/20"
+                            className="flex-1 py-3 rounded-xl bg-[#272C31] border border-white/10 items-center justify-center active:bg-white/5"
                           >
-                            <Text className="text-graphite text-xs font-bold uppercase tracking-wide">
-                              DISMISS REPORT
+                            <Text className="text-[#F4F6F7] text-xs font-bold uppercase tracking-wide">
+                              Dismiss
                             </Text>
                           </Pressable>
                         </View>
                       </View>
                     ) : isResolved ? (
-                      /* RESOLVED STATUS STRIP */
-                      <View className="p-2.5 bg-arena-olive/15 rounded-xs border border-arena-olive/30 flex-row items-center justify-between">
+                      <View className="p-3 bg-[#E85D26]/10 rounded-xl border border-[#E85D26]/30 flex-row items-center justify-between">
                         <View className="flex-row items-center">
-                          <Ionicons name="checkmark-circle" size={16} color="#3D4438" />
+                          <Ionicons name="checkmark-circle" size={18} color="#E85D26" />
                           <View className="ml-2">
-                            <Text className="text-arena-olive text-xs font-black uppercase tracking-tight">
-                              RESOLVED
+                            <Text className="text-[#E85D26] text-xs font-black uppercase tracking-tight">
+                              Resolved
                             </Text>
-                            <Text className="text-stone-muted text-[9px] font-mono">
-                              PLATFORM REVIEW COMPLETE
+                            <Text className="text-[#A0A5AD] text-[10px] font-mono">
+                              Platform review complete
                             </Text>
                           </View>
                         </View>
                         <ArenaBadge label="RESOLVED" variant="olive" size="sm" />
                       </View>
                     ) : (
-                      /* DISMISSED STATUS STRIP */
-                      <View className="p-2.5 bg-stone/20 rounded-xs border border-stone/50 flex-row items-center justify-between">
+                      <View className="p-3 bg-[#272C31] rounded-xl border border-white/10 flex-row items-center justify-between">
                         <View className="flex-row items-center">
-                          <Ionicons name="close-circle-outline" size={16} color="#666B60" />
+                          <Ionicons name="close-circle-outline" size={18} color="#A0A5AD" />
                           <View className="ml-2">
-                            <Text className="text-graphite text-xs font-bold uppercase tracking-tight">
-                              DISMISSED
+                            <Text className="text-[#F4F6F7] text-xs font-bold uppercase tracking-tight">
+                              Dismissed
                             </Text>
-                            <Text className="text-stone-muted text-[9px] font-mono">
-                              NO FURTHER PLATFORM REVIEW REQUIRED
+                            <Text className="text-[#7F8993] text-[10px] font-mono">
+                              No further review required
                             </Text>
                           </View>
                         </View>
@@ -763,16 +739,16 @@ export default function ReportReviewScreen() {
                       onPress={() => setInspectReport(item)}
                       accessibilityRole="button"
                       accessibilityLabel={`View full report sheet for ${item.id}`}
-                      className="mt-2.5 pt-2 border-t border-stone/20 flex-row items-center justify-between"
+                      className="mt-2.5 pt-2 border-t border-white/5 flex-row items-center justify-between"
                     >
-                      <Text className="text-stone-muted text-[10px] font-mono uppercase font-bold">
-                        VIEW CASE DETAILS SHEET
+                      <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold">
+                        View Case Details Sheet
                       </Text>
                       <View className="flex-row items-center">
-                        <Text className="text-graphite text-[10px] font-bold mr-1">
+                        <Text className="text-[#A0A5AD] text-[10px] font-bold mr-1">
                           {item.id.slice(0, 8).toUpperCase()}
                         </Text>
-                        <Ionicons name="chevron-forward" size={12} color="#242522" />
+                        <Ionicons name="chevron-forward" size={12} color="#A0A5AD" />
                       </View>
                     </Pressable>
                   </View>
@@ -783,26 +759,24 @@ export default function ReportReviewScreen() {
         </View>
       </ScrollView>
 
-      {/* ===================================================================== */}
-      {/* CONFIRMATION MODAL: RESOLVE / DISMISS / FOLLOW-UP */}
-      {/* ===================================================================== */}
+      {/* CONFIRMATION MODAL */}
       <Modal
         visible={!!confirmModal}
         transparent
         animationType="fade"
         onRequestClose={() => !isSubmitting && setConfirmModal(null)}
       >
-        <View className="flex-1 bg-graphite/80 items-center justify-center p-5">
-          <View className="w-full max-w-sm bg-warm-white rounded-sm p-5 border border-stone shadow-xl">
+        <View className="flex-1 bg-[#171A1D]/85 items-center justify-center p-5">
+          <View className="w-full max-w-sm bg-[#1F2327] rounded-2xl p-6 border border-white/10 shadow-2xl">
             {confirmModal ? (
               <>
                 <View
-                  className={`w-12 h-12 rounded-sm items-center justify-center border mb-3 ${
+                  className={`w-12 h-12 rounded-xl items-center justify-center mb-3 ${
                     confirmModal.action === 'RESOLVE'
-                      ? 'bg-arena-olive border-warm-white/20'
+                      ? 'bg-[#E85D26]'
                       : confirmModal.action === 'DISMISS'
-                      ? 'bg-stone/30 border-stone'
-                      : 'bg-rust/20 border-rust/40'
+                      ? 'bg-[#272C31] border border-white/10'
+                      : 'bg-[#F4A261]/20 border border-[#F4A261]/40'
                   }`}
                 >
                   <Ionicons
@@ -814,7 +788,7 @@ export default function ReportReviewScreen() {
                         : 'alert-circle-outline'
                     }
                     size={24}
-                    color={confirmModal.action === 'RESOLVE' ? '#F4F1EA' : '#242522'}
+                    color={confirmModal.action === 'RESOLVE' ? '#171A1D' : '#F4F6F7'}
                   />
                 </View>
 
@@ -836,15 +810,15 @@ export default function ReportReviewScreen() {
                   size="sm"
                 />
 
-                <Text className="text-graphite text-lg font-black uppercase tracking-tight mt-2">
+                <Text className="text-[#F4F6F7] text-lg font-black uppercase tracking-tight mt-2">
                   {confirmModal.action === 'RESOLVE'
-                    ? 'RESOLVE REPORT?'
+                    ? 'Resolve Report?'
                     : confirmModal.action === 'DISMISS'
-                    ? 'DISMISS REPORT?'
-                    : 'NEEDS FOLLOW-UP?'}
+                    ? 'Dismiss Report?'
+                    : 'Needs Follow-Up?'}
                 </Text>
 
-                <Text className="text-stone-muted text-xs leading-4 mt-1">
+                <Text className="text-[#A0A5AD] text-xs leading-4 mt-1">
                   {confirmModal.action === 'RESOLVE'
                     ? 'This will record platform review completion for this conduct report.'
                     : confirmModal.action === 'DISMISS'
@@ -853,19 +827,19 @@ export default function ReportReviewScreen() {
                 </Text>
 
                 {/* Case snapshot */}
-                <View className="my-3 p-2.5 bg-white rounded-xs border border-stone">
-                  <Text className="text-graphite text-xs font-black uppercase" numberOfLines={1}>
+                <View className="my-3 p-3 bg-[#272C31] rounded-xl border border-white/10">
+                  <Text className="text-[#F4F6F7] text-xs font-black uppercase" numberOfLines={1}>
                     {confirmModal.report.id.slice(0, 8).toUpperCase()} • {CATEGORY_META[confirmModal.report.category]?.label || 'REPORT'}
                   </Text>
-                  <Text className="text-stone-muted text-[10px] mt-0.5" numberOfLines={2}>
+                  <Text className="text-[#A0A5AD] text-xs mt-0.5" numberOfLines={2}>
                     {confirmModal.report.description}
                   </Text>
                 </View>
 
                 {/* Optional local admin note input */}
                 <View className="mb-3">
-                  <Text className="text-stone-muted text-[10px] font-mono uppercase font-bold mb-1">
-                    ADMIN NOTE (OPTIONAL)
+                  <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold mb-1.5">
+                    Admin Note (Optional)
                   </Text>
                   <TextInput
                     value={adminNoteInput}
@@ -873,10 +847,10 @@ export default function ReportReviewScreen() {
                     maxLength={300}
                     editable={!isSubmitting}
                     placeholder="e.g. Verified with match coordinator..."
-                    placeholderTextColor="#A0A59A"
-                    className="bg-white border border-stone p-2 rounded-xs text-graphite text-xs min-h-[38px]"
+                    placeholderTextColor="#7F8993"
+                    className="bg-[#272C31] border border-white/10 p-2.5 rounded-xl text-[#F4F6F7] text-xs min-h-[42px]"
                   />
-                  <Text className="text-stone-muted text-[9px] font-mono text-right mt-0.5">
+                  <Text className="text-[#7F8993] text-[9px] font-mono text-right mt-1">
                     {adminNoteInput.length}/300
                   </Text>
                 </View>
@@ -904,10 +878,10 @@ export default function ReportReviewScreen() {
                       setConfirmModal(null);
                       setAdminNoteInput('');
                     }}
-                    className="py-2.5 items-center mt-1"
+                    className="py-3 items-center mt-1"
                   >
-                    <Text className="text-stone-muted text-xs font-bold uppercase tracking-wider">
-                      CANCEL
+                    <Text className="text-[#A0A5AD] text-xs font-bold uppercase tracking-wider">
+                      Cancel
                     </Text>
                   </Pressable>
                 </View>
@@ -917,91 +891,89 @@ export default function ReportReviewScreen() {
         </View>
       </Modal>
 
-      {/* ===================================================================== */}
       {/* INLINE CASE DETAILS SHEET MODAL */}
-      {/* ===================================================================== */}
       <Modal
         visible={!!inspectReport}
         transparent
         animationType="slide"
         onRequestClose={() => setInspectReport(null)}
       >
-        <View className="flex-1 bg-graphite/80 justify-end">
-          <View className="bg-warm-white rounded-t-lg p-5 border-t border-stone max-h-[85%]">
+        <View className="flex-1 bg-[#171A1D]/85 justify-end">
+          <View className="bg-[#1F2327] rounded-t-3xl p-6 border-t border-white/10 max-h-[85%]">
             {inspectReport ? (
               <ScrollView showsVerticalScrollIndicator={false}>
-                <View className="flex-row items-center justify-between pb-3 border-b border-stone/30">
+                <View className="flex-row items-center justify-between pb-3 border-b border-white/5">
                   <View className="flex-1 pr-2">
-                    <Text className="text-stone-muted text-[9px] font-mono uppercase font-bold">
-                      CASE DETAILS AUDIT SHEET
+                    <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold">
+                      Case Details Audit Sheet
                     </Text>
-                    <Text className="text-graphite text-base font-black uppercase tracking-tight mt-0.5">
-                      REPORT #{inspectReport.id.slice(0, 8).toUpperCase()}
+                    <Text className="text-[#F4F6F7] text-lg font-black uppercase tracking-tight mt-0.5">
+                      Report #{inspectReport.id.slice(0, 8).toUpperCase()}
                     </Text>
                   </View>
                   <Pressable
                     onPress={() => setInspectReport(null)}
-                    className="w-8 h-8 rounded-xs bg-stone/20 items-center justify-center border border-stone"
+                    className="w-9 h-9 rounded-xl bg-[#272C31] items-center justify-center border border-white/10"
                   >
-                    <Ionicons name="close" size={18} color="#242522" />
+                    <Ionicons name="close" size={20} color="#F4F6F7" />
                   </Pressable>
                 </View>
 
                 {/* Table Breakdown */}
-                <View className="mt-3 bg-white rounded-sm border border-stone p-3.5 space-y-2.5">
+                <View className="mt-4 bg-[#272C31] rounded-2xl border border-white/10 p-4 space-y-3">
                   <View>
-                    <Text className="text-stone-muted text-[9px] font-mono uppercase font-bold">
-                      INCIDENT CATEGORY
+                    <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold">
+                      Incident Category
                     </Text>
-                    <Text className="text-graphite text-xs font-bold mt-0.5">
+                    <Text className="text-[#F4F6F7] text-xs font-bold mt-0.5">
                       {(CATEGORY_META[inspectReport.category] || CATEGORY_META.OTHER).label} • {(CATEGORY_META[inspectReport.category] || CATEGORY_META.OTHER).description}
                     </Text>
                   </View>
 
-                  <View className="pt-2 border-t border-stone/20">
-                    <Text className="text-stone-muted text-[9px] font-mono uppercase font-bold">
-                      REPORTING PLAYER
+                  <View className="pt-2 border-t border-white/5">
+                    <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold">
+                      Reporting Player
                     </Text>
-                    <Text className="text-graphite text-xs font-bold mt-0.5">
-                      {inspectReport.reporterName || 'ANONYMOUS'}
-                    </Text>
-                  </View>
-
-                  <View className="pt-2 border-t border-stone/20">
-                    <Text className="text-stone-muted text-[9px] font-mono uppercase font-bold">
-                      REPORTED ACCOUNT
-                    </Text>
-                    <Text className="text-graphite text-xs font-bold mt-0.5">
-                      {inspectReport.reportedUserName || 'UNKNOWN ACCOUNT'}
+                    <Text className="text-[#F4F6F7] text-xs font-bold mt-0.5">
+                      {inspectReport.reporterName || 'Anonymous'}
                     </Text>
                   </View>
 
-                  <View className="pt-2 border-t border-stone/20">
-                    <Text className="text-stone-muted text-[9px] font-mono uppercase font-bold">
-                      FULL INCIDENT STATEMENT
+                  <View className="pt-2 border-t border-white/5">
+                    <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold">
+                      Reported Account
                     </Text>
-                    <Text className="text-graphite text-xs leading-4 mt-0.5">
+                    <Text className="text-[#F4F6F7] text-xs font-bold mt-0.5">
+                      {inspectReport.reportedUserName || 'Unknown Account'}
+                    </Text>
+                  </View>
+
+                  <View className="pt-2 border-t border-white/5">
+                    <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold">
+                      Full Incident Statement
+                    </Text>
+                    <Text className="text-[#F4F6F7] text-xs leading-4 mt-0.5">
                       {inspectReport.description}
                     </Text>
                   </View>
 
                   {inspectReport.matchId ? (
-                    <View className="pt-2 border-t border-stone/20">
-                      <Text className="text-stone-muted text-[9px] font-mono uppercase font-bold">
-                        MATCH REFERENCE
+                    <View className="pt-2 border-t border-white/5">
+                      <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold">
+                        Match Reference
                       </Text>
-                      <Text className="text-graphite text-xs font-mono font-bold mt-0.5">
+                      <Text className="text-[#F4F6F7] text-xs font-mono font-bold mt-0.5">
                         {inspectReport.matchTitle ? `${inspectReport.matchTitle} (${inspectReport.matchId})` : inspectReport.matchId}
                       </Text>
                     </View>
                   ) : null}
 
                   {inspectReport.adminNote ? (
-                    <View className="pt-2 border-t border-stone/20">
-                      <Text className="text-stone-muted text-[9px] font-mono uppercase font-bold">
-                        EXISTING ADMINISTRATIVE NOTE
+                    <View className="pt-2 border-t border-white/5">
+                      <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold">
+                        Recorded Audit Note
                       </Text>
-                      <Text className="text-graphite text-xs leading-4 mt-0.5">
+                      <Text className="text-[#F4F6F7] text-xs leading-4 mt-0.5">
                         {inspectReport.adminNote}
                       </Text>
                     </View>
@@ -1009,9 +981,9 @@ export default function ReportReviewScreen() {
                 </View>
 
                 {/* Regulatory Notice */}
-                <View className="mt-3 p-3 bg-stone/20 rounded-sm border border-stone">
-                  <Text className="text-stone-muted text-[10px] font-mono leading-4">
-                    NOTE: Moderation decisions are administrative platform actions under Maidaan Fair Play standards. They do not constitute legal adjudication or criminal investigation.
+                <View className="mt-3 p-3.5 bg-[#272C31] rounded-xl border border-white/5">
+                  <Text className="text-[#7F8993] text-xs leading-4">
+                    Moderation decisions are administrative platform actions under Maidaan Fair Play standards.
                   </Text>
                 </View>
 
@@ -1023,10 +995,10 @@ export default function ReportReviewScreen() {
                         onPress={() => {
                           handleOpenConfirm('RESOLVE', inspectReport);
                         }}
-                        className="flex-1 py-3 rounded-xs bg-arena-olive border border-arena-olive items-center justify-center active:bg-olive-dark"
+                        className="flex-1 py-3 rounded-xl bg-[#E85D26] border border-[#E85D26] items-center justify-center active:opacity-90"
                       >
-                        <Text className="text-warm-white text-xs font-black uppercase tracking-wider">
-                          RESOLVE REPORT
+                        <Text className="text-[#171A1D] text-xs font-black uppercase tracking-wider">
+                          Resolve
                         </Text>
                       </Pressable>
 
@@ -1034,10 +1006,10 @@ export default function ReportReviewScreen() {
                         onPress={() => {
                           handleOpenConfirm('DISMISS', inspectReport);
                         }}
-                        className="flex-1 py-3 rounded-xs bg-warm-white border border-stone items-center justify-center active:bg-stone/20"
+                        className="flex-1 py-3 rounded-xl bg-[#272C31] border border-white/10 items-center justify-center active:bg-white/5"
                       >
-                        <Text className="text-graphite text-xs font-bold uppercase tracking-wide">
-                          DISMISS REPORT
+                        <Text className="text-[#F4F6F7] text-xs font-bold uppercase tracking-wide">
+                          Dismiss
                         </Text>
                       </Pressable>
                     </View>
@@ -1046,10 +1018,10 @@ export default function ReportReviewScreen() {
                       onPress={() => {
                         handleOpenConfirm('FOLLOW_UP', inspectReport);
                       }}
-                      className="py-2.5 rounded-xs bg-stone/20 border border-stone items-center justify-center active:bg-stone/30"
+                      className="py-2.5 rounded-xl bg-[#272C31] border border-white/10 items-center justify-center active:bg-white/5"
                     >
-                      <Text className="text-graphite text-[10px] font-mono uppercase font-bold">
-                        NEEDS FOLLOW-UP
+                      <Text className="text-[#A0A5AD] text-xs font-bold uppercase">
+                        Needs Follow-Up
                       </Text>
                     </Pressable>
                   </View>
@@ -1059,10 +1031,10 @@ export default function ReportReviewScreen() {
                       onPress={() => {
                         handleOpenConfirm('RESOLVE', inspectReport);
                       }}
-                      className="flex-1 py-3 rounded-xs bg-arena-olive border border-arena-olive items-center justify-center active:bg-olive-dark"
+                      className="flex-1 py-3 rounded-xl bg-[#E85D26] border border-[#E85D26] items-center justify-center active:opacity-90"
                     >
-                      <Text className="text-warm-white text-xs font-black uppercase tracking-wider">
-                        RESOLVE REPORT
+                      <Text className="text-[#171A1D] text-xs font-black uppercase tracking-wider">
+                        Resolve
                       </Text>
                     </Pressable>
 
@@ -1070,10 +1042,10 @@ export default function ReportReviewScreen() {
                       onPress={() => {
                         handleOpenConfirm('DISMISS', inspectReport);
                       }}
-                      className="flex-1 py-3 rounded-xs bg-warm-white border border-stone items-center justify-center active:bg-stone/20"
+                      className="flex-1 py-3 rounded-xl bg-[#272C31] border border-white/10 items-center justify-center active:bg-white/5"
                     >
-                      <Text className="text-graphite text-xs font-bold uppercase tracking-wide">
-                        DISMISS REPORT
+                      <Text className="text-[#F4F6F7] text-xs font-bold uppercase tracking-wide">
+                        Dismiss
                       </Text>
                     </Pressable>
                   </View>

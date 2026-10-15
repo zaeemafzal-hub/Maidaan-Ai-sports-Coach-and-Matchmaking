@@ -131,40 +131,41 @@ export default function CreateAccountScreen() {
 
   if (showConfirmation) {
     return (
-      <SafeAreaView className="flex-1 bg-warm-white" edges={['top', 'bottom']}>
+      <SafeAreaView className="flex-1 bg-[#0C0D0E]" edges={['top', 'bottom']}>
         <ArenaHeader
-          title="MAIDAAN"
-          subtitle="ACCOUNT VERIFICATION"
+          title="Account Verification"
+          subtitle="Email Confirmation"
           showBack
           fallbackRoute="/(auth)/role-selection"
           onBack={() => setShowConfirmation(false)}
         />
-        <View className="flex-1 px-6 justify-center items-center">
-          <View className="w-16 h-16 rounded-2xl bg-olive/15 border-2 border-olive items-center justify-center mb-5">
-            <Ionicons name="mail-unread" size={32} color="#3D4438" />
+        <View className="flex-1 px-5 justify-center items-center">
+          <View className="w-16 h-16 rounded-2xl bg-brand-primary/15 border border-brand-primary/30 items-center justify-center mb-5">
+            <Ionicons name="mail-unread" size={32} color="#E85D26" />
           </View>
-          <Text className="text-rust text-xs font-black uppercase tracking-widest mb-1.5">
-            EMAIL CONFIRMATION REQUIRED
+          <Text className="text-brand-primary text-xs font-bold uppercase tracking-wider mb-1.5">
+            Email Confirmation Required
           </Text>
-          <Text className="text-graphite text-2xl font-black uppercase text-center mb-2 tracking-tight">
+          <Text className="text-white text-2xl font-bold text-center mb-2 tracking-tight">
             Check Your Inbox
           </Text>
-          <Text className="text-stone-muted text-sm text-center font-medium leading-relaxed mb-4 max-w-xs">
-            We have dispatched a verification link to:
+          <Text className="text-[#A0A5AD] text-sm text-center font-normal leading-relaxed mb-4 max-w-xs">
+            We sent a verification link to:
           </Text>
-          <View className="px-4 py-2 bg-stone-light border border-stone rounded-lg mb-6">
-            <Text className="text-graphite text-xs font-black uppercase tracking-wider">
+          <View className="px-4 py-2 bg-[#141518] border border-white/[0.08] rounded-xl mb-6">
+            <Text className="text-white text-xs font-semibold">
               {email}
             </Text>
           </View>
-          <Text className="text-stone-muted text-xs text-center font-medium leading-relaxed mb-8 max-w-xs">
-            Please confirm your email address by clicking the link, then log in to complete your athlete roster setup.
+          <Text className="text-[#5C616A] text-xs text-center font-normal leading-relaxed mb-8 max-w-xs">
+            Please confirm your email address by clicking the link, then sign in to complete your profile setup.
           </Text>
           <View className="w-full max-w-xs">
             <PrimaryButton
-              title="PROCEED TO LOG IN"
+              title="Proceed to Sign In"
               onPress={handleLogin}
               variant="primary"
+              size="lg"
             />
           </View>
         </View>
@@ -173,16 +174,16 @@ export default function CreateAccountScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-warm-white" edges={['top', 'bottom']}>
+    <SafeAreaView className="flex-1 bg-[#0C0D0E]" edges={['top', 'bottom']}>
       <ArenaHeader
-        title="MAIDAAN"
-        subtitle="REGISTRATION"
+        title="Create Account"
+        subtitle="Step 2 of 2"
         showBack
         fallbackRoute="/(auth)/role-selection"
         rightAction={
-          <Pressable onPress={handleLogin} className="py-1 px-2.5">
-            <Text className="text-olive text-xs font-black uppercase tracking-wider">
-              LOG IN
+          <Pressable onPress={handleLogin} className="py-1.5 px-3 rounded-full bg-brand-primary/15 border border-brand-primary/30">
+            <Text className="text-brand-primary text-xs font-semibold uppercase tracking-wider">
+              Log In
             </Text>
           </Pressable>
         }
@@ -197,32 +198,32 @@ export default function CreateAccountScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* Upper 35% Hero Sports Photography */}
-          <View className="h-44 w-full relative bg-graphite overflow-hidden">
+          {/* Upper Hero Sports Photography */}
+          <View className="h-44 w-full relative bg-[#141518] overflow-hidden">
             <Image
               source={IMAGES.arenaOnboard}
               className="w-full h-full object-cover"
               resizeMode="cover"
             />
-            <View className="absolute inset-0 bg-graphite/40" />
+            <View className="absolute inset-0 bg-[#0C0D0E]/60" />
 
-            <View className="absolute bottom-3 left-6 right-6">
-              <View className="flex-row items-center self-start px-2 py-0.5 rounded-sm bg-graphite/90 border border-stone/30 mb-1">
-                <Text className="text-warm-white text-[10px] font-bold uppercase tracking-wider">
-                  ROLE: {selectedRole || 'PLAYER'}
+            <View className="absolute bottom-4 left-5 right-5">
+              <View className="flex-row items-center self-start px-2.5 py-0.5 rounded-full bg-brand-primary/15 border border-brand-primary/30 mb-1.5">
+                <Text className="text-brand-primary text-[10px] font-bold uppercase tracking-wider">
+                  Role: {selectedRole || 'PLAYER'}
                 </Text>
               </View>
-              <Text className="text-warm-white text-2xl font-black uppercase tracking-tight">
+              <Text className="text-white text-2xl font-bold tracking-tight">
                 Create Your Account
               </Text>
             </View>
           </View>
 
           {/* Form Content */}
-          <View className="px-6 pt-5 pb-6">
+          <View className="px-5 pt-5 pb-6">
             {errors.general && (
-              <View className="mb-4 p-3 rounded-lg bg-rust/15 border border-rust">
-                <Text className="text-rust text-xs font-bold text-center">
+              <View className="mb-4 p-3.5 rounded-xl bg-error/15 border border-error/30">
+                <Text className="text-error text-xs font-medium text-center">
                   {errors.general}
                 </Text>
               </View>
@@ -230,7 +231,7 @@ export default function CreateAccountScreen() {
 
             <View className="space-y-4">
               <FormInput
-                label="FULL NAME"
+                label="Full Name"
                 value={fullName}
                 onChangeText={(text) => {
                   setFullName(text);
@@ -242,7 +243,7 @@ export default function CreateAccountScreen() {
               />
 
               <FormInput
-                label="EMAIL ADDRESS"
+                label="Email Address"
                 value={email}
                 onChangeText={(text) => {
                   setEmail(text);
@@ -256,7 +257,7 @@ export default function CreateAccountScreen() {
               />
 
               <FormInput
-                label="PASSWORD"
+                label="Password"
                 value={password}
                 onChangeText={(text) => {
                   setPassword(text);
@@ -276,7 +277,7 @@ export default function CreateAccountScreen() {
                     <Ionicons
                       name={showPassword ? 'eye-off-outline' : 'eye-outline'}
                       size={20}
-                      color="#666B60"
+                      color="#A0A5AD"
                     />
                   </Pressable>
                 }
@@ -295,45 +296,48 @@ export default function CreateAccountScreen() {
               className="flex-row items-start mt-4 mb-2 active:opacity-80"
             >
               <View
-                className={`w-5 h-5 rounded-sm border items-center justify-center mt-0.5 mr-3 ${
-                  acceptedTerms ? 'bg-olive border-olive' : 'border-stone bg-warm-white'
+                className={`w-5 h-5 rounded-md border items-center justify-center mt-0.5 mr-3 ${
+                  acceptedTerms
+                    ? 'bg-brand-primary border-brand-primary'
+                    : 'border-white/[0.08] bg-[#141518]'
                 }`}
               >
                 {acceptedTerms && (
-                  <Ionicons name="checkmark" size={14} color="#F4F1EA" />
+                  <Ionicons name="checkmark" size={14} color="#FFFFFF" />
                 )}
               </View>
 
-              <Text className="text-stone-muted text-xs leading-relaxed flex-1 font-medium">
-                I agree to the Maidaan Match-Day Code of Conduct, Rules of Play, and Community Terms.
+              <Text className="text-[#A0A5AD] text-xs leading-relaxed flex-1 font-normal">
+                I agree to the Maidaan Fair Play Code of Conduct, Rules of Play, and Community Terms.
               </Text>
             </Pressable>
 
             {errors.terms && (
-              <Text className="text-rust text-xs font-semibold mb-2 ml-8">
+              <Text className="text-error text-xs font-medium mb-2 ml-8">
                 {errors.terms}
               </Text>
             )}
 
             {/* Submit Button */}
-            <View className="mt-5">
+            <View className="mt-6">
               <PrimaryButton
-                title="ENTER THE ARENA"
+                title="Create Account"
                 onPress={handleCreateAccount}
                 loading={isSubmitting}
                 variant="primary"
+                size="lg"
                 testID="create-account-button"
               />
 
               <Pressable
                 onPress={handleLogin}
-                className="w-full py-3.5 items-center justify-center mt-3 active:opacity-70 min-h-[44px]"
+                className="w-full py-4 items-center justify-center mt-3 active:opacity-75 min-h-[44px]"
                 accessibilityRole="button"
                 accessibilityLabel="Already registered? Log in"
               >
-                <Text className="text-stone-muted text-xs font-bold uppercase tracking-wider">
-                  ALREADY ON THE BOARD?{' '}
-                  <Text className="text-graphite underline font-black">LOG IN</Text>
+                <Text className="text-[#5C616A] text-sm font-medium">
+                  Already have an account?{' '}
+                  <Text className="text-brand-primary font-semibold">Log In</Text>
                 </Text>
               </Pressable>
             </View>

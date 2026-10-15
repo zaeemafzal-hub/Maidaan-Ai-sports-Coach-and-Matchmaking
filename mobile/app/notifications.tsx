@@ -184,11 +184,11 @@ export default function NotificationsScreen() {
   });
 
   return (
-    <SafeAreaView className="flex-1 bg-warm-white" edges={['top', 'bottom']}>
-      {/* Concrete Arena Header */}
+    <SafeAreaView className="flex-1 bg-[#171A1D]" edges={['top', 'bottom']}>
+      {/* Modern Header */}
       <ArenaHeader
-        title="NOTIFICATIONS"
-        subtitle="CIRCUIT DESK // ACTIVITY FEED"
+        title="Notifications"
+        subtitle="Activity feed"
         showBack
         fallbackRoute="/(tabs)/discover"
         onBack={() => {
@@ -204,9 +204,9 @@ export default function NotificationsScreen() {
               onPress={handleMarkAllRead}
               accessibilityRole="button"
               accessibilityLabel="Mark all notices as read"
-              className="px-3 py-1.5 rounded-lg bg-stone/30 border border-stone active:bg-stone-light"
+              className="px-3 py-1.5 rounded-lg bg-[#272C31] border border-white/10 active:bg-white/10"
             >
-              <Text className="text-graphite text-[10px] font-black uppercase tracking-wider">
+              <Text className="text-[#E85D26] text-[10px] font-bold uppercase tracking-wider">
                 MARK ALL READ
               </Text>
             </Pressable>
@@ -215,7 +215,7 @@ export default function NotificationsScreen() {
       />
 
       {/* Control Strip: Activity Category Filters */}
-      <View className="px-4 py-3 bg-warm-white border-b border-stone">
+      <View className="px-4 py-3 bg-[#171A1D] border-b border-white/5">
         <View className="flex-row items-center justify-between">
           <View className="flex-row space-x-1.5">
             {(
@@ -236,13 +236,13 @@ export default function NotificationsScreen() {
                   accessibilityLabel={`Filter ${filter.label}`}
                   className={`px-3 py-1.5 rounded-lg border transition-all ${
                     isSelected
-                      ? 'bg-olive border-olive-dark'
-                      : 'bg-warm-white border-stone active:bg-stone-light'
+                      ? 'bg-[#E85D26] border-[#E85D26]'
+                      : 'bg-[#1F2327] border-white/10 active:bg-[#272C31]'
                   }`}
                 >
                   <Text
-                    className={`text-xs font-black uppercase tracking-wider ${
-                      isSelected ? 'text-warm-white' : 'text-graphite'
+                    className={`text-xs font-bold uppercase tracking-wider ${
+                      isSelected ? 'text-[#171A1D]' : 'text-[#A0A5AD]'
                     }`}
                   >
                     {filter.label}
@@ -255,14 +255,14 @@ export default function NotificationsScreen() {
           {/* Unread Counter Pill */}
           <View className="flex-row items-center">
             {unreadCount > 0 ? (
-              <View className="flex-row items-center bg-olive/15 border border-olive px-2 py-0.5 rounded-sm">
-                <View className="w-1.5 h-1.5 rounded-full bg-olive mr-1.5" />
-                <Text className="text-olive text-[10px] font-black uppercase tracking-wider">
+              <View className="flex-row items-center bg-[#E85D26]/15 border border-[#E85D26]/40 px-2 py-0.5 rounded-full">
+                <View className="w-1.5 h-1.5 rounded-full bg-[#E85D26] mr-1.5" />
+                <Text className="text-[#E85D26] text-[10px] font-bold uppercase tracking-wider">
                   {unreadCount} NEW
                 </Text>
               </View>
             ) : (
-              <Text className="text-stone-muted text-[10px] font-bold uppercase tracking-wider">
+              <Text className="text-[#7F8993] text-[10px] font-bold uppercase tracking-wider">
                 ALL CAUGHT UP
               </Text>
             )}
@@ -273,28 +273,28 @@ export default function NotificationsScreen() {
       {/* Main Notification Bulletin Feed */}
       {loading ? (
         <View className="flex-1 items-center justify-center p-8">
-          <ActivityIndicator size="large" color="#3D4438" />
-          <Text className="text-graphite text-xs font-black uppercase tracking-wider mt-3">
+          <ActivityIndicator size="large" color="#E85D26" />
+          <Text className="text-[#A0A5AD] text-xs font-bold uppercase tracking-wider mt-3">
             SYNCING NOTIFICATION FEED...
           </Text>
         </View>
       ) : error ? (
         <View className="flex-1 items-center justify-center p-8">
-          <View className="p-8 mx-4 rounded-xl bg-stone-light/40 border border-stone items-center justify-center">
-            <View className="w-14 h-14 rounded-full bg-rust/10 border border-rust/40 items-center justify-center mb-3">
-              <Ionicons name="alert-circle-outline" size={26} color="#875646" />
+          <View className="p-8 mx-4 rounded-2xl bg-[#1F2327] border border-white/10 items-center justify-center">
+            <View className="w-14 h-14 rounded-full bg-[#F4A261]/10 border border-[#F4A261]/30 items-center justify-center mb-3">
+              <Ionicons name="alert-circle-outline" size={26} color="#F4A261" />
             </View>
-            <Text className="text-graphite text-base font-black uppercase tracking-tight text-center">
+            <Text className="text-[#F4F6F7] text-base font-bold uppercase tracking-tight text-center">
               FEED UNAVAILABLE
             </Text>
-            <Text className="text-stone-muted text-xs text-center mt-1.5 max-w-[260px] leading-4">
+            <Text className="text-[#A0A5AD] text-xs text-center mt-1.5 max-w-[260px] leading-4">
               {error}
             </Text>
             <Pressable
               onPress={() => loadNotifications()}
-              className="mt-4 px-4 py-2 rounded-lg bg-olive active:opacity-90"
+              className="mt-4 px-4 py-2 rounded-lg bg-[#E85D26] active:opacity-90"
             >
-              <Text className="text-warm-white text-xs font-black uppercase tracking-wider">
+              <Text className="text-[#171A1D] text-xs font-black uppercase tracking-wider">
                 RETRY SYNC
               </Text>
             </Pressable>
@@ -309,28 +309,28 @@ export default function NotificationsScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={() => loadNotifications(true)}
-              tintColor="#3D4438"
+              tintColor="#E85D26"
             />
           }
         >
           {filteredNotifications.length === 0 ? (
             /* Empty State */
-            <View className="p-8 mx-4 mt-8 rounded-xl bg-stone-light/40 border border-stone items-center justify-center">
-              <View className="w-14 h-14 rounded-full bg-stone/30 border border-stone items-center justify-center mb-3">
-                <Ionicons name="notifications-off-outline" size={26} color="#666B60" />
+            <View className="p-8 mx-4 mt-8 rounded-2xl bg-[#1F2327] border border-white/10 items-center justify-center">
+              <View className="w-14 h-14 rounded-full bg-[#272C31] border border-white/10 items-center justify-center mb-3">
+                <Ionicons name="notifications-off-outline" size={26} color="#E85D26" />
               </View>
-              <Text className="text-graphite text-base font-black uppercase tracking-tight text-center">
+              <Text className="text-[#F4F6F7] text-base font-bold uppercase tracking-tight text-center">
                 NO NEW NOTICES
               </Text>
-              <Text className="text-stone-muted text-xs text-center mt-1.5 max-w-[260px] leading-4">
+              <Text className="text-[#A0A5AD] text-xs text-center mt-1.5 max-w-[260px] leading-4">
                 Match requests, captain decisions and activity updates will appear here.
               </Text>
               {activeFilter !== 'ALL' && (
                 <Pressable
                   onPress={() => setActiveFilter('ALL')}
-                  className="mt-4 px-4 py-2 rounded-lg bg-olive active:opacity-90"
+                  className="mt-4 px-4 py-2 rounded-lg bg-[#E85D26] active:opacity-90"
                 >
-                  <Text className="text-warm-white text-xs font-black uppercase tracking-wider">
+                  <Text className="text-[#171A1D] text-xs font-black uppercase tracking-wider">
                     VIEW ALL NOTICES
                   </Text>
                 </Pressable>
@@ -348,27 +348,27 @@ export default function NotificationsScreen() {
                     onPress={() => handleNotificationPress(notif)}
                     accessibilityRole="button"
                     accessibilityLabel={`${notif.isRead ? 'Read' : 'Unread'} notice: ${notif.title}. ${notif.message}. ${formatTimestamp(notif.createdAt)}`}
-                    className={`w-full p-4 rounded-xl border mb-2.5 transition-all active:scale-[0.99] ${
+                    className={`w-full p-4 rounded-2xl border mb-2.5 transition-all active:scale-[0.99] ${
                       notif.isRead
-                        ? 'bg-stone-light/40 border-stone/80'
-                        : 'bg-warm-white border-stone shadow-xs'
+                        ? 'bg-[#1F2327]/60 border-white/5'
+                        : 'bg-[#1F2327] border-white/10 shadow-sm'
                     }`}
                   >
                     {/* Top Header Row: Category Kicker + Timestamp + Unread Indicator */}
                     <View className="flex-row items-center justify-between mb-2">
                       <View className="flex-row items-center">
                         <View className="mr-2">{getNotificationIcon(notif.type)}</View>
-                        <Text className="text-stone-muted text-[10px] font-black uppercase tracking-widest">
+                        <Text className="text-[#7F8993] text-[10px] font-bold uppercase tracking-widest">
                           {getNotificationKicker(notif.type)}
                         </Text>
                       </View>
 
                       <View className="flex-row items-center">
-                        <Text className="text-stone-muted text-[10px] font-bold uppercase tracking-wider mr-2">
+                        <Text className="text-[#7F8993] text-[10px] font-bold uppercase tracking-wider mr-2">
                           {formatTimestamp(notif.createdAt)}
                         </Text>
                         {!notif.isRead && (
-                          <View className="w-2 h-2 rounded-full bg-olive" />
+                          <View className="w-2 h-2 rounded-full bg-[#E85D26]" />
                         )}
                       </View>
                     </View>
@@ -376,8 +376,8 @@ export default function NotificationsScreen() {
                     {/* Notice Title */}
                     <View className="flex-row items-center justify-between">
                       <Text
-                        className={`text-sm font-black uppercase tracking-tight ${
-                          notif.isRead ? 'text-graphite/80' : 'text-graphite'
+                        className={`text-sm font-bold uppercase tracking-tight ${
+                          notif.isRead ? 'text-[#A0A5AD]' : 'text-[#F4F6F7]'
                         }`}
                       >
                         {notif.title}
@@ -398,7 +398,7 @@ export default function NotificationsScreen() {
                     {/* Notice Body Copy */}
                     <Text
                       className={`text-xs mt-1.5 leading-5 ${
-                        notif.isRead ? 'text-stone-muted' : 'text-graphite/90 font-medium'
+                        notif.isRead ? 'text-[#7F8993]' : 'text-[#A0A5AD] font-medium'
                       }`}
                     >
                       {notif.message}
@@ -406,8 +406,8 @@ export default function NotificationsScreen() {
 
                     {/* Action Link Footer (Only If Actionable) */}
                     {isActionable && (
-                      <View className="flex-row items-center justify-between mt-3 pt-2 border-t border-stone/50">
-                        <Text className="text-olive text-[11px] font-black uppercase tracking-wider">
+                      <View className="flex-row items-center justify-between mt-3 pt-2 border-t border-white/5">
+                        <Text className="text-[#E85D26] text-[11px] font-bold uppercase tracking-wider">
                           {notif.type === 'JOIN_REQUEST_RECEIVED'
                             ? 'REVIEW REQUEST →'
                             : notif.type === 'JOIN_REQUEST_ACCEPTED'
@@ -420,7 +420,7 @@ export default function NotificationsScreen() {
                         <Ionicons
                           name="chevron-forward"
                           size={14}
-                          color={notif.isRead ? '#666B60' : '#3D4438'}
+                          color={notif.isRead ? '#7F8993' : '#E85D26'}
                         />
                       </View>
                     )}

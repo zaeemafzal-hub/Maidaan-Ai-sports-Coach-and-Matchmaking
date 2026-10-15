@@ -8,6 +8,10 @@
     "backend"
   ],
   "scripts": {
+    "start": "npm --prefix mobile start",
+    "android": "npm --prefix mobile run android",
+    "ios": "npm --prefix mobile run ios",
+    "web": "npm --prefix mobile run web",
     "dev": "node scripts/dev.js",
     "build": "tsc --noEmit --project mobile/tsconfig.json && npm --prefix backend run build",
     "lint": "tsc --noEmit --project mobile/tsconfig.json && tsc --noEmit --project backend/tsconfig.json",

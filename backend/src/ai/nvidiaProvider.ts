@@ -17,7 +17,7 @@ export class NvidiaNimProvider implements AIProvider {
   private readonly timeoutMs: number;
 
   constructor(config: NvidiaProviderConfig = {}) {
-    this.apiKey = (config.apiKey || process.env.NVIDIA_API_KEY || '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').trim();
+    this.apiKey = (config.apiKey || process.env.NVIDIA_API_KEY || '').trim();
     this.model = (config.model || process.env.NVIDIA_MODEL || 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning').trim();
     this.baseUrl = (config.baseUrl || process.env.NVIDIA_BASE_URL || 'https://integrate.api.nvidia.com/v1').replace(/\/+$/, '');
     this.timeoutMs = config.timeoutMs && config.timeoutMs > 0 ? config.timeoutMs : 75000;

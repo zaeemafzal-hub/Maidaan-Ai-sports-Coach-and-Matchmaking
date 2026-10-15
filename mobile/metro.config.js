@@ -13,6 +13,9 @@ config.resolver.nodeModulesPaths = [
   path.resolve(projectRoot, "node_modules"),
   path.resolve(workspaceRoot, "node_modules"),
 ];
+config.resolver.blockList = [
+  /.*[/\\]backend[/\\].*/,
+];
 
 const fs = require("fs");
 const cssInteropPath = [

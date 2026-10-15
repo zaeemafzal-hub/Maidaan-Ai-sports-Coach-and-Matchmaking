@@ -7,16 +7,18 @@ import {
   Modal,
   Image,
   ActivityIndicator,
+  StyleSheet,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/useAuthStore';
-import { Sport, SkillLevel, PlayerProfile } from '../../types';
+import { Sport, SkillLevel } from '../../types';
 import { profileService } from '../../services/profileService';
 import { SportCard } from '../../components/ui/SportCard';
 import { ArenaHeader } from '../../components/ui/ArenaHeader';
 import { PrimaryButton } from '../../components/ui/PrimaryButton';
+import { AmbientGlowOverlay } from '../../components/ui';
 
 interface SportConfig {
   sport: Sport;
@@ -43,19 +45,19 @@ const SKILL_TIERS: SkillTierConfig[] = [
     key: 'beginner',
     label: 'Beginner',
     tagline: 'Grassroots & friendly casual play',
-    badge: 'DIV 03',
+    badge: 'TIER 1',
   },
   {
     key: 'intermediate',
     label: 'Intermediate',
     tagline: 'Club regular & structured matches',
-    badge: 'DIV 02',
+    badge: 'TIER 2',
   },
   {
     key: 'advanced',
     label: 'Advanced',
     tagline: 'Premier tournament & league pace',
-    badge: 'DIV 01',
+    badge: 'TIER 3',
   },
 ];
 
@@ -68,6 +70,7 @@ const PRESET_AREAS = [
 ];
 
 export default function PlayerSetupScreen() {
+  const insets = useSafeAreaInsets();
   const {
     currentUser,
     selectedRole,
@@ -102,7 +105,6 @@ export default function PlayerSetupScreen() {
   const [skillLevel, setSkillLevel] = useState<SkillLevel>('intermediate');
   const [area, setArea] = useState('Gulberg, Lahore');
   const [isAreaModalVisible, setIsAreaModalVisible] = useState(false);
-  const [editNotice, setEditNotice] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -144,152 +146,81 @@ export default function PlayerSetupScreen() {
     }
   };
 
-  const handleEditPress = () => {
-    setEditNotice('Avatar and jersey details can be updated anytime from your Player Profile tab.');
-    setTimeout(() => setEditNotice(null), 3500);
-  };
-
   if (!isInitialized || isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-warm-white items-center justify-center">
-        <ActivityIndicator size="large" color="#3D4438" />
-        <Text className="text-stone-muted text-xs font-bold uppercase tracking-widest mt-3">
-          Restoring Arena Session...
+      <SafeAreaView className="flex-1 bg-[#0C0D0E] items-center justify-center">
+        <ActivityIndicator size="large" color="#E85D26" />
+        <Text style={{ color: '#A0A5AD' }} className="text-[#A0A5AD] text-xs font-medium tracking-wider mt-3">
+          Restoring Session...
         </Text>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-warm-white" edges={['top', 'bottom']}>
-      {/* Concrete Arena Match-Day Header */}
+    <SafeAreaView className="flex-1 bg-[#0C0D0E]" edges={['top', 'bottom']}>
+      {/* Restrained Atmospheric Hero Backdrop (135px height) */}
+      <View
+        pointerEvents="none"
+        style={styles.heroBackdrop}
+      >
+        <Image
+          source={require('../../assets/images/arena_player.jpg')}
+          style={styles.heroImage}
+          resizeMode="cover"
+        />
+        {/* Multi-stop dark gradient vignette transitioning into #0C0D0E */}
+        <View style={styles.vignetteTop} />
+        <View style={styles.vignetteMid} />
+        <View style={styles.vignetteBottom} />
+      </View>
+
+      {/* Subtle Warm Solar Ambient Glow */}
+      <AmbientGlowOverlay top={-50} right={-30} size={280} opacity={0.12} />
+
+      {/* Modern Athletic Header */}
       <ArenaHeader
-        title="MAIDAAN"
-        subtitle="MATCH-DAY ROSTER // STEP 01 OF 01"
+        title="Player Setup"
+        subtitle="Step 1 of 1"
         showBack
         fallbackRoute="/(auth)/role-selection"
+        transparent
       />
 
       <ScrollView
-        contentContainerStyle={{ flexGrow: 1 }}
+        contentContainerStyle={{
+          flexGrow: 1,
+          paddingBottom: Math.max(insets.bottom, 16) + 36,
+        }}
         showsVerticalScrollIndicator={false}
         className="flex-1"
       >
-        {/* Sports Photography Match-Day Hero Section */}
-        <View className="relative w-full h-44 bg-graphite overflow-hidden border-b border-stone">
-          <Image
-            source={require('../../assets/images/arena_player.jpg')}
-            className="w-full h-full"
-            resizeMode="cover"
-          />
-          {/* Gritty Vignette & Atmospheric Stadium Lighting Overlay */}
-          <View className="absolute inset-0 bg-graphite/60" />
-          <View className="absolute inset-0 bg-gradient-to-t from-graphite via-graphite/40 to-transparent" />
-
-          {/* Hero Content Overlay */}
-          <View className="absolute bottom-3 left-5 right-5 z-10">
-            <View className="flex-row items-center mb-1">
-              <Text className="text-rust text-[10px] font-black uppercase tracking-widest">
-                CIRCUIT ONBOARDING
-              </Text>
-              <Text className="text-stone-muted text-[10px] font-bold mx-1.5">
-                //
-              </Text>
-              <Text className="text-stone text-[10px] font-black uppercase tracking-wider">
-                LAHORE ARENA
-              </Text>
-            </View>
-            <Text className="text-warm-white text-xl font-black uppercase tracking-tight">
-              Set Up Your Athlete Profile
-            </Text>
-            <Text className="text-stone text-[11px] font-medium mt-0.5 tracking-tight">
-              Register your primary sports and competitive tier for local matchmaking.
-            </Text>
-          </View>
-        </View>
-
-        {/* Main Content Form */}
-        <View className="px-5 py-4">
-          {/* Edit Notice Toast if triggered */}
-          {editNotice && (
-            <View className="mb-4 p-3 rounded-xl bg-stone-light border border-olive flex-row items-center shadow-xs">
-              <Ionicons name="information-circle-sharp" size={18} color="#3D4438" />
-              <Text className="text-olive text-xs font-bold ml-2 flex-1">
-                {editNotice}
-              </Text>
-            </View>
-          )}
-
-          {/* Section 1: Player Credential Card (3D Stamped Roster Card) */}
-          <View className="bg-warm-white border border-stone border-b-[3px] border-b-stone-muted/70 rounded-xl p-3.5 mb-5 shadow-xs">
-            <View className="flex-row items-center justify-between">
-              <View className="flex-row items-center flex-1 mr-3">
-                {/* 3D Athlete Silhouette Well */}
-                <View className="w-12 h-12 rounded-lg bg-stone-light border border-stone border-b-[2px] border-b-stone-muted items-center justify-center mr-3 relative">
-                  <MaterialCommunityIcons name="shield-account" size={24} color="#3D4438" />
-                  <View className="absolute -bottom-1 -right-1 px-1 py-0.2 bg-olive rounded-sm">
-                    <Text className="text-warm-white text-[8px] font-black tracking-tighter">
-                      #07
-                    </Text>
-                  </View>
-                </View>
-
-                {/* Player Name and Metadata */}
-                <View className="flex-1">
-                  <View className="flex-row items-center">
-                    <Text
-                      numberOfLines={1}
-                      className="text-graphite text-sm font-black uppercase tracking-tight flex-1"
-                    >
-                      {currentUser?.name || 'Recreational Athlete'}
-                    </Text>
-                  </View>
-                  <View className="flex-row items-center mt-0.5">
-                    <Text className="text-olive text-[11px] font-extrabold uppercase tracking-wide">
-                      PLAYER ROLE
-                    </Text>
-                    <Text className="text-stone-muted text-[10px] font-bold mx-1.5">
-                      ·
-                    </Text>
-                    <Text className="text-stone-muted text-[10px] font-medium tracking-tight">
-                      Ready for fixtures
-                    </Text>
-                  </View>
-                </View>
-              </View>
-
-              {/* Edit Credential Button */}
-              <Pressable
-                onPress={handleEditPress}
-                accessibilityRole="button"
-                accessibilityLabel="Edit player profile"
-                className="py-1.5 px-3 rounded-lg bg-stone-light border border-stone border-b-[2px] border-b-stone-muted active:scale-95"
+        <View className="px-5 pt-5">
+          {/* Section 1: Preferred Sports */}
+          <View style={{ marginBottom: 30 }}>
+            <View className="flex-row items-center justify-between mb-1.5">
+              <Text
+                style={{ color: '#FFFFFF' }}
+                className="text-white text-xs font-bold uppercase tracking-wider"
               >
-                <Text className="text-graphite text-[10px] font-black tracking-wider uppercase">
-                  EDIT
-                </Text>
-              </Pressable>
-            </View>
-          </View>
-
-          {/* Section 2: Preferred Sports (Cricket, Badminton, Padel, Football) */}
-          <View className="mb-5">
-            <View className="flex-row items-center justify-between mb-2">
-              <View className="flex-row items-center">
-                <Text className="text-graphite text-xs font-black tracking-wider uppercase">
-                  PREFERRED SPORTS
-                </Text>
-                <Text className="text-stone-muted text-[11px] font-bold ml-2">
-                  ({selectedSports.length}/4 ACTIVE)
-                </Text>
-              </View>
-              <Text className="text-stone-muted text-[10px] font-bold uppercase tracking-wide">
-                SELECT 1 OR MORE
+                Preferred Sports
+              </Text>
+              <Text
+                style={{ color: '#E85D26' }}
+                className="text-[#E85D26] text-xs font-bold"
+              >
+                {selectedSports.length}/4 Active
               </Text>
             </View>
+            <Text
+              style={{ color: '#A0A5AD' }}
+              className="text-[#A0A5AD] text-xs font-normal mb-3.5"
+            >
+              Select 1 or more disciplines to calibrate matchmaking.
+            </Text>
 
-            {/* 4 Sport Cards Grid Row */}
-            <View className="flex-row space-x-2">
+            {/* 4 Sport Cards Row */}
+            <View className="flex-row" style={{ gap: 8 }}>
               {ALL_SPORTS.map((item) => (
                 <SportCard
                   key={item.sport}
@@ -303,33 +234,45 @@ export default function PlayerSetupScreen() {
               ))}
             </View>
 
-            {/* Validation Message in Rust */}
+            {/* Validation Message */}
             {validationError && (
-              <View className="mt-2.5 p-2 rounded-lg bg-rust/10 border border-rust/30 flex-row items-center">
-                <Ionicons name="alert-circle-outline" size={15} color="#875646" />
-                <Text className="text-rust text-xs font-bold ml-1.5 flex-1">
+              <View className="mt-3 p-3 rounded-xl bg-[#EF4444]/15 border border-[#EF4444]/30 flex-row items-center">
+                <Ionicons name="alert-circle" size={16} color="#EF4444" />
+                <Text
+                  style={{ color: '#EF4444' }}
+                  className="text-[#EF4444] text-xs font-medium ml-2 flex-1"
+                >
                   {validationError}
                 </Text>
               </View>
             )}
           </View>
 
-          {/* Section 3: Skill Level (Tactical Competitive Divisions) */}
-          <View className="mb-5">
+          {/* Section 2: Skill Level */}
+          <View style={{ marginBottom: 30 }}>
             <View className="flex-row items-center justify-between mb-1.5">
-              <Text className="text-graphite text-xs font-black tracking-wider uppercase">
-                COMPETITIVE TIER
+              <Text
+                style={{ color: '#FFFFFF' }}
+                className="text-white text-xs font-bold uppercase tracking-wider"
+              >
+                Skill Level
               </Text>
-              <Text className="text-stone-muted text-[10px] font-bold uppercase tracking-wide">
-                SELECT DIVISION
+              <Text
+                style={{ color: '#5C616A' }}
+                className="text-[#5C616A] text-xs font-bold"
+              >
+                Select tier
               </Text>
             </View>
-            <Text className="text-stone-muted text-[11px] font-medium mb-2.5">
-              Determines matchmaking balance and fixture difficulty.
+            <Text
+              style={{ color: '#A0A5AD' }}
+              className="text-[#A0A5AD] text-xs font-normal mb-3.5"
+            >
+              Helps balance match matchmaking and fixture difficulty.
             </Text>
 
-            {/* Tactical Division Cards */}
-            <View className="space-y-2">
+            {/* Division Cards */}
+            <View style={{ gap: 11 }}>
               {SKILL_TIERS.map((tier) => {
                 const isSelected = skillLevel === tier.key;
                 return (
@@ -340,24 +283,25 @@ export default function PlayerSetupScreen() {
                     accessibilityRole="radio"
                     accessibilityState={{ selected: isSelected }}
                     accessibilityLabel={`${tier.label} skill level`}
-                    className={`w-full p-3 rounded-xl border flex-row items-center justify-between my-1 transition-all active:scale-[0.99] ${
+                    className={`w-full p-4 rounded-2xl border flex-row items-center justify-between transition-all active:scale-[0.99] ${
                       isSelected
-                        ? 'bg-stone-light border-2 border-olive border-b-[4px] border-b-olive-dark shadow-sm'
-                        : 'bg-warm-white border border-stone border-b-[2px] border-b-stone-muted/60'
+                        ? 'bg-[#1B1D22] border-2 border-[#E85D26] shadow-sm shadow-[#E85D26]/20'
+                        : 'bg-[#141518] border border-white/[0.08]'
                     }`}
                   >
                     <View className="flex-row items-center flex-1 mr-3">
-                      {/* Division Badge / Radio Pill */}
+                      {/* Division Badge */}
                       <View
-                        className={`w-10 h-10 rounded-lg items-center justify-center mr-3 border ${
+                        className={`w-11 h-11 rounded-xl items-center justify-center mr-3.5 border ${
                           isSelected
-                            ? 'bg-olive border-olive-dark'
-                            : 'bg-stone/20 border-stone/50'
+                            ? 'bg-[#E85D26]/15 border-[#E85D26]/30'
+                            : 'bg-[#101214] border border-white/[0.06]'
                         }`}
                       >
                         <Text
-                          className={`text-[10px] font-black uppercase ${
-                            isSelected ? 'text-warm-white' : 'text-stone-muted'
+                          style={{ color: isSelected ? '#E85D26' : '#A0A5AD' }}
+                          className={`text-xs font-black uppercase ${
+                            isSelected ? 'text-[#E85D26]' : 'text-[#A0A5AD]'
                           }`}
                         >
                           {tier.badge}
@@ -367,13 +311,15 @@ export default function PlayerSetupScreen() {
                       {/* Tier Label and Tagline */}
                       <View className="flex-1">
                         <Text
-                          className={`text-sm font-black uppercase tracking-tight ${
-                            isSelected ? 'text-graphite' : 'text-graphite/85'
-                          }`}
+                          style={{ color: '#FFFFFF' }}
+                          className="text-white text-sm font-bold tracking-tight"
                         >
                           {tier.label}
                         </Text>
-                        <Text className="text-stone-muted text-[11px] font-medium mt-0.5">
+                        <Text
+                          style={{ color: '#A0A5AD' }}
+                          className="text-[#A0A5AD] text-xs font-normal mt-0.5"
+                        >
                           {tier.tagline}
                         </Text>
                       </View>
@@ -383,12 +329,12 @@ export default function PlayerSetupScreen() {
                     <View
                       className={`w-5 h-5 rounded-full border items-center justify-center ${
                         isSelected
-                          ? 'border-olive bg-olive'
-                          : 'border-stone bg-warm-white'
+                          ? 'border-2 border-[#E85D26] bg-[#E85D26]'
+                          : 'border border-white/20 bg-[#101214]'
                       }`}
                     >
                       {isSelected && (
-                        <View className="w-2 h-2 rounded-full bg-warm-white" />
+                        <View className="w-2 h-2 rounded-full bg-white" />
                       )}
                     </View>
                   </Pressable>
@@ -397,29 +343,47 @@ export default function PlayerSetupScreen() {
             </View>
           </View>
 
-          {/* Section 4: Your Area (Home Ground & Matchmaking Zone) */}
-          <View className="mb-6">
+          {/* Section 3: Home Ground Area */}
+          <View style={{ marginBottom: 30 }}>
             <View className="flex-row items-center justify-between mb-1.5">
-              <Text className="text-graphite text-xs font-black tracking-wider uppercase">
-                HOME GROUND // ZONE
+              <Text
+                style={{ color: '#FFFFFF' }}
+                className="text-white text-xs font-bold uppercase tracking-wider"
+              >
+                Home Ground Area
               </Text>
-              <Text className="text-stone-muted text-[10px] font-bold uppercase tracking-wide">
-                CIRCUIT LOCATION
+              <Text
+                style={{ color: '#5C616A' }}
+                className="text-[#5C616A] text-xs font-bold"
+              >
+                Location
               </Text>
             </View>
+            <Text
+              style={{ color: '#A0A5AD' }}
+              className="text-[#A0A5AD] text-xs font-normal mb-3.5"
+            >
+              Used to discover nearby matches and arenas.
+            </Text>
 
-            <View className="bg-warm-white border border-stone border-b-[3px] border-b-stone-muted/70 rounded-xl p-3.5 flex-row items-center justify-between shadow-xs">
+            <View className="bg-[#141518] border border-white/[0.08] rounded-2xl p-4 flex-row items-center justify-between shadow-sm">
               <View className="flex-row items-center flex-1 mr-3">
-                <View className="w-10 h-10 rounded-lg bg-olive/10 border border-olive/30 border-b-[2px] border-b-olive/50 items-center justify-center mr-3">
-                  <Ionicons name="location-sharp" size={20} color="#3D4438" />
+                <View className="w-11 h-11 rounded-xl bg-[#E85D26]/15 border border-[#E85D26]/30 items-center justify-center mr-3.5">
+                  <Ionicons name="location" size={20} color="#E85D26" />
                 </View>
 
                 <View className="flex-1">
-                  <Text className="text-graphite text-sm font-black uppercase tracking-tight">
+                  <Text
+                    style={{ color: '#FFFFFF' }}
+                    className="text-white text-sm font-bold tracking-tight"
+                  >
                     {area}
                   </Text>
-                  <Text className="text-stone-muted text-[11px] font-medium mt-0.5">
-                    Used to discover nearby fixtures & public grounds
+                  <Text
+                    style={{ color: '#A0A5AD' }}
+                    className="text-[#A0A5AD] text-xs font-normal mt-0.5"
+                  >
+                    Lahore metropolitan area
                   </Text>
                 </View>
               </View>
@@ -428,29 +392,36 @@ export default function PlayerSetupScreen() {
                 onPress={() => setIsAreaModalVisible(true)}
                 accessibilityRole="button"
                 accessibilityLabel="Change primary area"
-                className="py-1.5 px-3 rounded-lg bg-stone-light border border-stone border-b-[2px] border-b-stone-muted active:scale-95"
+                className="py-2 px-3.5 rounded-xl bg-[#1B1D22] border border-white/[0.12] active:bg-[#20232A] active:scale-95"
               >
-                <Text className="text-graphite text-[10px] font-black tracking-wider uppercase">
-                  CHANGE
+                <Text
+                  style={{ color: '#FFFFFF' }}
+                  className="text-white text-xs font-bold"
+                >
+                  Change
                 </Text>
               </Pressable>
             </View>
           </View>
 
-          {/* Finish Setup CTA & Guarantee */}
-          <View className="pt-1 pb-6">
+          {/* Finish Setup CTA & Trust Guarantee */}
+          <View style={{ marginTop: 2 }}>
             <PrimaryButton
-              title="FINISH SETUP & ENTER ARENA"
+              title="Finish Setup & Enter Maidaan"
               onPress={handleFinishSetup}
               loading={isSubmitting}
               variant="primary"
+              size="lg"
               testID="finish-player-setup-btn"
             />
 
-            <View className="flex-row items-center justify-center mt-3">
-              <Ionicons name="shield-checkmark-sharp" size={13} color="#3D4438" />
-              <Text className="text-stone-muted text-[10px] font-bold uppercase tracking-wider ml-1.5">
-                Instant match discovery · Real-time matchmaking · Free-first
+            <View className="flex-row items-center justify-center mt-3.5">
+              <Ionicons name="shield-checkmark" size={14} color="#E85D26" />
+              <Text
+                style={{ color: '#A0A5AD' }}
+                className="text-[#A0A5AD] text-xs font-medium ml-1.5"
+              >
+                Instant match discovery • Real-time matchmaking • Free to play
               </Text>
             </View>
           </View>
@@ -466,33 +437,39 @@ export default function PlayerSetupScreen() {
       >
         <Pressable
           onPress={() => setIsAreaModalVisible(false)}
-          className="flex-1 bg-graphite/75 justify-center items-center px-5"
+          className="flex-1 bg-black/80 justify-center items-center px-5"
         >
           <Pressable
             onPress={(e) => e.stopPropagation()}
-            className="w-full max-w-sm rounded-2xl bg-warm-white border border-stone border-b-[4px] border-b-stone-muted p-5 shadow-2xl"
+            className="w-full max-w-sm rounded-2xl bg-[#141518] border border-white/[0.08] p-5 shadow-2xl"
           >
             {/* Modal Header */}
-            <View className="flex-row items-center justify-between mb-4 pb-3 border-b border-stone">
+            <View className="flex-row items-center justify-between mb-4 pb-3 border-b border-white/[0.08]">
               <View>
-                <Text className="text-rust text-[10px] font-black uppercase tracking-widest">
-                  LOCATION SELECTOR
+                <Text
+                  style={{ color: '#E85D26' }}
+                  className="text-[#E85D26] text-[11px] font-bold uppercase tracking-wider"
+                >
+                  Location Selector
                 </Text>
-                <Text className="text-graphite text-base font-black uppercase tracking-tight mt-0.5">
+                <Text
+                  style={{ color: '#FFFFFF' }}
+                  className="text-white text-base font-bold tracking-tight mt-0.5"
+                >
                   Select Home Ground Area
                 </Text>
               </View>
               <Pressable
                 onPress={() => setIsAreaModalVisible(false)}
-                className="w-8 h-8 rounded-lg bg-stone-light items-center justify-center border border-stone active:scale-95"
+                className="w-8 h-8 rounded-lg bg-[#1B1D22] items-center justify-center border border-white/[0.08] active:bg-[#20232A] active:scale-95"
                 accessibilityLabel="Close area modal"
               >
-                <Ionicons name="close" size={18} color="#242522" />
+                <Ionicons name="close" size={18} color="#FFFFFF" />
               </Pressable>
             </View>
 
             {/* List of preset areas */}
-            <View className="space-y-2">
+            <View style={{ gap: 8 }}>
               {PRESET_AREAS.map((item) => {
                 const isSelected = area === item;
                 return (
@@ -502,29 +479,30 @@ export default function PlayerSetupScreen() {
                       setArea(item);
                       setIsAreaModalVisible(false);
                     }}
-                    className={`w-full p-3 rounded-xl border flex-row items-center justify-between my-1 transition-all active:scale-[0.99] ${
+                    className={`w-full p-3.5 rounded-xl border flex-row items-center justify-between transition-all active:scale-[0.99] ${
                       isSelected
-                        ? 'bg-stone-light border-2 border-olive border-b-[3px] border-b-olive-dark'
-                        : 'bg-warm-white border border-stone border-b-[2px] border-b-stone-muted/60'
+                        ? 'bg-[#1B1D22] border-[#E85D26]'
+                        : 'bg-[#141518] border-white/[0.08]'
                     }`}
                   >
                     <View className="flex-row items-center flex-1">
                       <Ionicons
-                        name="location-sharp"
+                        name="location"
                         size={16}
-                        color={isSelected ? '#3D4438' : '#75796F'}
+                        color={isSelected ? '#E85D26' : '#A0A5AD'}
                       />
                       <Text
-                        className={`text-xs font-black uppercase tracking-tight ml-2.5 ${
-                          isSelected ? 'text-olive' : 'text-graphite'
+                        style={{ color: isSelected ? '#E85D26' : '#FFFFFF' }}
+                        className={`text-sm font-semibold ml-2.5 ${
+                          isSelected ? 'text-[#E85D26]' : 'text-white'
                         }`}
                       >
                         {item}
                       </Text>
                     </View>
                     {isSelected && (
-                      <View className="w-5 h-5 rounded-full bg-olive items-center justify-center">
-                        <Ionicons name="checkmark" size={13} color="#F4F1EA" />
+                      <View className="w-5 h-5 rounded-full bg-[#E85D26] items-center justify-center">
+                        <Ionicons name="checkmark" size={13} color="#FFFFFF" />
                       </View>
                     )}
                   </Pressable>
@@ -537,3 +515,40 @@ export default function PlayerSetupScreen() {
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  heroBackdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 135,
+    overflow: 'hidden',
+    zIndex: 0,
+  },
+  heroImage: {
+    width: '100%',
+    height: '100%',
+    opacity: 0.55,
+  },
+  vignetteTop: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(12, 13, 14, 0.35)',
+  },
+  vignetteMid: {
+    position: 'absolute',
+    top: '40%',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(12, 13, 14, 0.75)',
+  },
+  vignetteBottom: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 35,
+    backgroundColor: '#0C0D0E',
+  },
+});

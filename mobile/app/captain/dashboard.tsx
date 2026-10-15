@@ -15,7 +15,9 @@ import { MatchSlotItem } from '../../constants/matches';
 import { IMAGES } from '../../constants/images';
 import { ArenaHeader } from '../../components/ui/ArenaHeader';
 import { ArenaBadge } from '../../components/ui/ArenaBadge';
+import { SpotProgressRing } from '../../components/ui/SpotProgressRing';
 import { Sport, SkillLevel } from '../../types';
+import { matchService } from '../../services/matchService';
 
 // Sport display metadata
 const SPORT_META: Record<
@@ -28,17 +30,15 @@ const SPORT_META: Record<
   badminton: { label: 'Badminton', icon: 'badminton' },
 };
 
-// Skill tier metadata matching Concrete Arena system
+// Skill tier metadata conforming to Dark-Neutral Athletic design
 const SKILL_METAS: Record<
   SkillLevel,
   { label: string; tierBadge: string; tag: string }
 > = {
-  beginner: { label: 'Beginner', tierBadge: 'DIV 03', tag: 'Grassroots Casual' },
-  intermediate: { label: 'Intermediate', tierBadge: 'DIV 02', tag: 'Club Regular' },
-  advanced: { label: 'Advanced', tierBadge: 'DIV 01', tag: 'Premier Circuit' },
+  beginner: { label: 'Beginner', tierBadge: 'Tier 3', tag: 'Grassroots Casual' },
+  intermediate: { label: 'Intermediate', tierBadge: 'Tier 2', tag: 'Club Regular' },
+  advanced: { label: 'Advanced', tierBadge: 'Tier 1', tag: 'Premier Circuit' },
 };
-
-import { matchService } from '../../services/matchService';
 
 // Helper to map MatchSlotItem into presentation fixture model
 const mapToCaptainFixture = (m: MatchSlotItem): CaptainFixture => {
@@ -93,7 +93,7 @@ export default function CaptainDashboardScreen() {
   const effectiveRole = currentUser?.role || selectedRole || 'PLAYER';
   const isCaptain = effectiveRole === 'TEAM_CAPTAIN';
 
-  // Deterministic local request count (presentation only, not claiming push sync)
+  // Deterministic local request count (presentation only)
   const pendingRequestsCount = 3;
 
   // =========================================================================
@@ -101,10 +101,10 @@ export default function CaptainDashboardScreen() {
   // =========================================================================
   if (!isCaptain) {
     return (
-      <SafeAreaView className="flex-1 bg-warm-white" edges={['top']}>
+      <SafeAreaView className="flex-1 bg-[#0C0D0E]" edges={['top']}>
         <ArenaHeader
-          title="MAIDAAN"
-          subtitle="MATCH OPERATIONS // ROLE RESTRICTION"
+          title="Captain Operations"
+          subtitle="Role Restriction"
           showBack
           onBack={() => router.replace('/(tabs)/discover')}
         />
@@ -113,31 +113,84 @@ export default function CaptainDashboardScreen() {
           contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 24 }}
           showsVerticalScrollIndicator={false}
         >
-          <View className="bg-white rounded-sm p-6 border border-stone items-center shadow-sm">
-            <View className="w-16 h-16 rounded-full bg-stone/20 border border-stone items-center justify-center mb-4">
-              <Ionicons name="shield-outline" size={30} color="#666B60" />
+          <View
+            style={{
+              backgroundColor: '#141518',
+              borderRadius: 24,
+              padding: 24,
+              borderWidth: 1,
+              borderColor: 'rgba(255,255,255,0.08)',
+              alignItems: 'center',
+            }}
+          >
+            <View
+              style={{
+                width: 64,
+                height: 64,
+                borderRadius: 32,
+                backgroundColor: '#1B1D22',
+                borderWidth: 1,
+                borderColor: 'rgba(255,255,255,0.08)',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: 16,
+              }}
+            >
+              <Ionicons name="shield-outline" size={30} color="#E85D26" />
             </View>
 
             <Text
               accessibilityRole="header"
-              className="text-graphite text-lg font-black uppercase tracking-tight text-center"
+              style={{
+                color: '#FFFFFF',
+                fontSize: 18,
+                fontWeight: '900',
+                textTransform: 'uppercase',
+                letterSpacing: 0.5,
+                textAlign: 'center',
+              }}
             >
-              CAPTAIN ACCESS REQUIRED
+              Captain Access Required
             </Text>
 
-            <Text className="text-stone-muted text-xs font-medium text-center mt-2.5 leading-5 max-w-[280px]">
-              This workspace is available to Team Captain accounts.
+            <Text
+              style={{
+                color: '#A0A5AD',
+                fontSize: 13,
+                fontWeight: '500',
+                textAlign: 'center',
+                marginTop: 10,
+                lineHeight: 20,
+                maxWidth: 280,
+              }}
+            >
+              This workspace is reserved for Team Captain accounts to manage fixtures and team rosters.
             </Text>
 
-            <View className="w-full mt-6 space-y-2.5">
+            <View style={{ width: '100%', marginTop: 24, gap: 12 }}>
               <Pressable
                 onPress={() => router.replace('/(tabs)/discover')}
                 accessibilityRole="button"
                 accessibilityLabel="Return to Discover"
-                className="w-full bg-arena-olive py-3.5 rounded-sm items-center justify-center border border-arena-olive active:bg-olive-dark"
+                style={{
+                  width: '100%',
+                  backgroundColor: '#E85D26',
+                  minHeight: 48,
+                  borderRadius: 14,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
               >
-                <Text className="text-warm-white text-xs font-black uppercase tracking-wider">
-                  RETURN TO DISCOVER
+                <Text
+                  style={{
+                    color: '#0C0D0E',
+                    fontSize: 12,
+                    fontWeight: '900',
+                    textTransform: 'uppercase',
+                    letterSpacing: 1,
+                  }}
+                >
+                  Return to Discover
                 </Text>
               </Pressable>
 
@@ -145,10 +198,27 @@ export default function CaptainDashboardScreen() {
                 onPress={() => router.push('/(auth)/role-selection')}
                 accessibilityRole="button"
                 accessibilityLabel="Switch to Captain Account"
-                className="w-full bg-stone/20 py-3 rounded-sm items-center justify-center border border-stone active:bg-stone/30 mt-2"
+                style={{
+                  width: '100%',
+                  backgroundColor: '#1B1D22',
+                  minHeight: 48,
+                  borderRadius: 14,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderWidth: 1,
+                  borderColor: 'rgba(255,255,255,0.08)',
+                }}
               >
-                <Text className="text-graphite text-xs font-bold uppercase tracking-wide">
-                  SWITCH ROLE IN SELECTION
+                <Text
+                  style={{
+                    color: '#FFFFFF',
+                    fontSize: 12,
+                    fontWeight: '700',
+                    textTransform: 'uppercase',
+                    letterSpacing: 0.5,
+                  }}
+                >
+                  Switch Role
                 </Text>
               </Pressable>
             </View>
@@ -163,10 +233,10 @@ export default function CaptainDashboardScreen() {
   // =========================================================================
   if (!captainProfile) {
     return (
-      <SafeAreaView className="flex-1 bg-warm-white" edges={['top']}>
+      <SafeAreaView className="flex-1 bg-[#0C0D0E]" edges={['top']}>
         <ArenaHeader
-          title="MAIDAAN"
-          subtitle="CAPTAIN DESK // SETUP REQUIRED"
+          title="Captain Setup"
+          subtitle="Profile Required"
           showBack
           onBack={() => router.replace('/(tabs)/discover')}
         />
@@ -175,31 +245,84 @@ export default function CaptainDashboardScreen() {
           contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 24 }}
           showsVerticalScrollIndicator={false}
         >
-          <View className="bg-white rounded-sm p-6 border border-stone items-center shadow-sm">
-            <View className="w-16 h-16 rounded-full bg-arena-olive/10 border border-arena-olive/30 items-center justify-center mb-4">
-              <Ionicons name="clipboard-outline" size={30} color="#3D4438" />
+          <View
+            style={{
+              backgroundColor: '#141518',
+              borderRadius: 24,
+              padding: 24,
+              borderWidth: 1,
+              borderColor: 'rgba(255,255,255,0.08)',
+              alignItems: 'center',
+            }}
+          >
+            <View
+              style={{
+                width: 64,
+                height: 64,
+                borderRadius: 32,
+                backgroundColor: 'rgba(232,93,38,0.12)',
+                borderWidth: 1,
+                borderColor: 'rgba(232,93,38,0.3)',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: 16,
+              }}
+            >
+              <Ionicons name="clipboard-outline" size={30} color="#E85D26" />
             </View>
 
             <Text
               accessibilityRole="header"
-              className="text-graphite text-lg font-black uppercase tracking-tight text-center"
+              style={{
+                color: '#FFFFFF',
+                fontSize: 18,
+                fontWeight: '900',
+                textTransform: 'uppercase',
+                letterSpacing: 0.5,
+                textAlign: 'center',
+              }}
             >
-              CAPTAIN PROFILE NOT SET
+              Captain Profile Not Set
             </Text>
 
-            <Text className="text-stone-muted text-xs font-medium text-center mt-2.5 leading-5 max-w-[280px]">
-              Complete your captain setup before managing fixtures.
+            <Text
+              style={{
+                color: '#A0A5AD',
+                fontSize: 13,
+                fontWeight: '500',
+                textAlign: 'center',
+                marginTop: 10,
+                lineHeight: 20,
+                maxWidth: 280,
+              }}
+            >
+              Complete your captain setup before scheduling matches and managing your squad.
             </Text>
 
-            <View className="w-full mt-6 space-y-2.5">
+            <View style={{ width: '100%', marginTop: 24, gap: 12 }}>
               <Pressable
                 onPress={() => router.push('/onboarding/captain-setup')}
                 accessibilityRole="button"
                 accessibilityLabel="Complete Captain Setup"
-                className="w-full bg-arena-olive py-3.5 rounded-sm items-center justify-center border border-arena-olive active:bg-olive-dark"
+                style={{
+                  width: '100%',
+                  backgroundColor: '#E85D26',
+                  minHeight: 48,
+                  borderRadius: 14,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
               >
-                <Text className="text-warm-white text-xs font-black uppercase tracking-wider">
-                  COMPLETE CAPTAIN SETUP
+                <Text
+                  style={{
+                    color: '#0C0D0E',
+                    fontSize: 12,
+                    fontWeight: '900',
+                    textTransform: 'uppercase',
+                    letterSpacing: 1,
+                  }}
+                >
+                  Complete Captain Setup
                 </Text>
               </Pressable>
 
@@ -207,10 +330,27 @@ export default function CaptainDashboardScreen() {
                 onPress={() => router.replace('/(tabs)/discover')}
                 accessibilityRole="button"
                 accessibilityLabel="Return to Discover"
-                className="w-full bg-stone/20 py-3 rounded-sm items-center justify-center border border-stone active:bg-stone/30 mt-2"
+                style={{
+                  width: '100%',
+                  backgroundColor: '#1B1D22',
+                  minHeight: 48,
+                  borderRadius: 14,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderWidth: 1,
+                  borderColor: 'rgba(255,255,255,0.08)',
+                }}
               >
-                <Text className="text-graphite text-xs font-bold uppercase tracking-wide">
-                  RETURN TO DISCOVER
+                <Text
+                  style={{
+                    color: '#FFFFFF',
+                    fontSize: 12,
+                    fontWeight: '700',
+                    textTransform: 'uppercase',
+                    letterSpacing: 0.5,
+                  }}
+                >
+                  Return to Discover
                 </Text>
               </Pressable>
             </View>
@@ -223,11 +363,10 @@ export default function CaptainDashboardScreen() {
   // =========================================================================
   // 3. CAPTAIN PROFILE SOURCE (Strict values without synthetic fallbacks)
   // =========================================================================
-  const teamName = captainProfile.teamName?.trim() || 'TEAM NAME NOT SET';
-  // Use actual captain sports array established by Captain Setup
+  const teamName = captainProfile.teamName?.trim() || 'Team Name Not Set';
   const assignedSport: Sport | undefined = captainProfile.sports?.[0];
   const assignedSkill: SkillLevel | undefined = captainProfile.skillLevel;
-  const primaryLocation = captainProfile.primaryLocation?.trim() || 'AREA NOT SET';
+  const primaryLocation = captainProfile.primaryLocation?.trim() || 'Location Not Set';
   const captainName = currentUser?.name?.trim() || 'Captain';
 
   const sportMeta = assignedSport ? SPORT_META[assignedSport] : null;
@@ -289,35 +428,38 @@ export default function CaptainDashboardScreen() {
   const activeFixturesCount = captainFixtures.length;
   const totalOpenSlots = captainFixtures.reduce((acc, f) => acc + f.slotsOpen, 0);
 
+  // Featured match is the first scheduled fixture
+  const featuredMatch = captainFixtures.length > 0 ? captainFixtures[0] : null;
+
   // Helper for open-slot vacancy presentation
   const getSlotPresentation = (slotsOpen: number) => {
     if (slotsOpen === 0) {
       return {
         label: 'ROSTER FULL',
         badgeVariant: 'stone' as const,
-        textColor: 'text-stone-muted',
+        textColor: '#5C616A',
       };
     }
     if (slotsOpen === 1) {
       return {
         label: '1 SLOT LEFT',
         badgeVariant: 'rust' as const,
-        textColor: 'text-rust font-bold',
+        textColor: '#F4A261',
       };
     }
     return {
       label: `${slotsOpen} OPEN SLOTS`,
-      badgeVariant: 'olive' as const,
-      textColor: 'text-arena-olive font-bold',
+      badgeVariant: 'brand' as const,
+      textColor: '#E85D26',
     };
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-warm-white" edges={['top']}>
-      {/* Concrete Arena Header */}
+    <SafeAreaView className="flex-1 bg-[#0C0D0E]" edges={['top']}>
+      {/* Cinematic Athletic Header */}
       <ArenaHeader
-        title="MAIDAAN"
-        subtitle="CAPTAIN DESK // MATCH OPERATIONS"
+        title="Captain Desk"
+        subtitle="Match Operations"
         showBack
         onBack={() => router.replace('/(tabs)/discover')}
         rightAction={
@@ -325,206 +467,451 @@ export default function CaptainDashboardScreen() {
             onPress={() => router.push('/notifications')}
             accessibilityRole="button"
             accessibilityLabel="Notifications"
-            className="w-10 h-10 rounded-sm bg-stone/20 border border-stone items-center justify-center active:bg-stone/30"
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 12,
+              backgroundColor: '#1B1D22',
+              borderWidth: 1,
+              borderColor: 'rgba(255,255,255,0.08)',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
           >
-            <Ionicons name="notifications-outline" size={18} color="#242522" />
+            <Ionicons name="notifications-outline" size={19} color="#FFFFFF" />
           </Pressable>
         }
       />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 48 }}
+        contentContainerStyle={{ paddingBottom: 54 }}
       >
-        {/* RESTRAINED PHOTOGRAPHY: Narrow Captain Banner */}
-        <View className="px-4 pt-3">
-          <View className="h-16 w-full rounded-sm overflow-hidden border border-stone relative bg-graphite">
-            <Image
-              source={IMAGES.arenaTeam}
-              className="w-full h-full opacity-35"
-              resizeMode="cover"
-            />
-            <View className="absolute inset-0 px-3.5 py-2 flex-row items-center justify-between">
-              <View>
-                <Text className="text-stone-muted text-[9px] font-mono uppercase tracking-widest">
-                  TEAM CREDENTIALS
-                </Text>
+        {/* Athletic Team Hero Banner */}
+        <View style={{ paddingHorizontal: 16, paddingTop: 14 }}>
+          <View
+            style={{
+              borderRadius: 24,
+              overflow: 'hidden',
+              borderWidth: 1,
+              borderColor: 'rgba(255,255,255,0.08)',
+              backgroundColor: '#141518',
+              position: 'relative',
+            }}
+          >
+            {/* Background Image with Cinematic Gradient Fade */}
+            <View style={{ height: 110, width: '100%', position: 'relative' }}>
+              <Image
+                source={IMAGES.arenaTeam}
+                style={{ width: '100%', height: '100%', opacity: 0.25 }}
+                resizeMode="cover"
+              />
+              <View
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  backgroundColor: 'rgba(12,13,14,0.65)',
+                }}
+              />
+              <View
+                style={{
+                  position: 'absolute',
+                  top: 14,
+                  left: 16,
+                  right: 16,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <ArenaBadge label="CAPTAIN" variant="brand" size="sm" />
+                  {skillMeta ? (
+                    <View
+                      style={{
+                        backgroundColor: 'rgba(255,255,255,0.08)',
+                        paddingHorizontal: 8,
+                        paddingVertical: 3,
+                        borderRadius: 999,
+                        borderWidth: 1,
+                        borderColor: 'rgba(255,255,255,0.12)',
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: '#A0A5AD',
+                          fontSize: 10,
+                          fontWeight: '700',
+                          textTransform: 'uppercase',
+                        }}
+                      >
+                        {skillMeta.tierBadge}
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
+
+                {sportMeta ? (
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      backgroundColor: '#1B1D22',
+                      paddingHorizontal: 10,
+                      paddingVertical: 4,
+                      borderRadius: 10,
+                      borderWidth: 1,
+                      borderColor: 'rgba(255,255,255,0.08)',
+                    }}
+                  >
+                    <MaterialCommunityIcons
+                      name={sportMeta.icon}
+                      size={13}
+                      color="#E85D26"
+                    />
+                    <Text
+                      style={{
+                        color: '#FFFFFF',
+                        fontSize: 10,
+                        fontWeight: '800',
+                        textTransform: 'uppercase',
+                        marginLeft: 5,
+                      }}
+                    >
+                      {sportMeta.label}
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
+
+              <View
+                style={{
+                  position: 'absolute',
+                  bottom: 12,
+                  left: 16,
+                  right: 16,
+                }}
+              >
                 <Text
                   numberOfLines={1}
-                  className="text-warm-white text-sm font-black uppercase tracking-tight"
+                  style={{
+                    color: '#FFFFFF',
+                    fontSize: 22,
+                    fontWeight: '900',
+                    textTransform: 'uppercase',
+                    letterSpacing: -0.5,
+                  }}
                 >
                   {teamName}
                 </Text>
               </View>
-              <View className="bg-arena-olive/70 px-2 py-0.5 rounded-xs border border-arena-olive">
-                <Text className="text-warm-white text-[9px] font-mono uppercase tracking-wider font-bold">
-                  {skillMeta ? skillMeta.tierBadge : 'DIV --'}
-                </Text>
-              </View>
-            </View>
-          </View>
-        </View>
-
-        {/* CAPTAIN IDENTITY STRIP (Operational Clipboard Credentials) */}
-        <View className="px-4 mt-3">
-          <View className="bg-white rounded-sm p-4 border border-stone shadow-2xs">
-            <View className="flex-row items-start justify-between">
-              <View className="flex-1 pr-2">
-                <View className="flex-row items-center flex-wrap gap-1.5 mb-1">
-                  <Text
-                    numberOfLines={1}
-                    className="text-graphite text-base font-black uppercase tracking-tight"
-                  >
-                    {teamName}
-                  </Text>
-                  <ArenaBadge label="TEAM CAPTAIN" variant="olive" size="sm" />
-                </View>
-                <Text className="text-stone-muted text-xs font-medium">
-                  Led by {captainName}
-                </Text>
-              </View>
-
-              <View className="items-end">
-                {sportMeta ? (
-                  <View className="flex-row items-center bg-stone/20 px-2 py-1 rounded-xs border border-stone">
-                    <MaterialCommunityIcons
-                      name={sportMeta.icon}
-                      size={13}
-                      color="#3D4438"
-                    />
-                    <Text className="text-graphite text-[10px] font-mono uppercase ml-1 font-bold">
-                      {sportMeta.label}
-                    </Text>
-                  </View>
-                ) : (
-                  <View className="bg-stone/20 px-2 py-1 rounded-xs border border-stone">
-                    <Text className="text-stone-muted text-[10px] font-mono uppercase font-bold">
-                      SPORT NOT SET
-                    </Text>
-                  </View>
-                )}
-              </View>
             </View>
 
-            {/* Spec strip */}
-            <View className="mt-3 pt-2.5 border-t border-stone/40 flex-row items-center justify-between">
-              <View className="flex-row items-center">
-                <Ionicons name="location-sharp" size={12} color="#666B60" />
+            {/* Sub-spec strip */}
+            <View
+              style={{
+                paddingHorizontal: 16,
+                paddingVertical: 12,
+                backgroundColor: '#141518',
+                borderTopWidth: 1,
+                borderTopColor: 'rgba(255,255,255,0.06)',
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Ionicons name="location-sharp" size={13} color="#E85D26" />
                 <Text
                   numberOfLines={1}
-                  className="text-stone-muted text-[11px] font-medium ml-1 max-w-[190px]"
+                  style={{
+                    color: '#A0A5AD',
+                    fontSize: 12,
+                    fontWeight: '600',
+                    marginLeft: 4,
+                    maxWidth: 170,
+                  }}
                 >
                   {primaryLocation}
                 </Text>
               </View>
-              <View className="flex-row items-center">
-                <View className="w-1.5 h-1.5 rounded-full bg-arena-olive mr-1.5" />
-                <Text className="text-stone-muted text-[10px] font-mono">
-                  {skillMeta ? `${skillMeta.label} Circuit` : 'SKILL NOT SET'}
+
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Ionicons name="person-circle-outline" size={14} color="#A0A5AD" />
+                <Text
+                  style={{
+                    color: '#A0A5AD',
+                    fontSize: 12,
+                    fontWeight: '500',
+                    marginLeft: 4,
+                  }}
+                >
+                  Led by {captainName}
                 </Text>
               </View>
             </View>
           </View>
         </View>
 
-        {/* DOMINANT ELEMENT: CAPTAIN MATCH OPERATIONS SUMMARY */}
-        <View className="px-4 mt-4">
-          <Text
-            accessibilityRole="header"
-            className="text-graphite text-[11px] font-mono uppercase tracking-widest mb-2 font-bold"
-          >
-            MATCH OPERATIONS
-          </Text>
+        {/* FEATURED MATCH CARD (If Active Matches Exist) */}
+        {featuredMatch && (
+          <View style={{ paddingHorizontal: 16, marginTop: 16 }}>
+            <View
+              style={{
+                backgroundColor: '#141518',
+                borderRadius: 24,
+                padding: 18,
+                borderWidth: 1,
+                borderColor: 'rgba(232,93,38,0.3)',
+                position: 'relative',
+                shadowColor: '#E85D26',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.15,
+                shadowRadius: 16,
+              }}
+            >
+              {/* Card Tag & Sport */}
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  marginBottom: 12,
+                }}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <ArenaBadge label="FEATURED FIXTURE" variant="brand" size="sm" />
+                  <Text
+                    style={{
+                      color: '#A0A5AD',
+                      fontSize: 11,
+                      fontFamily: 'monospace',
+                    }}
+                  >
+                    {featuredMatch.date} · {featuredMatch.time}
+                  </Text>
+                </View>
 
-          <View className="flex-row gap-2">
-            {/* Stat 1: Active Fixtures */}
-            <View className="flex-1 bg-stone/20 rounded-sm p-3 border border-stone">
-              <Text className="text-stone-muted text-[9px] font-mono uppercase tracking-wider">
-                ACTIVE FIXTURES
-              </Text>
-              <Text className="text-graphite text-2xl font-black tracking-tight mt-0.5">
-                {activeFixturesCount}
-              </Text>
-              <Text className="text-stone-muted text-[10px] font-medium mt-0.5">
-                On board
-              </Text>
-            </View>
+                <ArenaBadge
+                  label={featuredMatch.sportLabel.toUpperCase()}
+                  variant="neutral"
+                  size="sm"
+                />
+              </View>
 
-            {/* Stat 2: Open Slots */}
-            <View className="flex-1 bg-stone/20 rounded-sm p-3 border border-stone">
-              <Text className="text-stone-muted text-[9px] font-mono uppercase tracking-wider">
-                OPEN SLOTS
-              </Text>
-              <Text className="text-arena-olive text-2xl font-black tracking-tight mt-0.5">
-                {totalOpenSlots}
-              </Text>
-              <Text className="text-stone-muted text-[10px] font-medium mt-0.5">
-                Available
-              </Text>
-            </View>
+              {/* Title & Progress Layout */}
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 12,
+                }}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text
+                    numberOfLines={2}
+                    style={{
+                      color: '#FFFFFF',
+                      fontSize: 17,
+                      fontWeight: '900',
+                      textTransform: 'uppercase',
+                      letterSpacing: -0.3,
+                      lineHeight: 22,
+                    }}
+                  >
+                    {featuredMatch.title}
+                  </Text>
 
-            {/* Stat 3: Pending Requests */}
-            <View className="flex-1 bg-stone/20 rounded-sm p-3 border border-stone">
-              <Text className="text-stone-muted text-[9px] font-mono uppercase tracking-wider">
-                REQUESTS
-              </Text>
-              <Text className="text-rust text-2xl font-black tracking-tight mt-0.5">
-                {pendingRequestsCount}
-              </Text>
-              <Text className="text-stone-muted text-[10px] font-medium mt-0.5">
-                Waiting
-              </Text>
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      marginTop: 8,
+                    }}
+                  >
+                    <Ionicons name="location-outline" size={13} color="#A0A5AD" />
+                    <Text
+                      numberOfLines={1}
+                      style={{
+                        color: '#A0A5AD',
+                        fontSize: 12,
+                        fontWeight: '500',
+                        marginLeft: 4,
+                      }}
+                    >
+                      {featuredMatch.groundName} · {featuredMatch.area}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Progress Ring Pattern Showing Filled Roster */}
+                <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+                  <SpotProgressRing
+                    slotsOpen={featuredMatch.slotsOpen}
+                    totalSlots={featuredMatch.totalSlots}
+                    size={72}
+                    strokeWidth={7}
+                    glow={true}
+                    displayMode="filled"
+                    label="filled"
+                  />
+                </View>
+              </View>
+
+              {/* Manage Fixture Pill Button */}
+              <View
+                style={{
+                  marginTop: 16,
+                  paddingTop: 14,
+                  borderTopWidth: 1,
+                  borderTopColor: 'rgba(255,255,255,0.06)',
+                }}
+              >
+                <Pressable
+                  onPress={() => router.push(`/match/${featuredMatch.id}`)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Manage featured fixture ${featuredMatch.title}`}
+                  style={{
+                    backgroundColor: '#1B1D22',
+                    minHeight: 44,
+                    borderRadius: 12,
+                    borderWidth: 1,
+                    borderColor: 'rgba(232,93,38,0.4)',
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 6,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: '#E85D26',
+                      fontSize: 12,
+                      fontWeight: '800',
+                      textTransform: 'uppercase',
+                      letterSpacing: 0.5,
+                    }}
+                  >
+                    Manage Fixture
+                  </Text>
+                  <Ionicons name="chevron-forward" size={14} color="#E85D26" />
+                </Pressable>
+              </View>
             </View>
           </View>
-        </View>
+        )}
 
-        {/* PRIMARY ACTION: CREATE MATCH (Screen 17 Bridge) */}
-        <View className="px-4 mt-4">
+        {/* PRIMARY QUICK ACTIONS */}
+        <View style={{ paddingHorizontal: 16, marginTop: 16 }}>
+          {/* Action 1: CREATE MATCH (Solar Orange Primary CTA) */}
           <Pressable
             onPress={() => router.push('/captain/create-match')}
             accessibilityRole="button"
             accessibilityLabel="Create Match. Open new fixture for your squad"
-            className="w-full bg-graphite rounded-sm p-4 border border-graphite shadow-sm active:bg-graphite/90 active:scale-[0.99]"
+            style={{
+              width: '100%',
+              backgroundColor: '#E85D26',
+              minHeight: 56,
+              borderRadius: 20,
+              paddingHorizontal: 18,
+              paddingVertical: 12,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              shadowColor: '#E85D26',
+              shadowOffset: { width: 0, height: 6 },
+              shadowOpacity: 0.3,
+              shadowRadius: 14,
+            }}
           >
-            <View className="flex-row items-center justify-between">
-              <View className="flex-row items-center flex-1 pr-3">
-                <View className="w-10 h-10 rounded-sm bg-arena-olive items-center justify-center border border-warm-white/20 mr-3">
-                  <Ionicons name="add" size={24} color="#F4F1EA" />
-                </View>
-                <View className="flex-1">
-                  <View className="flex-row items-center">
-                    <Text className="text-warm-white text-sm font-black uppercase tracking-wider">
-                      CREATE MATCH
-                    </Text>
-                    <View className="ml-2 bg-arena-olive/60 px-1.5 py-0.5 rounded-xs">
-                      <Text className="text-warm-white text-[9px] font-mono uppercase">
-                        SCREEN 17
-                      </Text>
-                    </View>
-                  </View>
-                  <Text className="text-stone-muted text-xs mt-0.5">
-                    Open player slots & schedule local fixture
-                  </Text>
-                </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 12 }}>
+              <View
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 18,
+                  backgroundColor: '#0C0D0E',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginRight: 12,
+                }}
+              >
+                <Ionicons name="add" size={22} color="#E85D26" />
               </View>
-              <Ionicons name="chevron-forward" size={18} color="#F4F1EA" />
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={{
+                    color: '#0C0D0E',
+                    fontSize: 14,
+                    fontWeight: '900',
+                    textTransform: 'uppercase',
+                    letterSpacing: 0.5,
+                  }}
+                >
+                  Create Match
+                </Text>
+                <Text
+                  style={{
+                    color: 'rgba(12,13,14,0.75)',
+                    fontSize: 11,
+                    fontWeight: '600',
+                    marginTop: 1,
+                  }}
+                >
+                  Open player slots & schedule local fixture
+                </Text>
+              </View>
             </View>
+            <Ionicons name="chevron-forward" size={20} color="#0C0D0E" />
           </Pressable>
-        </View>
 
-        {/* SECONDARY ACTION: REQUEST ACTIVITY PANEL (Screen 18 Bridge) */}
-        <View className="px-4 mt-3">
+          {/* Action 2: JOIN REQUESTS ATTENTION PANEL */}
           <Pressable
             onPress={() => router.push('/captain/join-requests')}
             accessibilityRole="button"
             accessibilityLabel={`Review join requests. ${pendingRequestsCount} athletes waiting for slot approval.`}
-            className="w-full bg-white rounded-sm p-4 border border-stone shadow-2xs active:bg-stone/10 active:scale-[0.99]"
+            style={{
+              width: '100%',
+              backgroundColor: '#141518',
+              borderRadius: 20,
+              padding: 16,
+              borderWidth: 1,
+              borderColor: 'rgba(255,255,255,0.08)',
+              marginTop: 10,
+            }}
           >
-            <View className="flex-row items-center justify-between mb-2">
-              <View className="flex-row items-center">
-                <View className="w-2 h-2 rounded-full bg-rust mr-2" />
-                <Text className="text-graphite text-xs font-black uppercase tracking-wide">
-                  REQUEST ATTENTION
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: 8,
+              }}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <View
+                  style={{
+                    width: 7,
+                    height: 7,
+                    borderRadius: 4,
+                    backgroundColor: '#E85D26',
+                    marginRight: 8,
+                  }}
+                />
+                <Text
+                  style={{
+                    color: '#FFFFFF',
+                    fontSize: 12,
+                    fontWeight: '800',
+                    textTransform: 'uppercase',
+                    letterSpacing: 0.5,
+                  }}
+                >
+                  Join Requests Attention
                 </Text>
               </View>
               <ArenaBadge
@@ -534,49 +921,270 @@ export default function CaptainDashboardScreen() {
               />
             </View>
 
-            <Text className="text-stone-muted text-xs leading-4 mb-3">
-              {pendingRequestsCount} players are waiting for slot approval on your active fixtures.
+            <Text
+              style={{
+                color: '#A0A5AD',
+                fontSize: 12,
+                lineHeight: 18,
+                marginBottom: 10,
+              }}
+            >
+              {pendingRequestsCount} athletes are waiting for slot approval on your active fixtures.
             </Text>
 
-            <View className="flex-row items-center justify-between pt-2.5 border-t border-stone/30">
-              <Text className="text-rust text-xs font-black uppercase tracking-wider">
-                REVIEW REQUESTS
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                paddingTop: 10,
+                borderTopWidth: 1,
+                borderTopColor: 'rgba(255,255,255,0.06)',
+                minHeight: 28,
+              }}
+            >
+              <Text
+                style={{
+                  color: '#E85D26',
+                  fontSize: 12,
+                  fontWeight: '800',
+                  textTransform: 'uppercase',
+                  letterSpacing: 0.5,
+                }}
+              >
+                Review Requests
               </Text>
-              <Ionicons name="arrow-forward" size={15} color="#875646" />
+              <Ionicons name="arrow-forward" size={15} color="#E85D26" />
             </View>
           </Pressable>
         </View>
 
+        {/* OPERATIONAL SUMMARY / METRICS */}
+        <View style={{ paddingHorizontal: 16, marginTop: 18 }}>
+          <Text
+            accessibilityRole="header"
+            style={{
+              color: '#A0A5AD',
+              fontSize: 11,
+              fontFamily: 'monospace',
+              textTransform: 'uppercase',
+              letterSpacing: 1,
+              marginBottom: 10,
+              fontWeight: '700',
+            }}
+          >
+            Match Operations
+          </Text>
+
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            {/* Stat 1: Active Fixtures */}
+            <View
+              style={{
+                flex: 1,
+                backgroundColor: '#141518',
+                borderRadius: 18,
+                padding: 14,
+                borderWidth: 1,
+                borderColor: 'rgba(255,255,255,0.08)',
+              }}
+            >
+              <Text
+                style={{
+                  color: '#5C616A',
+                  fontSize: 10,
+                  fontFamily: 'monospace',
+                  textTransform: 'uppercase',
+                  letterSpacing: 0.5,
+                  fontWeight: '700',
+                }}
+              >
+                FIXTURES
+              </Text>
+              <Text
+                style={{
+                  color: '#FFFFFF',
+                  fontSize: 24,
+                  fontWeight: '900',
+                  letterSpacing: -0.5,
+                  marginTop: 2,
+                }}
+              >
+                {activeFixturesCount}
+              </Text>
+              <Text
+                style={{
+                  color: '#A0A5AD',
+                  fontSize: 10,
+                  fontWeight: '500',
+                  marginTop: 2,
+                }}
+              >
+                Scheduled
+              </Text>
+            </View>
+
+            {/* Stat 2: Open Slots */}
+            <View
+              style={{
+                flex: 1,
+                backgroundColor: '#141518',
+                borderRadius: 18,
+                padding: 14,
+                borderWidth: 1,
+                borderColor: 'rgba(255,255,255,0.08)',
+              }}
+            >
+              <Text
+                style={{
+                  color: '#5C616A',
+                  fontSize: 10,
+                  fontFamily: 'monospace',
+                  textTransform: 'uppercase',
+                  letterSpacing: 0.5,
+                  fontWeight: '700',
+                }}
+              >
+                OPEN SLOTS
+              </Text>
+              <Text
+                style={{
+                  color: '#E85D26',
+                  fontSize: 24,
+                  fontWeight: '900',
+                  letterSpacing: -0.5,
+                  marginTop: 2,
+                }}
+              >
+                {totalOpenSlots}
+              </Text>
+              <Text
+                style={{
+                  color: '#A0A5AD',
+                  fontSize: 10,
+                  fontWeight: '500',
+                  marginTop: 2,
+                }}
+              >
+                Vacancies
+              </Text>
+            </View>
+
+            {/* Stat 3: Pending Requests */}
+            <View
+              style={{
+                flex: 1,
+                backgroundColor: '#141518',
+                borderRadius: 18,
+                padding: 14,
+                borderWidth: 1,
+                borderColor: 'rgba(255,255,255,0.08)',
+              }}
+            >
+              <Text
+                style={{
+                  color: '#5C616A',
+                  fontSize: 10,
+                  fontFamily: 'monospace',
+                  textTransform: 'uppercase',
+                  letterSpacing: 0.5,
+                  fontWeight: '700',
+                }}
+              >
+                REQUESTS
+              </Text>
+              <Text
+                style={{
+                  color: '#F4A261',
+                  fontSize: 24,
+                  fontWeight: '900',
+                  letterSpacing: -0.5,
+                  marginTop: 2,
+                }}
+              >
+                {pendingRequestsCount}
+              </Text>
+              <Text
+                style={{
+                  color: '#A0A5AD',
+                  fontSize: 10,
+                  fontWeight: '500',
+                  marginTop: 2,
+                }}
+              >
+                Pending
+              </Text>
+            </View>
+          </View>
+        </View>
+
         {/* FIXTURES SECTION: YOUR FIXTURES */}
-        <View className="px-4 mt-6">
-          <View className="flex-row items-center justify-between mb-2.5">
+        <View style={{ paddingHorizontal: 16, marginTop: 22 }}>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: 12,
+            }}
+          >
             <Text
               accessibilityRole="header"
-              className="text-graphite text-[11px] font-mono uppercase tracking-widest font-bold"
+              style={{
+                color: '#FFFFFF',
+                fontSize: 14,
+                fontWeight: '900',
+                textTransform: 'uppercase',
+                letterSpacing: 0.5,
+              }}
             >
-              YOUR FIXTURES
+              Your Fixtures
             </Text>
-            <Text className="text-stone-muted text-[10px] font-mono">
+            <Text
+              style={{
+                color: '#5C616A',
+                fontSize: 11,
+                fontFamily: 'monospace',
+              }}
+            >
               {displayedFixtures.length} of {captainFixtures.length} Shown
             </Text>
           </View>
 
-          {/* Presentation Filter Tabs */}
-          <View className="flex-row bg-stone/30 p-1 rounded-sm border border-stone mb-3">
+          {/* Presentation Filter Tabs (44px min height touch target) */}
+          <View
+            style={{
+              flexDirection: 'row',
+              backgroundColor: '#141518',
+              padding: 4,
+              borderRadius: 14,
+              borderWidth: 1,
+              borderColor: 'rgba(255,255,255,0.08)',
+              marginBottom: 14,
+            }}
+          >
             <Pressable
               onPress={() => setFilterTab('all')}
               accessibilityRole="button"
               accessibilityLabel="Show all captain fixtures"
-              className={`flex-1 py-1.5 items-center rounded-xs ${
-                filterTab === 'all' ? 'bg-graphite' : 'bg-transparent'
-              }`}
+              style={{
+                flex: 1,
+                minHeight: 44,
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: 10,
+                backgroundColor: filterTab === 'all' ? '#E85D26' : 'transparent',
+              }}
             >
               <Text
-                className={`text-[11px] font-black uppercase tracking-wider ${
-                  filterTab === 'all' ? 'text-warm-white' : 'text-stone-muted'
-                }`}
+                style={{
+                  fontSize: 11,
+                  fontWeight: '800',
+                  textTransform: 'uppercase',
+                  letterSpacing: 0.5,
+                  color: filterTab === 'all' ? '#0C0D0E' : '#A0A5AD',
+                }}
               >
-                ALL ({captainFixtures.length})
+                All ({captainFixtures.length})
               </Text>
             </Pressable>
 
@@ -584,16 +1192,25 @@ export default function CaptainDashboardScreen() {
               onPress={() => setFilterTab('open')}
               accessibilityRole="button"
               accessibilityLabel="Show open slot fixtures"
-              className={`flex-1 py-1.5 items-center rounded-xs ${
-                filterTab === 'open' ? 'bg-graphite' : 'bg-transparent'
-              }`}
+              style={{
+                flex: 1,
+                minHeight: 44,
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: 10,
+                backgroundColor: filterTab === 'open' ? '#E85D26' : 'transparent',
+              }}
             >
               <Text
-                className={`text-[11px] font-black uppercase tracking-wider ${
-                  filterTab === 'open' ? 'text-warm-white' : 'text-stone-muted'
-                }`}
+                style={{
+                  fontSize: 11,
+                  fontWeight: '800',
+                  textTransform: 'uppercase',
+                  letterSpacing: 0.5,
+                  color: filterTab === 'open' ? '#0C0D0E' : '#A0A5AD',
+                }}
               >
-                OPEN SLOTS
+                Open Slots
               </Text>
             </Pressable>
 
@@ -601,90 +1218,225 @@ export default function CaptainDashboardScreen() {
               onPress={() => setFilterTab('full')}
               accessibilityRole="button"
               accessibilityLabel="Show full roster fixtures"
-              className={`flex-1 py-1.5 items-center rounded-xs ${
-                filterTab === 'full' ? 'bg-graphite' : 'bg-transparent'
-              }`}
+              style={{
+                flex: 1,
+                minHeight: 44,
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: 10,
+                backgroundColor: filterTab === 'full' ? '#E85D26' : 'transparent',
+              }}
             >
               <Text
-                className={`text-[11px] font-black uppercase tracking-wider ${
-                  filterTab === 'full' ? 'text-warm-white' : 'text-stone-muted'
-                }`}
+                style={{
+                  fontSize: 11,
+                  fontWeight: '800',
+                  textTransform: 'uppercase',
+                  letterSpacing: 0.5,
+                  color: filterTab === 'full' ? '#0C0D0E' : '#A0A5AD',
+                }}
               >
-                ROSTER FULL
+                Roster Full
               </Text>
             </Pressable>
           </View>
 
           {/* FIXTURE CARDS, LOADING, ERROR OR EMPTY STATE */}
           {isLoadingFixtures ? (
-            /* LOADING STATE */
-            <View className="bg-white rounded-sm p-8 border border-stone items-center justify-center">
-              <ActivityIndicator size="small" color="#1A1C19" />
-              <Text className="text-stone-muted text-[10px] font-mono uppercase tracking-widest mt-3">
-                SYNCING CAPTAIN FIXTURES...
+            <View
+              style={{
+                backgroundColor: '#141518',
+                borderRadius: 20,
+                padding: 32,
+                borderWidth: 1,
+                borderColor: 'rgba(255,255,255,0.08)',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <ActivityIndicator size="small" color="#E85D26" />
+              <Text
+                style={{
+                  color: '#A0A5AD',
+                  fontSize: 11,
+                  fontFamily: 'monospace',
+                  textTransform: 'uppercase',
+                  letterSpacing: 1,
+                  marginTop: 12,
+                }}
+              >
+                Syncing Captain Fixtures...
               </Text>
             </View>
           ) : fixturesError ? (
-            /* ERROR STATE WITH RETRY */
-            <View className="bg-white rounded-sm p-6 border border-rust/40 items-center">
-              <View className="w-12 h-12 rounded-full bg-rust/10 border border-rust/30 items-center justify-center mb-3">
-                <Ionicons name="cloud-offline-outline" size={24} color="#875646" />
+            <View
+              style={{
+                backgroundColor: '#141518',
+                borderRadius: 20,
+                padding: 24,
+                borderWidth: 1,
+                borderColor: 'rgba(244,162,97,0.3)',
+                alignItems: 'center',
+              }}
+            >
+              <View
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 24,
+                  backgroundColor: 'rgba(244,162,97,0.1)',
+                  borderWidth: 1,
+                  borderColor: 'rgba(244,162,97,0.3)',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: 12,
+                }}
+              >
+                <Ionicons name="cloud-offline-outline" size={24} color="#F4A261" />
               </View>
 
-              <Text className="text-graphite text-sm font-black uppercase tracking-tight text-center">
-                FAILED TO LOAD CAPTAIN FIXTURES
+              <Text
+                style={{
+                  color: '#FFFFFF',
+                  fontSize: 14,
+                  fontWeight: '900',
+                  textTransform: 'uppercase',
+                  letterSpacing: 0.5,
+                  textAlign: 'center',
+                }}
+              >
+                Failed to Load Fixtures
               </Text>
 
-              <Text className="text-stone-muted text-xs font-medium text-center mt-1.5 leading-5 max-w-[260px]">
+              <Text
+                style={{
+                  color: '#A0A5AD',
+                  fontSize: 12,
+                  fontWeight: '500',
+                  textAlign: 'center',
+                  marginTop: 6,
+                  lineHeight: 18,
+                  maxWidth: 260,
+                }}
+              >
                 {fixturesError}
               </Text>
 
-              <View className="w-full mt-5">
+              <View style={{ width: '100%', marginTop: 18 }}>
                 <Pressable
                   onPress={loadCaptainFixtures}
                   accessibilityRole="button"
                   accessibilityLabel="Retry loading captain fixtures"
-                  className="w-full bg-arena-olive rounded-sm py-3 items-center justify-center active:bg-olive-dark border border-arena-olive"
+                  style={{
+                    width: '100%',
+                    backgroundColor: '#E85D26',
+                    borderRadius: 12,
+                    minHeight: 44,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
                 >
-                  <Text className="text-warm-white text-xs font-black uppercase tracking-wider">
-                    RETRY
+                  <Text
+                    style={{
+                      color: '#0C0D0E',
+                      fontSize: 12,
+                      fontWeight: '900',
+                      textTransform: 'uppercase',
+                      letterSpacing: 0.5,
+                    }}
+                  >
+                    Retry
                   </Text>
                 </Pressable>
               </View>
             </View>
           ) : displayedFixtures.length === 0 ? (
-            /* EMPTY CAPTAIN FIXTURES STATE */
-            <View className="bg-white rounded-sm p-6 border border-stone items-center">
-              <View className="w-12 h-12 rounded-full bg-stone/20 border border-stone items-center justify-center mb-3">
-                <Ionicons name="calendar-outline" size={24} color="#666B60" />
+            <View
+              style={{
+                backgroundColor: '#141518',
+                borderRadius: 20,
+                padding: 28,
+                borderWidth: 1,
+                borderColor: 'rgba(255,255,255,0.08)',
+                alignItems: 'center',
+              }}
+            >
+              <View
+                style={{
+                  width: 52,
+                  height: 52,
+                  borderRadius: 26,
+                  backgroundColor: '#1B1D22',
+                  borderWidth: 1,
+                  borderColor: 'rgba(255,255,255,0.08)',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: 12,
+                }}
+              >
+                <Ionicons name="calendar-outline" size={24} color="#A0A5AD" />
               </View>
 
-              <Text className="text-graphite text-sm font-black uppercase tracking-tight text-center">
-                NO FIXTURES ON YOUR BOARD
+              <Text
+                style={{
+                  color: '#FFFFFF',
+                  fontSize: 14,
+                  fontWeight: '900',
+                  textTransform: 'uppercase',
+                  letterSpacing: 0.5,
+                  textAlign: 'center',
+                }}
+              >
+                No Fixtures on Your Board
               </Text>
 
-              <Text className="text-stone-muted text-xs font-medium text-center mt-1.5 leading-5 max-w-[260px]">
+              <Text
+                style={{
+                  color: '#A0A5AD',
+                  fontSize: 12,
+                  fontWeight: '500',
+                  textAlign: 'center',
+                  marginTop: 6,
+                  lineHeight: 18,
+                  maxWidth: 260,
+                }}
+              >
                 Create a match to open player slots in your local circuit.
               </Text>
 
-              <View className="w-full mt-5">
+              <View style={{ width: '100%', marginTop: 20 }}>
                 <Pressable
                   onPress={() => router.push('/captain/create-match')}
                   accessibilityRole="button"
                   accessibilityLabel="Create Match"
-                  className="w-full bg-arena-olive rounded-sm py-3 items-center justify-center active:bg-olive-dark border border-arena-olive"
+                  style={{
+                    width: '100%',
+                    backgroundColor: '#E85D26',
+                    borderRadius: 12,
+                    minHeight: 48,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
                 >
-                  <Text className="text-warm-white text-xs font-black uppercase tracking-wider">
-                    CREATE MATCH
+                  <Text
+                    style={{
+                      color: '#0C0D0E',
+                      fontSize: 12,
+                      fontWeight: '900',
+                      textTransform: 'uppercase',
+                      letterSpacing: 0.5,
+                    }}
+                  >
+                    Create Match
                   </Text>
                 </Pressable>
               </View>
             </View>
           ) : (
-            /* LIST OF CAPTAIN FIXTURES */
             displayedFixtures.map((fixture) => {
               const slotPresentation = getSlotPresentation(fixture.slotsOpen);
               const confirmedCount = fixture.totalSlots - fixture.slotsOpen;
+              const fillRatio = Math.min(1, Math.max(0, confirmedCount / Math.max(1, fixture.totalSlots)));
 
               return (
                 <Pressable
@@ -692,22 +1444,42 @@ export default function CaptainDashboardScreen() {
                   onPress={() => router.push(`/match/${fixture.id}`)}
                   accessibilityRole="button"
                   accessibilityLabel={`Manage fixture ${fixture.title}, ${fixture.slotsOpen} open slots, at ${fixture.groundName}`}
-                  className="bg-white rounded-sm p-4 mb-3 border border-stone shadow-2xs active:bg-stone/10 active:scale-[0.99]"
+                  style={{
+                    backgroundColor: '#141518',
+                    borderRadius: 20,
+                    padding: 16,
+                    marginBottom: 12,
+                    borderWidth: 1,
+                    borderColor: 'rgba(255,255,255,0.08)',
+                  }}
                 >
-                  {/* Top Bar: Sport and Open Slot Status */}
-                  <View className="flex-row items-center justify-between mb-2">
-                    <View className="flex-row items-center">
+                  {/* Top Bar: Sport and Slot Status Badge */}
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      marginBottom: 10,
+                    }}
+                  >
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                       <ArenaBadge
                         label={fixture.sportLabel.toUpperCase()}
-                        variant={fixture.sport === 'cricket' ? 'rust' : 'olive'}
+                        variant={fixture.sport === 'cricket' ? 'rust' : 'brand'}
                         size="sm"
                       />
-                      <Text className="text-stone-muted text-[10px] font-mono ml-2">
+                      <Text
+                        style={{
+                          color: '#A0A5AD',
+                          fontSize: 11,
+                          fontFamily: 'monospace',
+                          marginLeft: 8,
+                        }}
+                      >
                         {fixture.date} · {fixture.time}
                       </Text>
                     </View>
 
-                    {/* Prominent Slot Vacancy Status */}
                     <ArenaBadge
                       label={slotPresentation.label}
                       variant={slotPresentation.badgeVariant}
@@ -718,39 +1490,129 @@ export default function CaptainDashboardScreen() {
                   {/* Fixture Title */}
                   <Text
                     numberOfLines={1}
-                    className="text-graphite text-sm font-black uppercase tracking-tight mb-2"
+                    style={{
+                      color: '#FFFFFF',
+                      fontSize: 15,
+                      fontWeight: '900',
+                      textTransform: 'uppercase',
+                      letterSpacing: -0.3,
+                      marginBottom: 8,
+                    }}
                   >
                     {fixture.title}
                   </Text>
 
                   {/* Venue and Area */}
-                  <View className="flex-row items-center mb-3">
-                    <Ionicons name="location-outline" size={13} color="#666B60" />
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      marginBottom: 14,
+                    }}
+                  >
+                    <Ionicons name="location-outline" size={13} color="#A0A5AD" />
                     <Text
                       numberOfLines={1}
-                      className="text-stone-muted text-xs font-medium ml-1 flex-1"
+                      style={{
+                        color: '#A0A5AD',
+                        fontSize: 12,
+                        fontWeight: '500',
+                        marginLeft: 4,
+                        flex: 1,
+                      }}
                     >
                       {fixture.groundName} · {fixture.area}
                     </Text>
                   </View>
 
-                  {/* Capacity & Operational Status Bar */}
-                  <View className="pt-2.5 border-t border-stone/30 flex-row items-center justify-between">
-                    <View className="flex-row items-center">
-                      <Ionicons name="people-outline" size={13} color="#3D4438" />
-                      <Text className="text-graphite text-xs font-bold ml-1.5">
-                        {confirmedCount}/{fixture.totalSlots} Players
-                      </Text>
-                      <Text className="text-stone-muted text-[10px] font-mono ml-1.5">
-                        ({slotPresentation.label})
-                      </Text>
+                  {/* Capacity Bar & Operational Status */}
+                  <View
+                    style={{
+                      paddingTop: 12,
+                      borderTopWidth: 1,
+                      borderTopColor: 'rgba(255,255,255,0.06)',
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                    }}
+                  >
+                    <View style={{ flex: 1, marginRight: 16 }}>
+                      <View
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          marginBottom: 6,
+                        }}
+                      >
+                        <Text
+                          style={{
+                            color: '#FFFFFF',
+                            fontSize: 11,
+                            fontWeight: '700',
+                          }}
+                        >
+                          {confirmedCount}/{fixture.totalSlots} Players
+                        </Text>
+                        <Text
+                          style={{
+                            color: slotPresentation.textColor,
+                            fontSize: 10,
+                            fontFamily: 'monospace',
+                            fontWeight: '700',
+                          }}
+                        >
+                          {fixture.slotsOpen > 0 ? `${fixture.slotsOpen} OPEN` : 'FULL'}
+                        </Text>
+                      </View>
+
+                      {/* Mini Capacity Track */}
+                      <View
+                        style={{
+                          height: 4,
+                          width: '100%',
+                          backgroundColor: '#1B1D22',
+                          borderRadius: 2,
+                          overflow: 'hidden',
+                        }}
+                      >
+                        <View
+                          style={{
+                            height: '100%',
+                            width: `${fillRatio * 100}%`,
+                            backgroundColor: fixture.slotsOpen === 0 ? '#5C616A' : '#E85D26',
+                            borderRadius: 2,
+                          }}
+                        />
+                      </View>
                     </View>
 
-                    <View className="flex-row items-center">
-                      <Text className="text-graphite text-[10px] font-black uppercase tracking-wider mr-1">
-                        MANAGE
+                    {/* Manage Link Button (44px min touch target) */}
+                    <View
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        backgroundColor: '#1B1D22',
+                        paddingHorizontal: 12,
+                        minHeight: 44,
+                        borderRadius: 10,
+                        borderWidth: 1,
+                        borderColor: 'rgba(255,255,255,0.08)',
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: '#E85D26',
+                          fontSize: 11,
+                          fontWeight: '800',
+                          textTransform: 'uppercase',
+                          letterSpacing: 0.5,
+                          marginRight: 4,
+                        }}
+                      >
+                        Manage
                       </Text>
-                      <Ionicons name="chevron-forward" size={13} color="#242522" />
+                      <Ionicons name="chevron-forward" size={13} color="#E85D26" />
                     </View>
                   </View>
                 </Pressable>

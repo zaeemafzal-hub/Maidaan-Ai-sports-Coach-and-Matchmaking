@@ -17,10 +17,6 @@ import { PrimaryButton } from '../../components/ui/PrimaryButton';
 import { IMAGES } from '../../constants/images';
 import { adminService } from '../../services/adminService';
 
-// =============================================================================
-// DOMAIN TYPES & LIVE SUMMARY MODEL
-// =============================================================================
-
 export interface AdminQueueSummary {
   pendingHubs: number;
   openReports: number;
@@ -41,8 +37,6 @@ export interface AdminActivityItem {
 export default function AdminDashboardScreen() {
   const { currentUser } = useAuthStore();
 
-  // Strict Admin Role Guard:
-  // Only authenticated user with currentUser.role === 'ADMIN' has access.
   const isAdmin = currentUser?.role === 'ADMIN';
 
   // Live operational state
@@ -106,7 +100,6 @@ export default function AdminDashboardScreen() {
         });
       }
 
-      // Construct live recent activity stream from real verifications & reports
       const liveItems: AdminActivityItem[] = [
         ...verifications.map((v) => ({
           id: `hub-${v.id.substring(0, 8)}`,
@@ -176,25 +169,25 @@ export default function AdminDashboardScreen() {
   // =========================================================================
   if (!isAdmin) {
     return (
-      <SafeAreaView className="flex-1 bg-warm-white" edges={['top']}>
+      <SafeAreaView className="flex-1 bg-[#171A1D]" edges={['top']}>
         <ArenaHeader
-          title="MAIDAAN"
-          subtitle="PLATFORM OPERATIONS // ACCESS RESTRICTION"
+          title="Admin Desk"
+          subtitle="Access Restriction"
           showBack
           onBack={() => router.replace('/(tabs)/discover')}
         />
-        <View className="flex-1 items-center justify-center p-6 bg-warm-white">
-          <View className="w-16 h-16 rounded-full bg-rust/10 items-center justify-center border border-rust/30 mb-5">
-            <Ionicons name="shield-outline" size={28} color="#875646" />
+        <View className="flex-1 items-center justify-center p-6 bg-[#171A1D]">
+          <View className="w-16 h-16 rounded-full bg-[#F4A261]/10 items-center justify-center border border-[#F4A261]/30 mb-5">
+            <Ionicons name="shield-outline" size={28} color="#F4A261" />
           </View>
 
           <ArenaBadge label="ADMIN ACCESS REQUIRED" variant="rust" size="md" />
 
-          <Text className="text-graphite text-lg font-black uppercase tracking-tight text-center mt-3">
-            ADMIN ACCESS REQUIRED
+          <Text className="text-[#F4F6F7] text-lg font-black uppercase tracking-tight text-center mt-3">
+            Admin Access Required
           </Text>
 
-          <Text className="text-stone-muted text-sm text-center mt-2 max-w-[310px] leading-5">
+          <Text className="text-[#A0A5AD] text-sm text-center mt-2 max-w-[310px] leading-5">
             This workspace is restricted to Maidaan administrators. Public accounts cannot access platform review queues.
           </Text>
 
@@ -213,7 +206,7 @@ export default function AdminDashboardScreen() {
   // =========================================================================
   // 2. ADMIN IDENTITY PRESENTATION
   // =========================================================================
-  const adminName = currentUser?.name?.trim() || 'ADMINISTRATOR';
+  const adminName = currentUser?.name?.trim() || 'Administrator';
   const adminIdentifier = currentUser?.id ? `ID: ${currentUser.id.substring(0, 8)}` : 'ADM-01';
 
   const areQueuesClear = summary.pendingHubs === 0 && summary.openReports === 0;
@@ -222,67 +215,64 @@ export default function AdminDashboardScreen() {
   // 3. MAIN DASHBOARD RENDER
   // =========================================================================
   return (
-    <SafeAreaView className="flex-1 bg-warm-white" edges={['top']}>
-      {/* Header */}
+    <SafeAreaView className="flex-1 bg-[#171A1D]" edges={['top']}>
+      {/* Modern Athletic Header */}
       <ArenaHeader
-        title="ADMIN DESK"
-        subtitle="PLATFORM OPERATIONS // REVIEW QUEUES"
+        title="Admin Desk"
+        subtitle="Platform Governance"
         showBack
         onBack={() => router.replace('/(tabs)/discover')}
-        rightAction={
-          <ArenaBadge label="LIVE DESK" variant="stone" size="sm" />
-        }
       />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 56 }}
       >
-        {/* RESTRAINED OPERATIONAL BANNER */}
+        {/* Operational Banner */}
         <View className="px-4 pt-3">
-          <View className="h-16 w-full rounded-sm overflow-hidden border border-stone relative bg-graphite">
+          <View className="h-18 w-full rounded-2xl overflow-hidden border border-white/10 relative bg-[#1F2327]">
             <Image
               source={IMAGES.arenaGround}
               className="w-full h-full opacity-30"
               resizeMode="cover"
             />
-            <View className="absolute inset-0 px-3.5 py-2 flex-row items-center justify-between">
+            <View className="absolute inset-0 px-4 py-3 flex-row items-center justify-between bg-gradient-to-r from-[#171A1D]/80 to-transparent">
               <View className="flex-1 pr-2">
-                <Text className="text-stone-muted text-[9px] font-mono uppercase tracking-widest font-bold">
-                  ADMIN SESSION ACTIVE
+                <Text className="text-[#7F8993] text-[10px] font-mono uppercase tracking-widest font-bold">
+                  Admin Session Active
                 </Text>
                 <Text
                   numberOfLines={1}
-                  className="text-warm-white text-sm font-black uppercase tracking-tight"
+                  className="text-[#F4F6F7] text-base font-black uppercase tracking-tight"
                 >
                   {adminName} • {adminIdentifier}
                 </Text>
               </View>
-              <ArenaBadge label="OPERATIONS DESK" variant="olive" size="sm" />
+              <ArenaBadge label="ADMIN" variant="olive" size="sm" />
             </View>
           </View>
         </View>
 
         {/* LOADING INDICATOR */}
         {loading && (
-          <View className="mx-4 mt-4 p-4 bg-white rounded-sm border border-stone flex-row items-center justify-center">
-            <ActivityIndicator size="small" color="#3D4438" />
-            <Text className="text-stone-muted text-xs font-mono ml-3">
-              SYNCING OPERATIONAL METRICS...
+          <View className="mx-4 mt-4 p-4 bg-[#1F2327] rounded-2xl border border-white/10 flex-row items-center justify-center">
+            <ActivityIndicator size="small" color="#E85D26" />
+            <Text className="text-[#A0A5AD] text-xs font-mono ml-3">
+              Syncing operational metrics...
             </Text>
           </View>
         )}
 
         {/* ERROR WITH RETRY */}
         {error && !loading && (
-          <View className="mx-4 mt-4 p-4 bg-rust/10 rounded-sm border border-rust/30">
+          <View className="mx-4 mt-4 p-4 bg-[#F4A261]/10 rounded-2xl border border-[#F4A261]/30">
             <View className="flex-row items-center mb-2">
-              <Ionicons name="alert-circle-outline" size={18} color="#875646" />
-              <Text className="text-rust text-xs font-black uppercase tracking-tight ml-2">
-                METRIC SYNC ERROR
+              <Ionicons name="alert-circle-outline" size={18} color="#F4A261" />
+              <Text className="text-[#F4A261] text-xs font-black uppercase tracking-tight ml-2">
+                Metric Sync Error
               </Text>
             </View>
-            <Text className="text-stone-muted text-xs leading-4 mb-3">
+            <Text className="text-[#A0A5AD] text-xs leading-4 mb-3">
               {error}
             </Text>
             <PrimaryButton
@@ -293,57 +283,57 @@ export default function AdminDashboardScreen() {
           </View>
         )}
 
-        {/* DOMINANT ELEMENT: REVIEW WORKLOAD SUMMARY STRIP */}
+        {/* REVIEW WORKLOAD SUMMARY STRIP */}
         <View className="px-4 mt-4">
           <View className="flex-row items-center justify-between mb-2">
             <Text
               accessibilityRole="header"
-              className="text-graphite text-[11px] font-mono uppercase tracking-widest font-bold"
+              className="text-[#A0A5AD] text-xs font-mono uppercase tracking-wider font-bold"
             >
-              MODERATION & VERIFICATION WORKLOAD
+              Moderation & Verification Workload
             </Text>
-            <Text className="text-stone-muted text-[10px] font-mono">
-              LIVE QUEUE STATUS
+            <Text className="text-[#7F8993] text-[10px] font-mono">
+              Live Queue Status
             </Text>
           </View>
 
           <View className="flex-row gap-2">
             {/* Stat 1: Hubs Pending */}
-            <View className="flex-1 bg-stone/20 rounded-sm p-3 border border-stone">
-              <Text className="text-stone-muted text-[9px] font-mono uppercase tracking-wider font-bold">
+            <View className="flex-1 bg-[#1F2327] rounded-2xl p-3.5 border border-white/10">
+              <Text className="text-[#7F8993] text-[10px] font-mono uppercase tracking-wider font-bold">
                 HUBS PENDING
               </Text>
-              <Text className="text-rust text-2xl font-black tracking-tight mt-0.5">
+              <Text className="text-[#F4A261] text-2xl font-black tracking-tight mt-0.5">
                 {summary.pendingHubs}
               </Text>
-              <Text className="text-stone-muted text-[10px] font-medium mt-0.5">
+              <Text className="text-[#A0A5AD] text-[10px] font-medium mt-0.5">
                 Awaiting audit
               </Text>
             </View>
 
             {/* Stat 2: Reports Open */}
-            <View className="flex-1 bg-stone/20 rounded-sm p-3 border border-stone">
-              <Text className="text-stone-muted text-[9px] font-mono uppercase tracking-wider font-bold">
+            <View className="flex-1 bg-[#1F2327] rounded-2xl p-3.5 border border-white/10">
+              <Text className="text-[#7F8993] text-[10px] font-mono uppercase tracking-wider font-bold">
                 REPORTS OPEN
               </Text>
-              <Text className="text-rust text-2xl font-black tracking-tight mt-0.5">
+              <Text className="text-[#F4A261] text-2xl font-black tracking-tight mt-0.5">
                 {summary.openReports}
               </Text>
-              <Text className="text-stone-muted text-[10px] font-medium mt-0.5">
+              <Text className="text-[#A0A5AD] text-[10px] font-medium mt-0.5">
                 Safety & conduct
               </Text>
             </View>
 
             {/* Stat 3: Reviews Completed */}
-            <View className="flex-1 bg-stone/20 rounded-sm p-3 border border-stone">
-              <Text className="text-stone-muted text-[9px] font-mono uppercase tracking-wider font-bold">
-                REVIEWS COMPLETED
+            <View className="flex-1 bg-[#1F2327] rounded-2xl p-3.5 border border-white/10">
+              <Text className="text-[#7F8993] text-[10px] font-mono uppercase tracking-wider font-bold">
+                RESOLVED
               </Text>
-              <Text className="text-arena-olive text-2xl font-black tracking-tight mt-0.5">
+              <Text className="text-[#E85D26] text-2xl font-black tracking-tight mt-0.5">
                 {summary.completedReviews}
               </Text>
-              <Text className="text-stone-muted text-[10px] font-medium mt-0.5">
-                Resolved cases
+              <Text className="text-[#A0A5AD] text-[10px] font-medium mt-0.5">
+                Completed
               </Text>
             </View>
           </View>
@@ -351,155 +341,151 @@ export default function AdminDashboardScreen() {
 
         {/* EMPTY WORKLOAD STATE */}
         {!loading && areQueuesClear ? (
-          <View className="mx-4 mt-4 bg-white rounded-sm p-5 border border-stone items-center">
-            <View className="w-12 h-12 rounded-full bg-arena-olive/20 border border-arena-olive items-center justify-center mb-2">
-              <Ionicons name="checkmark-done" size={24} color="#3D4438" />
+          <View className="mx-4 mt-4 bg-[#1F2327] rounded-2xl p-5 border border-white/10 items-center">
+            <View className="w-12 h-12 rounded-full bg-[#E85D26]/20 border border-[#E85D26]/40 items-center justify-center mb-2">
+              <Ionicons name="checkmark-done" size={24} color="#E85D26" />
             </View>
-            <Text className="text-graphite text-xs font-black uppercase tracking-wider">
-              REVIEW QUEUES CLEAR
+            <Text className="text-[#F4F6F7] text-xs font-black uppercase tracking-wider">
+              Review Queues Clear
             </Text>
-            <Text className="text-stone-muted text-xs text-center mt-1">
+            <Text className="text-[#A0A5AD] text-xs text-center mt-1">
               No Hub verifications or reports are waiting for review.
             </Text>
           </View>
         ) : null}
 
-        {/* ================================================================= */}
-        {/* APPROVED WORK QUEUE CARDS */}
-        {/* ================================================================= */}
+        {/* ACTIVE REVIEW QUEUES */}
         <View className="px-4 mt-6">
           <Text
             accessibilityRole="header"
-            className="text-graphite text-[11px] font-mono uppercase tracking-widest font-bold mb-3"
+            className="text-[#A0A5AD] text-xs font-mono uppercase tracking-wider font-bold mb-3"
           >
-            ACTIVE REVIEW QUEUES
+            Active Review Queues
           </Text>
 
-          {/* QUEUE 01: HUB VERIFICATION (Screen 21 Bridge) */}
+          {/* QUEUE 01: HUB VERIFICATION */}
           <Pressable
             onPress={() => router.push('/admin/hub-verification')}
             accessibilityRole="button"
             accessibilityLabel={`Open Hub Verification queue. ${summary.pendingHubs} submissions pending.`}
-            className="w-full bg-white rounded-sm p-4 border border-stone mb-3 shadow-2xs active:bg-stone/10 active:scale-[0.99]"
+            className="w-full bg-[#1F2327] rounded-2xl p-4 border border-white/10 mb-3 shadow-sm active:bg-[#272C31] active:scale-[0.99]"
           >
             <View className="flex-row items-center justify-between mb-2">
               <View className="flex-row items-center">
-                <Text className="text-stone-muted text-xs font-mono font-bold mr-2">
+                <Text className="text-[#7F8993] text-xs font-mono font-bold mr-2">
                   01
                 </Text>
-                <View className="w-2 h-2 rounded-full bg-rust mr-2" />
-                <Text className="text-graphite text-sm font-black uppercase tracking-tight">
-                  HUB VERIFICATION
+                <View className="w-2 h-2 rounded-full bg-[#F4A261] mr-2" />
+                <Text className="text-[#F4F6F7] text-sm font-black uppercase tracking-tight">
+                  Hub Verification
                 </Text>
               </View>
               <ArenaBadge
-                label={`${summary.pendingHubs} PENDING SUBMISSIONS`}
+                label={`${summary.pendingHubs} PENDING`}
                 variant="rust"
                 size="sm"
               />
             </View>
 
-            <Text className="text-stone-muted text-xs leading-4 mb-3">
+            <Text className="text-[#A0A5AD] text-xs leading-4 mb-3">
               Review Hub Owner submissions awaiting administrative verification. Inspect court dimensions, safety floodlights, and ground amenities.
             </Text>
 
-            <View className="flex-row items-center justify-between pt-2.5 border-t border-stone/30">
+            <View className="flex-row items-center justify-between pt-2.5 border-t border-white/5">
               <View className="flex-row items-center">
-                <Ionicons name="business-outline" size={14} color="#3D4438" />
-                <Text className="text-stone-muted text-[10px] font-mono uppercase font-bold ml-1.5">
-                  SCREEN 21 WORKFLOW
+                <Ionicons name="business-outline" size={14} color="#E85D26" />
+                <Text className="text-[#A0A5AD] text-xs ml-1.5">
+                  Verification Desk
                 </Text>
               </View>
               <View className="flex-row items-center">
-                <Text className="text-arena-olive text-xs font-black uppercase tracking-wider mr-1">
-                  REVIEW HUBS
+                <Text className="text-[#E85D26] text-xs font-bold uppercase tracking-wider mr-1">
+                  Review Hubs
                 </Text>
-                <Ionicons name="arrow-forward" size={14} color="#3D4438" />
+                <Ionicons name="arrow-forward" size={14} color="#E85D26" />
               </View>
             </View>
           </Pressable>
 
-          {/* QUEUE 02: REPORT REVIEW (Screen 22 Bridge) */}
+          {/* QUEUE 02: REPORT REVIEW */}
           <Pressable
             onPress={() => router.push('/admin/report-review')}
             accessibilityRole="button"
             accessibilityLabel={`Open Report Review queue. ${summary.openReports} reports awaiting action.`}
-            className="w-full bg-white rounded-sm p-4 border border-stone shadow-2xs active:bg-stone/10 active:scale-[0.99]"
+            className="w-full bg-[#1F2327] rounded-2xl p-4 border border-white/10 shadow-sm active:bg-[#272C31] active:scale-[0.99]"
           >
             <View className="flex-row items-center justify-between mb-2">
               <View className="flex-row items-center">
-                <Text className="text-stone-muted text-xs font-mono font-bold mr-2">
+                <Text className="text-[#7F8993] text-xs font-mono font-bold mr-2">
                   02
                 </Text>
-                <View className="w-2 h-2 rounded-full bg-rust mr-2" />
-                <Text className="text-graphite text-sm font-black uppercase tracking-tight">
-                  REPORT REVIEW
+                <View className="w-2 h-2 rounded-full bg-[#F4A261] mr-2" />
+                <Text className="text-[#F4F6F7] text-sm font-black uppercase tracking-tight">
+                  Report Review
                 </Text>
               </View>
               <ArenaBadge
-                label={`${summary.openReports} OPEN REPORTS`}
+                label={`${summary.openReports} OPEN`}
                 variant="rust"
                 size="sm"
               />
             </View>
 
-            <Text className="text-stone-muted text-xs leading-4 mb-3">
+            <Text className="text-[#A0A5AD] text-xs leading-4 mb-3">
               Review submitted player safety and conduct reports. Audit incident reports, match dispute notices, and sportsmanship violations.
             </Text>
 
-            <View className="flex-row items-center justify-between pt-2.5 border-t border-stone/30">
+            <View className="flex-row items-center justify-between pt-2.5 border-t border-white/5">
               <View className="flex-row items-center">
-                <Ionicons name="shield-checkmark-outline" size={14} color="#875646" />
-                <Text className="text-stone-muted text-[10px] font-mono uppercase font-bold ml-1.5">
-                  SCREEN 22 WORKFLOW
+                <Ionicons name="shield-checkmark-outline" size={14} color="#F4A261" />
+                <Text className="text-[#A0A5AD] text-xs ml-1.5">
+                  Conduct Audit
                 </Text>
               </View>
               <View className="flex-row items-center">
-                <Text className="text-rust text-xs font-black uppercase tracking-wider mr-1">
-                  REVIEW REPORTS
+                <Text className="text-[#F4A261] text-xs font-bold uppercase tracking-wider mr-1">
+                  Review Reports
                 </Text>
-                <Ionicons name="arrow-forward" size={14} color="#875646" />
+                <Ionicons name="arrow-forward" size={14} color="#F4A261" />
               </View>
             </View>
           </Pressable>
         </View>
 
-        {/* ================================================================= */}
         {/* RECENT ADMIN ACTIVITY LOG */}
-        {/* ================================================================= */}
         <View className="px-4 mt-6">
           <View className="flex-row items-center justify-between mb-2.5">
             <Text
               accessibilityRole="header"
-              className="text-graphite text-[11px] font-mono uppercase tracking-widest font-bold"
+              className="text-[#A0A5AD] text-xs font-mono uppercase tracking-wider font-bold"
             >
-              RECENT ADMIN ACTIVITY
+              Recent Admin Activity
             </Text>
-            <Text className="text-stone-muted text-[10px] font-mono">
-              LIVE AUDIT LOG
+            <Text className="text-[#7F8993] text-[10px] font-mono">
+              Audit Log
             </Text>
           </View>
 
-          <View className="bg-white rounded-sm border border-stone divide-y divide-stone/30 shadow-2xs">
+          <View className="bg-[#1F2327] rounded-2xl border border-white/10 divide-y divide-white/5 shadow-sm">
             {activities.length === 0 && !loading ? (
               <View className="p-4 items-center">
-                <Text className="text-stone-muted text-xs font-mono">
-                  NO ADMINISTRATIVE ACTIONS RECORDED YET
+                <Text className="text-[#7F8993] text-xs font-mono">
+                  No administrative actions recorded yet
                 </Text>
               </View>
             ) : (
               activities.map((item) => (
-                <View key={item.id} className="p-3.5">
+                <View key={item.id} className="p-4">
                   <View className="flex-row items-center justify-between mb-1">
                     <View className="flex-row items-center flex-1 pr-2">
                       <View
                         className={`w-1.5 h-1.5 rounded-full mr-2 ${
-                          item.category === 'HUB' ? 'bg-arena-olive' : 'bg-rust'
+                          item.category === 'HUB' ? 'bg-[#E85D26]' : 'bg-[#F4A261]'
                         }`}
                       />
                       <Text
                         numberOfLines={1}
-                        className="text-graphite text-xs font-black uppercase tracking-tight flex-1"
+                        className="text-[#F4F6F7] text-xs font-black uppercase tracking-tight flex-1"
                       >
                         {item.action}
                       </Text>
@@ -518,15 +504,15 @@ export default function AdminDashboardScreen() {
                     />
                   </View>
 
-                  <Text className="text-stone-muted text-xs leading-4 mt-0.5">
+                  <Text className="text-[#A0A5AD] text-xs leading-4 mt-0.5">
                     {item.detail}
                   </Text>
 
-                  <View className="flex-row items-center justify-between mt-2 pt-1 border-t border-stone/20">
-                    <Text className="text-stone-muted text-[9px] font-mono">
-                      LOG REF: {item.id.toUpperCase()}
+                  <View className="flex-row items-center justify-between mt-2 pt-1.5 border-t border-white/5">
+                    <Text className="text-[#7F8993] text-[10px] font-mono">
+                      REF: {item.id.toUpperCase()}
                     </Text>
-                    <Text className="text-stone-muted text-[9px] font-mono">
+                    <Text className="text-[#7F8993] text-[10px] font-mono">
                       {item.timestampLabel}
                     </Text>
                   </View>
@@ -538,9 +524,9 @@ export default function AdminDashboardScreen() {
 
         {/* PLATFORM OPERATIONS DISCLAIMER */}
         <View className="px-4 mt-5">
-          <View className="p-3 bg-stone/20 rounded-sm border border-stone">
-            <Text className="text-stone-muted text-[10px] font-mono leading-4 text-center">
-              MAIDAAN ADMINISTRATIVE WORKSPACE • PLATFORM GOVERNANCE DESK
+          <View className="p-3.5 bg-[#1F2327] rounded-xl border border-white/5">
+            <Text className="text-[#7F8993] text-xs leading-4 text-center">
+              Maidaan Administrative Workspace • Platform Governance Desk
               {'\n'}
               Decisions made in review queues execute policy checks under fair play standards.
             </Text>

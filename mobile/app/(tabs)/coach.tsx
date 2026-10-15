@@ -8,11 +8,11 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { ArenaHeader } from '../../components/ui/ArenaHeader';
 import { ArenaBadge } from '../../components/ui/ArenaBadge';
+import { AmbientGlowOverlay } from '../../components/ui/AmbientCanvas';
 import { useAuthStore } from '../../store/useAuthStore';
 import { coachService } from '../../services/coachService';
 import { CoachSport, CoachConversationMessage } from '../../types';
@@ -64,28 +64,28 @@ const SPORT_CONFIG: Record<
     icon: 'cricket',
     courtType: 'Tape-Ball & Nets',
     circuitFocus: 'Death Overs & Powerplay Execution',
-    color: '#875646',
+    color: '#F4A261',
   },
   badminton: {
     label: 'BADMINTON',
     icon: 'badminton',
     courtType: 'Wooden & Synthetic Courts',
     circuitFocus: 'Doubles Rotations & Net Kills',
-    color: '#525C4B',
+    color: '#7FD1AE',
   },
   padel: {
     label: 'PADEL',
     icon: 'tennis',
     courtType: 'Enclosed Glass & Mesh',
     circuitFocus: 'Bandeja Depth & Rebound Reads',
-    color: '#6E5B4B',
+    color: '#64B5F6',
   },
   football: {
     label: 'FOOTBALL',
     icon: 'soccer',
     courtType: '7v7 Floodlit Turf',
     circuitFocus: 'Press Resistance & Half-Turn Passes',
-    color: '#3D4438',
+    color: '#22C55E',
   },
 };
 
@@ -331,9 +331,9 @@ const INITIAL_COACH_MESSAGES: Record<CoachSport, CoachMessage[]> = {
 };
 
 export default function AICoachScreen() {
+  const insets = useSafeAreaInsets();
   const { currentUser, playerProfile } = useAuthStore();
 
-  // Personalize initial sport based strictly on playerProfile when available
   const [selectedSport, setSelectedSport] = useState<CoachSport>(() => {
     if (playerProfile?.preferredSports && playerProfile.preferredSports.length > 0) {
       const pref = playerProfile.preferredSports[0] as CoachSport;
@@ -355,7 +355,6 @@ export default function AICoachScreen() {
 
   const scrollViewRef = useRef<ScrollView>(null);
 
-  // Auto scroll on new messages
   useEffect(() => {
     const timer = setTimeout(() => {
       scrollViewRef.current?.scrollToEnd({ animated: true });
@@ -402,11 +401,9 @@ export default function AICoachScreen() {
       timestamp: 'JUST NOW',
     };
 
-    // Grab previous history before appending the current prompt
     const previousMsgs = messages[selectedSport] || [];
     const conversationHistory = buildHistory(previousMsgs);
 
-    // Append player message immediately to chat stream
     setMessages((prev) => ({
       ...prev,
       [selectedSport]: [...(prev[selectedSport] || []), userMsg],
@@ -459,8 +456,6 @@ export default function AICoachScreen() {
     setIsTyping(true);
 
     try {
-      // The failed message was already appended to messages[selectedSport].
-      // History should only contain messages before this failed message.
       const currentMsgs = messages[selectedSport] || [];
       const previousMsgs = currentMsgs.slice(0, -1);
       const conversationHistory = buildHistory(previousMsgs);
@@ -507,73 +502,86 @@ export default function AICoachScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-warm-white" edges={['top']}>
-      {/* Concrete Arena Header */}
-      <ArenaHeader
-        title="MAIDAAN COACH"
-        subtitle="TACTICAL ASSISTANT // SCREEN 13"
-        locationBadge="AI SPORTS LAB"
-        rightAction={
-          <View className="flex-row items-center space-x-2">
-            <Pressable
-              onPress={() => router.push('/coach/voice')}
-              className="px-2.5 py-1.5 rounded-xl bg-warm-white border border-stone flex-row items-center active:bg-stone-light"
-              accessibilityRole="button"
-              accessibilityLabel="Open Voice Coach"
-            >
-              <Ionicons name="mic-outline" size={14} color="#3D4438" />
-              <Text className="text-graphite text-[10px] font-mono font-bold ml-1 uppercase">
-                VOICE
-              </Text>
-            </Pressable>
-            <Pressable
-              onPress={handleResetSession}
-              className="w-9 h-9 rounded-xl bg-warm-white border border-stone items-center justify-center active:bg-stone-light"
-              accessibilityRole="button"
-              accessibilityLabel="Reset Session"
-            >
-              <Ionicons name="refresh-outline" size={16} color="#242522" />
-            </Pressable>
-          </View>
-        }
-      />
+    <SafeAreaView className="flex-1 bg-[#0C0D0E]" edges={['top']}>
+      <AmbientGlowOverlay top={-40} left={-30} size={280} opacity={0.14} />
 
-      {/* Safety & Domain Boundary Banner with strictly non-fabricated profile display */}
-      <View className="px-4 py-2 bg-stone/20 border-b border-stone flex-row items-center justify-between">
-        <View className="flex-row items-center flex-1 mr-2">
-          <Ionicons name="shield-checkmark-outline" size={14} color="#3D4438" />
-          <Text className="text-graphite text-[10px] font-mono font-bold tracking-tight ml-1.5 uppercase">
-            COACHING PROTOCOL · TECHNIQUE & TACTICS ONLY · NO CLINICAL DIAGNOSIS
+      {/* TOP SECTION: AI COACH IDENTITY & VOICE TRIGGER */}
+      <View className="px-5 pt-3 pb-3 border-b border-white/[0.08] flex-row items-center justify-between z-20">
+        <View>
+          <View className="flex-row items-center">
+            <Text
+              style={{ color: '#E85D26' }}
+              className="text-[#E85D26] text-[10px] font-black uppercase tracking-widest mr-1.5"
+            >
+              AI PERFORMANCE
+            </Text>
+            <View className="w-1.5 h-1.5 rounded-full bg-[#E85D26]" />
+          </View>
+          <Text
+            style={{ color: '#FFFFFF' }}
+            className="text-white text-xl font-black uppercase tracking-tight"
+          >
+            Train Smarter
           </Text>
         </View>
-        {playerProfile?.skillLevel ? (
-          <ArenaBadge
-            label={playerProfile.skillLevel.toUpperCase()}
-            variant="olive"
-            size="sm"
-          />
-        ) : currentUser?.role ? (
-          <ArenaBadge
-            label={currentUser.role.replace('_', ' ')}
-            variant="stone"
-            size="sm"
-          />
-        ) : (
-          <ArenaBadge
-            label="TACTICAL LAB"
-            variant="stone"
-            size="sm"
-          />
-        )}
+
+        <View className="flex-row items-center space-x-2">
+          {/* Quick Trigger to Voice Mode (Phone 3 Benchmark) */}
+          <Pressable
+            onPress={() => router.push('/coach/voice')}
+            accessibilityRole="button"
+            accessibilityLabel="Switch to Voice Coach"
+            className="min-h-[44px] px-3.5 py-2 rounded-full bg-[#141518] border border-[#E85D26]/40 flex-row items-center active:bg-[#1B1D22] mr-2 shadow-sm"
+          >
+            <Ionicons name="mic" size={15} color="#E85D26" />
+            <Text
+              style={{ color: '#FFFFFF' }}
+              className="text-white text-xs font-bold uppercase tracking-wider ml-1.5"
+            >
+              Voice
+            </Text>
+          </Pressable>
+
+          {/* Reset Session Button (44x44px touch target) */}
+          <Pressable
+            onPress={handleResetSession}
+            accessibilityRole="button"
+            accessibilityLabel="Reset Coaching Session"
+            className="w-11 h-11 rounded-full bg-[#141518] border border-white/[0.08] items-center justify-center active:bg-[#1B1D22]"
+          >
+            <Ionicons name="refresh-outline" size={18} color="#A0A5AD" />
+          </Pressable>
+        </View>
       </View>
 
-      {/* Sport Selector Bar */}
-      <View className="px-4 py-3 bg-warm-white border-b border-stone">
-        <View className="flex-row items-center justify-between mb-2">
-          <Text className="text-graphite text-xs font-mono font-bold tracking-wider uppercase">
-            SELECT DISCIPLINE
+      {/* Safety Protocol Banner */}
+      <View className="px-5 py-2 bg-[#101214] border-b border-white/[0.06] flex-row items-center justify-between">
+        <View className="flex-row items-center flex-1 mr-2">
+          <Ionicons name="shield-checkmark" size={13} color="#E85D26" />
+          <Text
+            style={{ color: '#A0A5AD' }}
+            className="text-[#A0A5AD] text-[10px] font-semibold tracking-wider ml-1.5 uppercase"
+          >
+            Technique & Tactics • No Clinical Advice
           </Text>
-          <Text className="text-stone-muted text-[11px] font-mono">
+        </View>
+        <ArenaBadge
+          label={playerProfile?.skillLevel ? playerProfile.skillLevel.toUpperCase() : 'TIER 2'}
+          variant="accent"
+          size="sm"
+        />
+      </View>
+
+      {/* Sport Discipline Selector Bar */}
+      <View className="px-5 py-3 bg-[#0C0D0E] border-b border-white/[0.06]">
+        <View className="flex-row items-center justify-between mb-2">
+          <Text
+            style={{ color: '#5C616A' }}
+            className="text-[#5C616A] text-[11px] font-bold uppercase tracking-wider"
+          >
+            Active Discipline
+          </Text>
+          <Text style={{ color: '#A0A5AD' }} className="text-[#A0A5AD] text-xs font-medium">
             {SPORT_CONFIG[selectedSport].courtType}
           </Text>
         </View>
@@ -586,20 +594,23 @@ export default function AICoachScreen() {
               <Pressable
                 key={sport}
                 onPress={() => handleSelectSport(sport)}
-                className={`flex-1 py-2.5 px-2 rounded-xl border flex-row items-center justify-center ${
+                className={`flex-1 py-2.5 px-2 rounded-2xl border flex-row items-center justify-center mr-1.5 ${
                   isSelected
-                    ? 'bg-graphite border-graphite'
-                    : 'bg-warm-white border-stone active:bg-stone-light'
+                    ? 'bg-[#1B1D22] border-2 border-[#E85D26] shadow-sm shadow-[#E85D26]/20'
+                    : 'bg-[#141518] border border-white/[0.08]'
                 }`}
               >
                 <MaterialCommunityIcons
                   name={config.icon}
-                  size={16}
-                  color={isSelected ? '#F4F1EA' : '#242522'}
+                  size={15}
+                  color={isSelected ? '#E85D26' : '#A0A5AD'}
                 />
                 <Text
-                  className={`text-[11px] font-mono font-bold ml-1.5 tracking-tight ${
-                    isSelected ? 'text-warm-white' : 'text-graphite'
+                  style={{
+                    color: isSelected ? '#FFFFFF' : '#A0A5AD',
+                  }}
+                  className={`text-[11px] ml-1.5 font-bold uppercase tracking-tight ${
+                    isSelected ? 'text-white font-extrabold' : 'text-[#A0A5AD]'
                   }`}
                   numberOfLines={1}
                 >
@@ -611,12 +622,12 @@ export default function AICoachScreen() {
         </View>
       </View>
 
-      {/* Category Pills & Tactical Matrix Header */}
-      <View className="px-4 py-2 bg-warm-white border-b border-stone/60">
+      {/* Category Pills Strip */}
+      <View className="px-5 py-2.5 bg-[#0C0D0E] border-b border-white/[0.06]">
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingRight: 16 }}
+          contentContainerStyle={{ paddingRight: 10 }}
           className="flex-row"
         >
           {(['ALL', 'TECHNIQUE', 'TACTICS', 'DRILLS', 'PREP'] as DrillCategory[]).map((cat) => {
@@ -625,15 +636,16 @@ export default function AICoachScreen() {
               <Pressable
                 key={cat}
                 onPress={() => setActiveCategory(cat)}
-                className={`mr-2 px-3 py-1.5 rounded-lg border ${
+                className={`mr-2 px-3.5 py-1.5 rounded-full border ${
                   isActive
-                    ? 'bg-olive border-olive-dark'
-                    : 'bg-stone/20 border-stone active:bg-stone/40'
+                    ? 'bg-[#E85D26] border-[#E85D26]'
+                    : 'bg-[#141518] border border-white/[0.08]'
                 }`}
               >
                 <Text
-                  className={`text-[10px] font-mono font-bold tracking-wider uppercase ${
-                    isActive ? 'text-warm-white' : 'text-graphite'
+                  style={{ color: isActive ? '#FFFFFF' : '#A0A5AD' }}
+                  className={`text-[10px] font-bold tracking-wider uppercase ${
+                    isActive ? 'text-white font-extrabold' : 'text-[#A0A5AD]'
                   }`}
                 >
                   {cat}
@@ -644,7 +656,7 @@ export default function AICoachScreen() {
         </ScrollView>
       </View>
 
-      {/* Main Conversation & Tactical Playbook Canvas */}
+      {/* Main Conversation Canvas with Keyboard Support */}
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
@@ -652,18 +664,21 @@ export default function AICoachScreen() {
       >
         <ScrollView
           ref={scrollViewRef}
-          contentContainerStyle={{ padding: 16, paddingBottom: 24 }}
+          contentContainerStyle={{ padding: 20, paddingBottom: 28 }}
           className="flex-1"
           keyboardShouldPersistTaps="handled"
         >
-          {/* Quick Tactical Prompt Chips */}
+          {/* Recommended Tactical Drills Carousel */}
           <View className="mb-4">
             <View className="flex-row items-center justify-between mb-2">
-              <Text className="text-stone-muted text-[11px] font-mono font-bold tracking-wider uppercase">
-                RECOMMENDED PLAYBOOK DRILLS
+              <Text
+                style={{ color: '#5C616A' }}
+                className="text-[#5C616A] text-xs font-bold tracking-wider uppercase"
+              >
+                Recommended Drills
               </Text>
-              <Text className="text-olive text-[10px] font-mono font-bold">
-                TAP TO LOAD BREAKDOWN
+              <Text style={{ color: '#E85D26' }} className="text-[#E85D26] text-[11px] font-semibold">
+                Tap to load breakdown
               </Text>
             </View>
 
@@ -677,20 +692,30 @@ export default function AICoachScreen() {
                 <Pressable
                   key={item.id}
                   onPress={() => handleSendPrompt(item.prompt)}
-                  className="mr-3 w-56 p-3 rounded-xl bg-warm-white border border-stone active:border-olive shadow-sm"
+                  accessibilityRole="button"
+                  accessibilityLabel={`Ask drill: ${item.title}`}
+                  className="mr-3 w-64 p-3.5 rounded-2xl bg-[#141518] border border-white/[0.08] active:border-[#E85D26] shadow-sm"
                 >
                   <View className="flex-row items-center justify-between mb-1.5">
-                    <ArenaBadge label={item.badge} variant="stone" size="sm" />
+                    <ArenaBadge label={item.badge} variant="neutral" size="sm" />
                     <MaterialCommunityIcons
                       name="arrow-top-right"
-                      size={14}
-                      color="#3D4438"
+                      size={15}
+                      color="#E85D26"
                     />
                   </View>
-                  <Text className="text-graphite text-xs font-bold leading-tight" numberOfLines={2}>
+                  <Text
+                    numberOfLines={2}
+                    style={{ color: '#FFFFFF' }}
+                    className="text-white text-xs font-bold leading-tight"
+                  >
                     {item.title}
                   </Text>
-                  <Text className="text-stone-muted text-[10px] mt-1 font-mono" numberOfLines={1}>
+                  <Text
+                    numberOfLines={1}
+                    style={{ color: '#A0A5AD' }}
+                    className="text-[#A0A5AD] text-[11px] mt-1 font-normal"
+                  >
                     {item.prompt}
                   </Text>
                 </Pressable>
@@ -708,42 +733,49 @@ export default function AICoachScreen() {
                 className={`mb-4 ${isCoach ? 'items-start' : 'items-end'}`}
               >
                 {/* Sender Attribution */}
-                <View className="flex-row items-center mb-1 px-1">
+                <View className="flex-row items-center mb-1.5 px-1">
                   {isCoach ? (
                     <>
-                      <View className="w-4 h-4 rounded-full bg-olive items-center justify-center mr-1.5">
-                        <Ionicons name="fitness" size={10} color="#F4F1EA" />
+                      <View className="w-5 h-5 rounded-full bg-[#E85D26] items-center justify-center mr-1.5">
+                        <Ionicons name="fitness" size={11} color="#FFFFFF" />
                       </View>
-                      <Text className="text-graphite text-[10px] font-mono font-bold uppercase tracking-wider">
-                        MAIDAAN TACTICAL ENGINE
+                      <Text
+                        style={{ color: '#E85D26' }}
+                        className="text-[#E85D26] text-[11px] font-bold uppercase tracking-wider"
+                      >
+                        Maidaan Coach
                       </Text>
-                      <Text className="text-stone-muted text-[9px] font-mono ml-2">
+                      <Text style={{ color: '#5C616A' }} className="text-[#5C616A] text-[10px] ml-2">
                         {msg.timestamp}
                       </Text>
                     </>
                   ) : (
                     <>
-                      <Text className="text-stone-muted text-[9px] font-mono mr-2">
+                      <Text style={{ color: '#5C616A' }} className="text-[#5C616A] text-[10px] mr-2">
                         {msg.timestamp}
                       </Text>
-                      <Text className="text-graphite text-[10px] font-mono font-bold uppercase tracking-wider">
-                        {currentUser?.name || 'ATHLETE'}
+                      <Text
+                        style={{ color: '#FFFFFF' }}
+                        className="text-white text-[11px] font-bold uppercase tracking-wider"
+                      >
+                        {currentUser?.name || 'Athlete'}
                       </Text>
                     </>
                   )}
                 </View>
 
-                {/* Message Body */}
+                {/* Message Body Bubble */}
                 <View
                   className={`max-w-[92%] rounded-2xl p-4 border ${
                     isCoach
-                      ? 'bg-warm-white border-stone shadow-sm'
-                      : 'bg-graphite border-surface-border-dark'
+                      ? 'bg-[#141518] border-white/[0.08] shadow-sm'
+                      : 'bg-[#1B1D22] border-[#E85D26]/30'
                   }`}
                 >
                   <Text
+                    style={{ color: '#FFFFFF' }}
                     className={`text-sm leading-relaxed ${
-                      isCoach ? 'text-graphite' : 'text-warm-white font-medium'
+                      isCoach ? 'text-white' : 'text-white font-medium'
                     }`}
                   >
                     {msg.text}
@@ -751,29 +783,41 @@ export default function AICoachScreen() {
 
                   {/* Structured Tactical Drill Breakdown Card */}
                   {msg.drillPlan && (
-                    <View className="mt-4 pt-3.5 border-t border-stone/60">
+                    <View className="mt-4 pt-3.5 border-t border-white/[0.08]">
                       {/* Drill Header */}
                       <View className="flex-row items-center justify-between mb-2">
                         <View className="flex-1 mr-2">
-                          <Text className="text-olive text-[11px] font-mono font-black uppercase tracking-wider">
+                          <Text
+                            style={{ color: '#E85D26' }}
+                            className="text-[#E85D26] text-xs font-bold uppercase tracking-wider"
+                          >
                             {msg.drillPlan.title}
                           </Text>
-                          <Text className="text-graphite text-xs font-bold mt-0.5">
+                          <Text
+                            style={{ color: '#FFFFFF' }}
+                            className="text-white text-xs font-semibold mt-0.5"
+                          >
                             {msg.drillPlan.objective}
                           </Text>
                         </View>
-                        <ArenaBadge label="TACTICAL PLAN" variant="olive" size="sm" />
+                        <ArenaBadge label="Tactical Plan" variant="accent" size="sm" />
                       </View>
 
                       {/* Technical Cues */}
-                      <View className="my-2.5 p-3 rounded-xl bg-stone/20 border border-stone">
-                        <Text className="text-graphite text-[10px] font-mono font-bold uppercase tracking-wider mb-1.5">
-                          KEY MECHANICAL CUES
+                      <View className="my-2.5 p-3 rounded-xl bg-[#101214] border border-white/[0.06]">
+                        <Text
+                          style={{ color: '#A0A5AD' }}
+                          className="text-[#A0A5AD] text-[10px] font-bold uppercase tracking-wider mb-1.5"
+                        >
+                          Key Mechanical Cues
                         </Text>
                         {msg.drillPlan.cues.map((cue, idx) => (
                           <View key={idx} className="flex-row items-start mb-1.5 last:mb-0">
-                            <Text className="text-olive font-bold text-xs mr-1.5">•</Text>
-                            <Text className="text-graphite text-xs leading-tight flex-1">
+                            <Text style={{ color: '#E85D26' }} className="text-[#E85D26] font-bold text-xs mr-1.5">•</Text>
+                            <Text
+                              style={{ color: '#A0A5AD' }}
+                              className="text-[#A0A5AD] text-xs leading-relaxed flex-1 font-normal"
+                            >
                               {cue}
                             </Text>
                           </View>
@@ -781,53 +825,49 @@ export default function AICoachScreen() {
                       </View>
 
                       {/* Training Routine Specifications */}
-                      <View className="p-3 rounded-xl bg-warm-white border border-stone mb-2.5">
-                        <View className="flex-row items-center justify-between border-b border-stone/50 pb-2 mb-2">
+                      <View className="p-3 rounded-xl bg-[#101214] border border-white/[0.06] mb-2.5">
+                        <View className="flex-row items-center justify-between border-b border-white/[0.06] pb-2 mb-2">
                           <View>
-                            <Text className="text-stone-muted text-[9px] font-mono font-bold">
-                              SETS & VOLUME
+                            <Text style={{ color: '#5C616A' }} className="text-[#5C616A] text-[10px] font-semibold">
+                              Sets & Volume
                             </Text>
-                            <Text className="text-graphite text-xs font-bold">
-                              {msg.drillPlan.routine.sets} · {msg.drillPlan.routine.reps}
+                            <Text style={{ color: '#FFFFFF' }} className="text-white text-xs font-bold">
+                              {msg.drillPlan.routine.sets} • {msg.drillPlan.routine.reps}
                             </Text>
                           </View>
                           <View className="items-end">
-                            <Text className="text-stone-muted text-[9px] font-mono font-bold">
-                              TARGET DURATION
+                            <Text style={{ color: '#5C616A' }} className="text-[#5C616A] text-[10px] font-semibold">
+                              Target Duration
                             </Text>
-                            <Text className="text-olive text-xs font-bold">
+                            <Text style={{ color: '#E85D26' }} className="text-[#E85D26] text-xs font-bold">
                               {msg.drillPlan.routine.duration}
                             </Text>
                           </View>
                         </View>
-                        <Text className="text-graphite text-[11px] leading-snug">
-                          <Text className="font-bold text-stone-muted font-mono">SETUP: </Text>
+                        <Text style={{ color: '#A0A5AD' }} className="text-[#A0A5AD] text-[11px] leading-snug">
+                          <Text style={{ color: '#FFFFFF' }} className="font-bold text-white">Setup: </Text>
                           {msg.drillPlan.routine.setup}
                         </Text>
                       </View>
 
-                      {/* Pro Tip / Rule of Thumb */}
-                      <View className="p-3 rounded-xl bg-olive/10 border-l-4 border-olive">
+                      {/* Pro Tip */}
+                      <View className="p-3 rounded-xl bg-[#E85D26]/10 border-l-4 border-[#E85D26]">
                         <View className="flex-row items-center mb-1">
-                          <Ionicons name="bulb-outline" size={14} color="#3D4438" />
-                          <Text className="text-olive text-[10px] font-mono font-black ml-1 uppercase">
-                            MATCH CIRCUIT RULE OF THUMB
+                          <Ionicons name="bulb-outline" size={14} color="#E85D26" />
+                          <Text
+                            style={{ color: '#E85D26' }}
+                            className="text-[#E85D26] text-[10px] font-bold ml-1 uppercase"
+                          >
+                            Pro Tip
                           </Text>
                         </View>
-                        <Text className="text-graphite text-xs font-medium leading-relaxed">
+                        <Text
+                          style={{ color: '#FFFFFF' }}
+                          className="text-white text-xs font-medium leading-relaxed"
+                        >
                           {msg.drillPlan.proTip}
                         </Text>
                       </View>
-                    </View>
-                  )}
-
-                  {/* Safety Boundary Notice if triggered */}
-                  {msg.disclaimer && (
-                    <View className="mt-3 p-3 rounded-xl bg-rust/10 border border-rust/40 flex-row items-start">
-                      <Ionicons name="warning-outline" size={16} color="#875646" />
-                      <Text className="text-rust text-xs font-medium leading-tight ml-2 flex-1">
-                        {msg.disclaimer}
-                      </Text>
                     </View>
                   )}
                 </View>
@@ -838,23 +878,26 @@ export default function AICoachScreen() {
           {/* Typing Indicator */}
           {isTyping && (
             <View className="mb-4 items-start">
-              <View className="px-4 py-3 rounded-2xl bg-warm-white border border-stone flex-row items-center shadow-sm">
-                <View className="w-2 h-2 rounded-full bg-olive animate-pulse mr-1.5" />
-                <View className="w-2 h-2 rounded-full bg-olive animate-pulse mr-1.5" />
-                <View className="w-2 h-2 rounded-full bg-olive animate-pulse mr-2" />
-                <Text className="text-stone-muted text-xs font-mono font-bold uppercase tracking-wider">
-                  COACH IS ANALYZING...
+              <View className="px-4 py-3 rounded-2xl bg-[#141518] border border-white/[0.08] flex-row items-center shadow-sm">
+                <View className="w-2 h-2 rounded-full bg-[#E85D26] mr-1.5" />
+                <View className="w-2 h-2 rounded-full bg-[#E85D26] mr-1.5" />
+                <View className="w-2 h-2 rounded-full bg-[#E85D26] mr-2" />
+                <Text
+                  style={{ color: '#A0A5AD' }}
+                  className="text-[#A0A5AD] text-xs font-semibold uppercase tracking-wider"
+                >
+                  Coach is analyzing...
                 </Text>
               </View>
             </View>
           )}
 
-          {/* Error State Banner with Retry */}
+          {/* Error Banner with Retry */}
           {errorBanner && (
-            <View className="mb-4 p-3.5 rounded-2xl bg-rust/10 border border-rust/40 flex-row items-center justify-between">
+            <View className="mb-4 p-3.5 rounded-2xl bg-[#EF4444]/15 border border-[#EF4444]/30 flex-row items-center justify-between">
               <View className="flex-row items-center flex-1 mr-3">
-                <Ionicons name="alert-circle-outline" size={18} color="#875646" />
-                <Text className="text-rust text-xs font-medium ml-2 flex-1">
+                <Ionicons name="alert-circle-outline" size={18} color="#EF4444" />
+                <Text style={{ color: '#EF4444' }} className="text-[#EF4444] text-xs font-medium ml-2 flex-1">
                   {errorBanner}
                 </Text>
               </View>
@@ -862,12 +905,12 @@ export default function AICoachScreen() {
                 <Pressable
                   onPress={handleRetry}
                   disabled={isTyping}
-                  className="px-3 py-1.5 rounded-xl bg-rust active:opacity-80"
+                  className="px-3 py-1.5 rounded-xl bg-[#EF4444] active:opacity-80"
                   accessibilityRole="button"
-                  accessibilityLabel="Retry sending question"
+                  accessibilityLabel="Retry question"
                 >
-                  <Text className="text-warm-white text-[11px] font-mono font-bold uppercase tracking-wider">
-                    RETRY
+                  <Text style={{ color: '#FFFFFF' }} className="text-white text-xs font-bold uppercase tracking-wider">
+                    Retry
                   </Text>
                 </Pressable>
               )}
@@ -875,24 +918,32 @@ export default function AICoachScreen() {
           )}
         </ScrollView>
 
-        {/* Input Bar */}
-        <View className="p-3 bg-warm-white border-t border-stone flex-row items-center">
-          <View className="flex-1 flex-row items-center bg-stone/20 rounded-xl px-3 border border-stone mr-2">
+        {/* PREMIUM PROMPT COMPOSER BAR */}
+        <View
+          className="p-3 bg-[#101214] border-t border-white/[0.08] flex-row items-center"
+          style={{
+            paddingBottom: Math.max(insets.bottom, 8) + 4,
+          }}
+        >
+          <View className="flex-1 flex-row items-center bg-[#141518] rounded-2xl px-3.5 border border-white/[0.08] mr-2 min-h-[46px]">
             <TextInput
               value={inputText}
               onChangeText={setInputText}
               placeholder={`Ask Coach about ${SPORT_CONFIG[selectedSport].label.toLowerCase()} drills, tactics...`}
-              placeholderTextColor="#8D9287"
-              className="flex-1 py-3 text-graphite text-sm font-medium"
+              placeholderTextColor="#5C616A"
+              style={{ color: '#FFFFFF' }}
+              className="flex-1 py-3 text-white text-sm font-medium"
               onSubmitEditing={() => handleSendPrompt(inputText)}
               returnKeyType="send"
             />
             {inputText.length > 0 && (
               <Pressable
                 onPress={() => setInputText('')}
-                className="p-1 active:opacity-60"
+                accessibilityRole="button"
+                accessibilityLabel="Clear input"
+                className="p-1.5"
               >
-                <Ionicons name="close-circle" size={16} color="#8D9287" />
+                <Ionicons name="close-circle" size={16} color="#A0A5AD" />
               </Pressable>
             )}
           </View>
@@ -900,10 +951,10 @@ export default function AICoachScreen() {
           <Pressable
             onPress={() => handleSendPrompt(inputText)}
             disabled={!inputText.trim() || isTyping}
-            className={`w-11 h-11 rounded-xl items-center justify-center ${
+            className={`w-11 h-11 rounded-2xl items-center justify-center ${
               inputText.trim() && !isTyping
-                ? 'bg-olive active:bg-olive-dark'
-                : 'bg-stone/40'
+                ? 'bg-[#E85D26] active:bg-[#FF723A] shadow-md shadow-[#E85D26]/30'
+                : 'bg-[#1B1D22]'
             }`}
             accessibilityRole="button"
             accessibilityLabel="Send Question"
@@ -911,7 +962,7 @@ export default function AICoachScreen() {
             <Ionicons
               name="arrow-up"
               size={20}
-              color={inputText.trim() && !isTyping ? '#F4F1EA' : '#8D9287'}
+              color={inputText.trim() && !isTyping ? '#FFFFFF' : '#5C616A'}
             />
           </Pressable>
         </View>

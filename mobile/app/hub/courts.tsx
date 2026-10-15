@@ -21,10 +21,6 @@ import { Sport, CourtStatus, HubCourt } from '../../types';
 import { hubCourtService } from '../../services/hubCourtService';
 import { profileService } from '../../services/profileService';
 
-// =============================================================================
-// DOMAIN CONSTANTS & META
-// =============================================================================
-
 const ALL_SUPPORTED_SPORTS: Sport[] = ['football', 'cricket', 'padel', 'badminton'];
 
 const SPORT_META: Record<
@@ -37,10 +33,6 @@ const SPORT_META: Record<
   badminton: { label: 'Badminton', icon: 'badminton' },
 };
 
-/**
- * Status presentation mapping using Concrete Arena color tokens only.
- * Strictly: AVAILABLE | LIMITED | UNAVAILABLE.
- */
 const STATUS_CONFIG: Record<
   CourtStatus,
   { label: string; badgeVariant: 'olive' | 'rust' | 'stone'; hint: string }
@@ -106,7 +98,6 @@ export default function HubCourtsScreen() {
         setCourts(data);
       }
 
-      // Re-fetch profile to keep synchronized court_count fresh
       try {
         const myProfile = await profileService.getMyProfile();
         if (isMountedRef.current && myProfile?.hubOwnerProfile) {
@@ -161,11 +152,8 @@ export default function HubCourtsScreen() {
         status: newCourtStatus,
       });
 
-      // Reset form
       setNewCourtName('');
       setIsAddModalVisible(false);
-
-      // Refresh real courts list
       await loadCourts();
     } catch (err: any) {
       console.warn('[HubCourts] Create court failed:', err);
@@ -213,7 +201,6 @@ export default function HubCourtsScreen() {
       setDeleteConfirmCourt(null);
       setEditModalCourt(null);
 
-      // Sync court count in auth store
       try {
         const myProfile = await profileService.getMyProfile();
         if (myProfile?.hubOwnerProfile) {
@@ -235,25 +222,25 @@ export default function HubCourtsScreen() {
   // =========================================================================
   if (!isHubOwner) {
     return (
-      <SafeAreaView className="flex-1 bg-warm-white" edges={['top']}>
+      <SafeAreaView className="flex-1 bg-[#171A1D]" edges={['top']}>
         <ArenaHeader
-          title="MAIDAAN"
-          subtitle="FACILITY DESK // ROLE RESTRICTION"
+          title="Hub Courts"
+          subtitle="Role Restriction"
           showBack
           onBack={() => router.replace('/(tabs)/discover')}
         />
-        <View className="flex-1 items-center justify-center p-6 bg-warm-white">
-          <View className="w-16 h-16 rounded-full bg-rust/10 items-center justify-center border border-rust/30 mb-5">
-            <Ionicons name="lock-closed" size={28} color="#875646" />
+        <View className="flex-1 items-center justify-center p-6 bg-[#171A1D]">
+          <View className="w-16 h-16 rounded-full bg-[#F4A261]/10 items-center justify-center border border-[#F4A261]/30 mb-5">
+            <Ionicons name="lock-closed" size={28} color="#F4A261" />
           </View>
 
-          <ArenaBadge label="HUB OWNER ACCESS REQUIRED" variant="rust" size="md" />
+          <ArenaBadge label="HUB OWNER REQUIRED" variant="rust" size="md" />
 
-          <Text className="text-graphite text-lg font-black uppercase tracking-tight text-center mt-3">
-            HUB OWNER ACCESS REQUIRED
+          <Text className="text-[#F4F6F7] text-lg font-black uppercase tracking-tight text-center mt-3">
+            Hub Owner Access Required
           </Text>
 
-          <Text className="text-stone-muted text-sm text-center mt-2 max-w-[310px] leading-5">
+          <Text className="text-[#A0A5AD] text-sm text-center mt-2 max-w-[310px] leading-5">
             Playing space management and court allocation sheets are restricted to Hub Owner accounts.
           </Text>
 
@@ -274,25 +261,25 @@ export default function HubCourtsScreen() {
   // =========================================================================
   if (!hubOwnerProfile) {
     return (
-      <SafeAreaView className="flex-1 bg-warm-white" edges={['top']}>
+      <SafeAreaView className="flex-1 bg-[#171A1D]" edges={['top']}>
         <ArenaHeader
-          title="MAIDAAN"
-          subtitle="FACILITY DESK // SETUP REQUIRED"
+          title="Hub Courts"
+          subtitle="Setup Required"
           showBack
           onBack={() => router.replace('/(tabs)/discover')}
         />
-        <View className="flex-1 items-center justify-center p-6 bg-warm-white">
-          <View className="w-16 h-16 rounded-full bg-stone/20 border border-stone items-center justify-center mb-5">
-            <Ionicons name="business-outline" size={30} color="#666B60" />
+        <View className="flex-1 items-center justify-center p-6 bg-[#171A1D]">
+          <View className="w-16 h-16 rounded-full bg-[#272C31] border border-white/10 items-center justify-center mb-5">
+            <Ionicons name="business-outline" size={30} color="#A0A5AD" />
           </View>
 
-          <ArenaBadge label="HUB PROFILE NOT SET" variant="stone" size="md" />
+          <ArenaBadge label="HUB PROFILE REQUIRED" variant="stone" size="md" />
 
-          <Text className="text-graphite text-lg font-black uppercase tracking-tight text-center mt-3">
-            HUB PROFILE NOT SET
+          <Text className="text-[#F4F6F7] text-lg font-black uppercase tracking-tight text-center mt-3">
+            Hub Profile Not Set
           </Text>
 
-          <Text className="text-stone-muted text-xs font-medium text-center mt-2.5 leading-5 max-w-[280px]">
+          <Text className="text-[#A0A5AD] text-xs font-medium text-center mt-2.5 leading-5 max-w-[280px]">
             Complete your Hub setup before managing playing spaces and court allocation sheets.
           </Text>
 
@@ -316,17 +303,15 @@ export default function HubCourtsScreen() {
   // =========================================================================
   // 3. HUB DATA DERIVATIONS
   // =========================================================================
-  const hubName = hubOwnerProfile.hubName?.trim() || 'SPORTS HUB';
-  const hubLocation = hubOwnerProfile.location?.trim() || 'LOCATION NOT SET';
+  const hubName = hubOwnerProfile.hubName?.trim() || 'Sports Hub';
+  const hubLocation = hubOwnerProfile.location?.trim() || 'Location Not Set';
   const isVerified = Boolean(hubOwnerProfile.isVerified);
   const declaredCourtsCount = hubOwnerProfile.courtsCount ?? courts.length;
   const configuredSports = hubOwnerProfile.sports ?? [];
 
-  // Summary counts derived strictly from real API court records
   const availableCount = courts.filter((c) => c.status === 'AVAILABLE').length;
   const limitedCount = courts.filter((c) => c.status === 'LIMITED').length;
 
-  // Filtered court list
   const displayedCourts = useMemo(() => {
     if (selectedSportFilter === 'all') {
       return courts;
@@ -334,7 +319,6 @@ export default function HubCourtsScreen() {
     return courts.filter((c) => c.sport === selectedSportFilter);
   }, [courts, selectedSportFilter]);
 
-  // Unique sports represented in courts for filter chips
   const availableFilterSports = useMemo(() => {
     const set = new Set<Sport>();
     configuredSports.forEach((s) => set.add(s));
@@ -342,15 +326,12 @@ export default function HubCourtsScreen() {
     return Array.from(set);
   }, [configuredSports, courts]);
 
-  // =========================================================================
-  // 4. MAIN RENDER
-  // =========================================================================
   return (
-    <SafeAreaView className="flex-1 bg-warm-white" edges={['top']}>
-      {/* Header */}
+    <SafeAreaView className="flex-1 bg-[#171A1D]" edges={['top']}>
+      {/* Modern Athletic Header */}
       <ArenaHeader
-        title="MAIDAAN"
-        subtitle="FACILITY DESK // PLAYING SPACES"
+        title="Hub Courts"
+        subtitle="Playing Spaces & Allocation"
         showBack
         fallbackRoute="/hub/profile"
         onBack={() => {
@@ -368,11 +349,11 @@ export default function HubCourtsScreen() {
             }}
             accessibilityRole="button"
             accessibilityLabel="Add court"
-            className="px-2.5 py-1.5 rounded-sm bg-olive border border-olive-dark active:scale-95 flex-row items-center"
+            className="px-3 py-1.5 rounded-xl bg-[#E85D26] active:opacity-90 flex-row items-center"
           >
-            <Ionicons name="add" size={14} color="#F4F1EA" />
-            <Text className="text-warm-white text-[10px] font-mono uppercase font-black ml-1">
-              ADD COURT
+            <Ionicons name="add" size={16} color="#171A1D" />
+            <Text className="text-[#171A1D] text-xs font-bold uppercase ml-1">
+              Add Court
             </Text>
           </Pressable>
         }
@@ -382,22 +363,22 @@ export default function HubCourtsScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 56 }}
       >
-        {/* RESTRAINED FACILITY PHOTOGRAPHY BANNER */}
+        {/* Athletic Facility Photography Banner */}
         <View className="px-4 pt-3">
-          <View className="h-16 w-full rounded-sm overflow-hidden border border-stone relative bg-graphite">
+          <View className="h-18 w-full rounded-2xl overflow-hidden border border-white/10 relative bg-[#1F2327]">
             <Image
               source={IMAGES.arenaGround}
               className="w-full h-full opacity-35"
               resizeMode="cover"
             />
-            <View className="absolute inset-0 px-3.5 py-2 flex-row items-center justify-between">
+            <View className="absolute inset-0 px-4 py-3 flex-row items-center justify-between bg-gradient-to-r from-[#171A1D]/80 to-transparent">
               <View className="flex-1 pr-2">
-                <Text className="text-stone-muted text-[9px] font-mono uppercase tracking-widest font-bold">
-                  FACILITY ALLOCATION BOARD
+                <Text className="text-[#7F8993] text-[10px] font-mono uppercase tracking-widest font-bold">
+                  Facility Allocation
                 </Text>
                 <Text
                   numberOfLines={1}
-                  className="text-warm-white text-sm font-black uppercase tracking-tight"
+                  className="text-[#F4F6F7] text-base font-black uppercase tracking-tight"
                 >
                   {hubName}
                 </Text>
@@ -411,19 +392,19 @@ export default function HubCourtsScreen() {
           </View>
         </View>
 
-        {/* HUB CONTEXT STRIP */}
+        {/* Hub Context Strip */}
         <View className="px-4 mt-3">
-          <View className="bg-white rounded-sm p-3.5 border border-stone shadow-2xs">
+          <View className="bg-[#1F2327] rounded-2xl p-4 border border-white/10 shadow-sm">
             <View className="flex-row items-start justify-between">
               <View className="flex-1 pr-2">
-                <Text className="text-stone-muted text-[9px] font-mono uppercase font-bold tracking-wider">
-                  REGISTERED HUB LOCATION
+                <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold tracking-wider">
+                  Registered Hub Location
                 </Text>
                 <View className="flex-row items-center mt-1">
-                  <Ionicons name="location-sharp" size={13} color="#666B60" />
+                  <Ionicons name="location-sharp" size={14} color="#A0A5AD" />
                   <Text
                     numberOfLines={1}
-                    className="text-graphite text-xs font-bold ml-1 flex-1"
+                    className="text-[#F4F6F7] text-xs font-bold ml-1 flex-1"
                   >
                     {hubLocation}
                   </Text>
@@ -434,93 +415,93 @@ export default function HubCourtsScreen() {
                 onPress={() => router.push('/hub/profile')}
                 accessibilityRole="button"
                 accessibilityLabel="View Hub Profile"
-                className="bg-stone/20 px-2.5 py-1 rounded-xs border border-stone active:bg-stone/30 flex-row items-center"
+                className="bg-[#272C31] px-3 py-1.5 rounded-xl border border-white/10 active:bg-white/5 flex-row items-center"
               >
-                <Text className="text-graphite text-[10px] font-mono uppercase font-bold mr-1">
-                  HUB PROFILE
+                <Text className="text-[#F4F6F7] text-xs font-bold mr-1">
+                  Hub Profile
                 </Text>
-                <Ionicons name="chevron-forward" size={10} color="#242522" />
+                <Ionicons name="chevron-forward" size={12} color="#A0A5AD" />
               </Pressable>
             </View>
 
             {/* Supported Sports Strip */}
-            <View className="mt-2.5 pt-2 border-t border-stone/30 flex-row items-center justify-between">
+            <View className="mt-3 pt-3 border-t border-white/5 flex-row items-center justify-between">
               <View className="flex-row items-center flex-wrap gap-1.5 flex-1 pr-2">
                 {configuredSports.map((s) => (
                   <View
                     key={s}
-                    className="flex-row items-center bg-stone/20 px-2 py-0.5 rounded-xs border border-stone/50"
+                    className="flex-row items-center bg-[#272C31] px-2.5 py-1 rounded-lg border border-white/10"
                   >
                     <MaterialCommunityIcons
                       name={SPORT_META[s].icon}
-                      size={11}
-                      color="#242522"
+                      size={12}
+                      color="#E85D26"
                     />
-                    <Text className="text-graphite text-[9px] font-mono uppercase font-bold ml-1">
+                    <Text className="text-[#F4F6F7] text-[10px] font-bold ml-1">
                       {SPORT_META[s].label}
                     </Text>
                   </View>
                 ))}
               </View>
-              <Text className="text-stone-muted text-[10px] font-mono">
-                {declaredCourtsCount} DECLARED
+              <Text className="text-[#7F8993] text-[10px] font-mono">
+                {declaredCourtsCount} Declared
               </Text>
             </View>
           </View>
         </View>
 
-        {/* DOMINANT ELEMENT: SUMMARY STRIP */}
+        {/* Summary Strip */}
         <View className="px-4 mt-4">
           <Text
             accessibilityRole="header"
-            className="text-graphite text-[11px] font-mono uppercase tracking-widest mb-2 font-bold"
+            className="text-[#A0A5AD] text-xs font-mono uppercase tracking-wider mb-2 font-bold"
           >
-            PLAYING SPACES OVERVIEW
+            Playing Spaces Overview
           </Text>
 
           <View className="flex-row gap-2">
             {/* Stat 1: Total Persisted Courts */}
-            <View className="flex-1 bg-stone/20 rounded-sm p-3 border border-stone">
-              <Text className="text-stone-muted text-[9px] font-mono uppercase tracking-wider font-bold">
+            <View className="flex-1 bg-[#1F2327] rounded-2xl p-3.5 border border-white/10">
+              <Text className="text-[#7F8993] text-[10px] font-mono uppercase tracking-wider font-bold">
                 COURTS
               </Text>
-              <Text className="text-graphite text-2xl font-black tracking-tight mt-0.5">
+              <Text className="text-[#F4F6F7] text-2xl font-black tracking-tight mt-0.5">
                 {courts.length}
               </Text>
-              <Text className="text-stone-muted text-[10px] font-medium mt-0.5">
-                Persisted
+              <Text className="text-[#A0A5AD] text-[10px] font-medium mt-0.5">
+                Configured
               </Text>
             </View>
 
             {/* Stat 2: Available */}
-            <View className="flex-1 bg-stone/20 rounded-sm p-3 border border-stone">
-              <Text className="text-stone-muted text-[9px] font-mono uppercase tracking-wider font-bold">
+            <View className="flex-1 bg-[#1F2327] rounded-2xl p-3.5 border border-white/10">
+              <Text className="text-[#7F8993] text-[10px] font-mono uppercase tracking-wider font-bold">
                 AVAILABLE
               </Text>
-              <Text className="text-arena-olive text-2xl font-black tracking-tight mt-0.5">
+              <Text className="text-[#E85D26] text-2xl font-black tracking-tight mt-0.5">
                 {availableCount}
               </Text>
-              <Text className="text-stone-muted text-[10px] font-medium mt-0.5">
+              <Text className="text-[#A0A5AD] text-[10px] font-medium mt-0.5">
                 Active spaces
               </Text>
             </View>
 
             {/* Stat 3: Limited */}
-            <View className="flex-1 bg-stone/20 rounded-sm p-3 border border-stone">
-              <Text className="text-stone-muted text-[9px] font-mono uppercase tracking-wider font-bold">
+            <View className="flex-1 bg-[#1F2327] rounded-2xl p-3.5 border border-white/10">
+              <Text className="text-[#7F8993] text-[10px] font-mono uppercase tracking-wider font-bold">
                 LIMITED
               </Text>
-              <Text className="text-rust text-2xl font-black tracking-tight mt-0.5">
+              <Text className="text-[#F4A261] text-2xl font-black tracking-tight mt-0.5">
                 {limitedCount}
               </Text>
-              <Text className="text-stone-muted text-[10px] font-medium mt-0.5">
+              <Text className="text-[#A0A5AD] text-[10px] font-medium mt-0.5">
                 Restricted
               </Text>
             </View>
           </View>
         </View>
 
-        {/* SPORT FILTER PILL BAR */}
+        {/* Sport Filter Chips */}
         {availableFilterSports.length > 1 ? (
           <View className="px-4 mt-4">
             <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
@@ -528,18 +509,18 @@ export default function HubCourtsScreen() {
                 onPress={() => setSelectedSportFilter('all')}
                 accessibilityRole="button"
                 accessibilityLabel="Filter All Courts"
-                className={`mr-2 px-3 py-1.5 rounded-xs border ${
+                className={`mr-2 px-3.5 py-1.5 rounded-xl border ${
                   selectedSportFilter === 'all'
-                    ? 'bg-graphite border-graphite shadow-2xs'
-                    : 'bg-white border-stone active:bg-stone/20'
+                    ? 'bg-[#E85D26] border-[#E85D26]'
+                    : 'bg-[#1F2327] border-white/10'
                 }`}
               >
                 <Text
-                  className={`text-[10px] font-mono uppercase tracking-wider ${
-                    selectedSportFilter === 'all' ? 'text-warm-white font-black' : 'text-graphite font-bold'
+                  className={`text-xs uppercase font-bold ${
+                    selectedSportFilter === 'all' ? 'text-[#171A1D]' : 'text-[#A0A5AD]'
                   }`}
                 >
-                  ALL ({courts.length})
+                  All ({courts.length})
                 </Text>
               </Pressable>
 
@@ -552,23 +533,23 @@ export default function HubCourtsScreen() {
                     onPress={() => setSelectedSportFilter(s)}
                     accessibilityRole="button"
                     accessibilityLabel={`Filter ${SPORT_META[s].label} Courts`}
-                    className={`mr-2 px-3 py-1.5 rounded-xs border flex-row items-center ${
+                    className={`mr-2 px-3.5 py-1.5 rounded-xl border flex-row items-center ${
                       isSelected
-                        ? 'bg-graphite border-graphite shadow-2xs'
-                        : 'bg-white border-stone active:bg-stone/20'
+                        ? 'bg-[#E85D26] border-[#E85D26]'
+                        : 'bg-[#1F2327] border-white/10'
                     }`}
                   >
                     <MaterialCommunityIcons
                       name={SPORT_META[s].icon}
                       size={12}
-                      color={isSelected ? '#F4F1EA' : '#242522'}
+                      color={isSelected ? '#171A1D' : '#A0A5AD'}
                     />
                     <Text
-                      className={`text-[10px] font-mono uppercase tracking-wider ml-1 ${
-                        isSelected ? 'text-warm-white font-black' : 'text-graphite font-bold'
+                      className={`text-xs uppercase font-bold ml-1.5 ${
+                        isSelected ? 'text-[#171A1D]' : 'text-[#A0A5AD]'
                       }`}
                     >
-                      {SPORT_META[s].label.toUpperCase()} ({count})
+                      {SPORT_META[s].label} ({count})
                     </Text>
                   </Pressable>
                 );
@@ -582,56 +563,56 @@ export default function HubCourtsScreen() {
           <View className="flex-row items-center justify-between mb-2.5">
             <Text
               accessibilityRole="header"
-              className="text-graphite text-[11px] font-mono uppercase tracking-widest font-bold"
+              className="text-[#A0A5AD] text-xs font-mono uppercase tracking-wider font-bold"
             >
-              COURTS & ALLOCATION
+              Courts & Allocation
             </Text>
-            <Text className="text-stone-muted text-[10px] font-mono">
-              {displayedCourts.length} of {courts.length} LISTED
+            <Text className="text-[#7F8993] text-[10px] font-mono">
+              {displayedCourts.length} of {courts.length} Listed
             </Text>
           </View>
 
-          {/* ASYNC STATES: LOADING, ERROR, EMPTY, SUCCESS */}
+          {/* ASYNC STATES */}
           {loading ? (
-            <View className="bg-white rounded-sm p-8 border border-stone items-center my-2 shadow-2xs">
-              <ActivityIndicator size="small" color="#3D4438" />
-              <Text className="text-graphite text-xs font-mono uppercase font-black tracking-wider mt-3">
-                LOADING REGISTERED COURTS...
+            <View className="bg-[#1F2327] rounded-2xl p-8 border border-white/10 items-center my-2">
+              <ActivityIndicator size="small" color="#E85D26" />
+              <Text className="text-[#A0A5AD] text-xs font-mono uppercase tracking-wider mt-3">
+                Loading Registered Courts...
               </Text>
             </View>
           ) : fetchError ? (
-            <View className="bg-white rounded-sm p-6 border border-rust/40 items-center my-2 shadow-2xs">
-              <View className="w-12 h-12 rounded-full bg-rust/10 border border-rust/30 items-center justify-center mb-3">
-                <Ionicons name="alert-circle-outline" size={24} color="#875646" />
+            <View className="bg-[#1F2327] rounded-2xl p-6 border border-[#F4A261]/30 items-center my-2">
+              <View className="w-12 h-12 rounded-full bg-[#F4A261]/10 border border-[#F4A261]/30 items-center justify-center mb-3">
+                <Ionicons name="alert-circle-outline" size={24} color="#F4A261" />
               </View>
-              <Text className="text-graphite text-sm font-black uppercase tracking-tight text-center">
-                UNABLE TO LOAD COURTS
+              <Text className="text-[#F4F6F7] text-sm font-black uppercase tracking-tight text-center">
+                Unable to Load Courts
               </Text>
-              <Text className="text-stone-muted text-xs text-center mt-1 leading-4 max-w-xs">
+              <Text className="text-[#A0A5AD] text-xs text-center mt-1 leading-4 max-w-xs">
                 {fetchError}
               </Text>
               <Pressable
                 onPress={loadCourts}
                 accessibilityRole="button"
                 accessibilityLabel="Retry loading courts"
-                className="mt-4 px-5 py-2.5 rounded-sm bg-olive active:opacity-90"
+                className="mt-4 px-5 py-2.5 rounded-xl bg-[#E85D26] active:opacity-90"
               >
-                <Text className="text-warm-white text-xs font-mono uppercase font-black">
-                  RETRY
+                <Text className="text-[#171A1D] text-xs font-black uppercase">
+                  Retry
                 </Text>
               </Pressable>
             </View>
           ) : courts.length === 0 ? (
-            <View className="bg-white rounded-sm p-6 border border-stone items-center my-2 shadow-2xs">
-              <View className="w-12 h-12 rounded-full bg-stone/20 border border-stone items-center justify-center mb-3">
-                <Ionicons name="tennisball-outline" size={24} color="#666B60" />
+            <View className="bg-[#1F2327] rounded-2xl p-6 border border-white/10 items-center my-2">
+              <View className="w-12 h-12 rounded-full bg-[#272C31] border border-white/10 items-center justify-center mb-3">
+                <Ionicons name="tennisball-outline" size={24} color="#A0A5AD" />
               </View>
 
-              <Text className="text-graphite text-sm font-black uppercase tracking-tight text-center">
-                NO COURTS REGISTERED
+              <Text className="text-[#F4F6F7] text-sm font-black uppercase tracking-tight text-center">
+                No Courts Registered
               </Text>
 
-              <Text className="text-stone-muted text-xs text-center mt-1 max-w-[260px] leading-4">
+              <Text className="text-[#A0A5AD] text-xs text-center mt-1 max-w-[260px] leading-4">
                 Register the playing spaces and pitches available at your facility.
               </Text>
 
@@ -647,11 +628,11 @@ export default function HubCourtsScreen() {
               </View>
             </View>
           ) : displayedCourts.length === 0 ? (
-            <View className="bg-white rounded-sm p-5 border border-stone items-center my-2">
-              <Text className="text-graphite text-xs font-bold uppercase tracking-wider">
-                NO COURTS FOR SELECTED SPORT
+            <View className="bg-[#1F2327] rounded-2xl p-5 border border-white/10 items-center my-2">
+              <Text className="text-[#F4F6F7] text-xs font-bold uppercase tracking-wider">
+                No Courts For Selected Sport
               </Text>
-              <Text className="text-stone-muted text-xs mt-1 text-center">
+              <Text className="text-[#A0A5AD] text-xs mt-1 text-center">
                 Try selecting &quot;ALL&quot; or choose another supported sport.
               </Text>
             </View>
@@ -663,14 +644,14 @@ export default function HubCourtsScreen() {
               return (
                 <View
                   key={court.id}
-                  className="bg-white rounded-sm border border-stone p-4 mb-3 shadow-2xs"
+                  className="bg-[#1F2327] rounded-2xl border border-white/10 p-4 mb-3 shadow-sm"
                 >
                   {/* Top Bar: Court Name, Sport & Status */}
                   <View className="flex-row items-start justify-between">
                     <View className="flex-1 pr-2">
                       <View className="flex-row items-center">
                         <Text
-                          className="text-graphite text-base font-black uppercase tracking-tight"
+                          className="text-[#F4F6F7] text-base font-black uppercase tracking-tight"
                           numberOfLines={1}
                         >
                           {court.name}
@@ -683,16 +664,15 @@ export default function HubCourtsScreen() {
                           <MaterialCommunityIcons
                             name={sportMeta?.icon || 'tennis'}
                             size={12}
-                            color="#3D4438"
+                            color="#E85D26"
                           />
-                          <Text className="text-graphite text-[10px] font-mono uppercase font-bold ml-1">
+                          <Text className="text-[#A0A5AD] text-xs font-medium ml-1">
                             {sportMeta?.label || court.sport}
                           </Text>
                         </View>
                       </View>
                     </View>
 
-                    {/* Status Badge */}
                     <ArenaBadge
                       label={statusMeta.label}
                       variant={statusMeta.badgeVariant}
@@ -701,28 +681,28 @@ export default function HubCourtsScreen() {
                   </View>
 
                   {/* Allocation & Status Action Bar */}
-                  <View className="mt-3 pt-2.5 border-t border-stone/30 flex-row items-center justify-between">
+                  <View className="mt-3 pt-3 border-t border-white/5 flex-row items-center justify-between">
                     <View className="flex-1 pr-2">
-                      <Text className="text-stone-muted text-[9px] font-mono uppercase font-bold">
-                        AVAILABILITY STATUS
+                      <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold">
+                        Availability Status
                       </Text>
                       <Text
                         numberOfLines={1}
-                        className="text-graphite text-[10px] font-medium mt-0.5"
+                        className="text-[#A0A5AD] text-xs font-medium mt-0.5"
                       >
                         {statusMeta.hint}
                       </Text>
                     </View>
 
-                    <View className="flex-row items-center space-x-1.5">
+                    <View className="flex-row items-center space-x-2">
                       {/* Delete Button */}
                       <Pressable
                         onPress={() => setDeleteConfirmCourt(court)}
                         accessibilityRole="button"
                         accessibilityLabel={`Delete ${court.name}`}
-                        className="bg-rust/10 p-2 rounded-xs border border-rust/30 active:bg-rust/20 mr-1.5"
+                        className="bg-[#F4A261]/10 p-2.5 rounded-xl border border-[#F4A261]/30 active:bg-[#F4A261]/20 mr-1.5"
                       >
-                        <Ionicons name="trash-outline" size={13} color="#875646" />
+                        <Ionicons name="trash-outline" size={14} color="#F4A261" />
                       </Pressable>
 
                       {/* Status Toggle Button */}
@@ -733,11 +713,11 @@ export default function HubCourtsScreen() {
                         }}
                         accessibilityRole="button"
                         accessibilityLabel={`Change status for ${court.name}. Currently ${statusMeta.label}`}
-                        className="bg-stone/20 px-3 py-2 rounded-xs border border-stone active:bg-stone/40 flex-row items-center"
+                        className="bg-[#272C31] px-3.5 py-2 rounded-xl border border-white/10 active:bg-white/5 flex-row items-center"
                       >
-                        <Ionicons name="create-outline" size={13} color="#242522" />
-                        <Text className="text-graphite text-[10px] font-mono uppercase font-bold ml-1">
-                          EDIT STATUS
+                        <Ionicons name="create-outline" size={14} color="#F4F6F7" />
+                        <Text className="text-[#F4F6F7] text-xs font-bold uppercase ml-1">
+                          Edit Status
                         </Text>
                       </Pressable>
                     </View>
@@ -758,26 +738,26 @@ export default function HubCourtsScreen() {
         animationType="fade"
         onRequestClose={() => setIsAddModalVisible(false)}
       >
-        <View className="flex-1 bg-graphite/80 items-center justify-center p-5">
-          <View className="w-full max-w-sm bg-warm-white rounded-sm p-5 border border-stone shadow-xl">
-            <View className="w-12 h-12 rounded-sm items-center justify-center border border-stone bg-stone/20 mb-3">
-              <Ionicons name="add-circle-outline" size={24} color="#3D4438" />
+        <View className="flex-1 bg-[#171A1D]/85 items-center justify-center p-5">
+          <View className="w-full max-w-sm bg-[#1F2327] rounded-2xl p-6 border border-white/10 shadow-2xl">
+            <View className="w-12 h-12 rounded-xl items-center justify-center border border-white/10 bg-[#272C31] mb-3">
+              <Ionicons name="add-circle-outline" size={24} color="#E85D26" />
             </View>
 
             <ArenaBadge label="FACILITY REGISTRATION" variant="olive" size="sm" />
 
-            <Text className="text-graphite text-lg font-black uppercase tracking-tight mt-2">
-              ADD NEW PLAYING SPACE
+            <Text className="text-[#F4F6F7] text-lg font-black uppercase tracking-tight mt-2">
+              Add Playing Space
             </Text>
 
-            <Text className="text-stone-muted text-xs leading-4 mt-1">
+            <Text className="text-[#A0A5AD] text-xs leading-4 mt-1">
               Register a court, turf pitch, or net area to your facility inventory.
             </Text>
 
             {createError ? (
-              <View className="mt-3 p-2.5 rounded-xs bg-rust/10 border border-rust/30 flex-row items-center">
-                <Ionicons name="alert-circle" size={14} color="#875646" />
-                <Text className="text-rust text-xs font-semibold ml-1.5 flex-1">
+              <View className="mt-3 p-3 rounded-xl bg-[#F4A261]/10 border border-[#F4A261]/30 flex-row items-center">
+                <Ionicons name="alert-circle" size={16} color="#F4A261" />
+                <Text className="text-[#F4A261] text-xs font-semibold ml-2 flex-1">
                   {createError}
                 </Text>
               </View>
@@ -785,8 +765,8 @@ export default function HubCourtsScreen() {
 
             {/* Court Name Input */}
             <View className="mt-3">
-              <Text className="text-graphite text-[10px] font-mono uppercase font-bold mb-1">
-                COURT NAME (MAX 80 CHARS)
+              <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold mb-1.5">
+                Court Name (Max 80 chars)
               </Text>
               <TextInput
                 value={newCourtName}
@@ -795,38 +775,38 @@ export default function HubCourtsScreen() {
                   if (createError) setCreateError(null);
                 }}
                 placeholder="e.g. Center Pitch A, Net 1"
-                placeholderTextColor="#75796F"
+                placeholderTextColor="#7F8993"
                 maxLength={80}
-                className="bg-white border border-stone p-2.5 rounded-xs text-graphite text-xs font-bold"
+                className="bg-[#272C31] border border-white/10 p-3 rounded-xl text-[#F4F6F7] text-xs font-bold"
               />
             </View>
 
             {/* Sport Selector */}
             <View className="mt-3">
-              <Text className="text-graphite text-[10px] font-mono uppercase font-bold mb-1.5">
-                SUPPORTED SPORT
+              <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold mb-2">
+                Supported Sport
               </Text>
-              <View className="flex-row flex-wrap gap-1.5">
+              <View className="flex-row flex-wrap gap-2">
                 {ALL_SUPPORTED_SPORTS.map((s) => {
                   const isSel = newCourtSport === s;
                   return (
                     <Pressable
                       key={s}
                       onPress={() => setNewCourtSport(s)}
-                      className={`px-2.5 py-1.5 rounded-xs border flex-row items-center ${
+                      className={`px-3 py-2 rounded-xl border flex-row items-center ${
                         isSel
-                          ? 'bg-graphite border-graphite'
-                          : 'bg-white border-stone active:bg-stone/20'
+                          ? 'bg-[#E85D26] border-[#E85D26]'
+                          : 'bg-[#272C31] border-white/10'
                       }`}
                     >
                       <MaterialCommunityIcons
                         name={SPORT_META[s].icon}
                         size={12}
-                        color={isSel ? '#F4F1EA' : '#242522'}
+                        color={isSel ? '#171A1D' : '#A0A5AD'}
                       />
                       <Text
-                        className={`text-[10px] font-mono uppercase font-bold ml-1 ${
-                          isSel ? 'text-warm-white' : 'text-graphite'
+                        className={`text-xs font-bold ml-1.5 ${
+                          isSel ? 'text-[#171A1D]' : 'text-[#A0A5AD]'
                         }`}
                       >
                         {SPORT_META[s].label}
@@ -839,10 +819,10 @@ export default function HubCourtsScreen() {
 
             {/* Initial Status Selector */}
             <View className="mt-3">
-              <Text className="text-graphite text-[10px] font-mono uppercase font-bold mb-1.5">
-                INITIAL OPERATIONAL STATUS
+              <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold mb-2">
+                Initial Operational Status
               </Text>
-              <View className="flex-row gap-1.5">
+              <View className="flex-row gap-2">
                 {(['AVAILABLE', 'LIMITED', 'UNAVAILABLE'] as CourtStatus[]).map((st) => {
                   const isSel = newCourtStatus === st;
                   const meta = STATUS_CONFIG[st];
@@ -850,15 +830,15 @@ export default function HubCourtsScreen() {
                     <Pressable
                       key={st}
                       onPress={() => setNewCourtStatus(st)}
-                      className={`flex-1 py-1.5 rounded-xs border items-center ${
+                      className={`flex-1 py-2 rounded-xl border items-center ${
                         isSel
-                          ? 'bg-olive border-olive-dark'
-                          : 'bg-white border-stone active:bg-stone/20'
+                          ? 'bg-[#E85D26] border-[#E85D26]'
+                          : 'bg-[#272C31] border-white/10'
                       }`}
                     >
                       <Text
-                        className={`text-[9px] font-mono uppercase font-black ${
-                          isSel ? 'text-warm-white' : 'text-graphite'
+                        className={`text-[10px] font-bold uppercase ${
+                          isSel ? 'text-[#171A1D]' : 'text-[#A0A5AD]'
                         }`}
                       >
                         {meta.label}
@@ -880,10 +860,10 @@ export default function HubCourtsScreen() {
               <Pressable
                 onPress={() => setIsAddModalVisible(false)}
                 disabled={isCreating}
-                className="py-2.5 items-center mt-2 bg-stone/20 rounded-xs border border-stone active:bg-stone/40"
+                className="py-3 items-center mt-2 bg-[#272C31] rounded-xl border border-white/10"
               >
-                <Text className="text-graphite text-xs font-bold uppercase tracking-wider">
-                  CANCEL
+                <Text className="text-[#A0A5AD] text-xs font-bold uppercase tracking-wider">
+                  Cancel
                 </Text>
               </Pressable>
             </View>
@@ -900,28 +880,28 @@ export default function HubCourtsScreen() {
         animationType="fade"
         onRequestClose={() => setEditModalCourt(null)}
       >
-        <View className="flex-1 bg-graphite/80 items-center justify-center p-5">
-          <View className="w-full max-w-sm bg-warm-white rounded-sm p-5 border border-stone shadow-xl">
+        <View className="flex-1 bg-[#171A1D]/85 items-center justify-center p-5">
+          <View className="w-full max-w-sm bg-[#1F2327] rounded-2xl p-6 border border-white/10 shadow-2xl">
             {editModalCourt ? (
               <>
-                <View className="w-12 h-12 rounded-sm items-center justify-center border border-stone bg-stone/20 mb-3">
-                  <Ionicons name="clipboard-outline" size={24} color="#242522" />
+                <View className="w-12 h-12 rounded-xl items-center justify-center border border-white/10 bg-[#272C31] mb-3">
+                  <Ionicons name="clipboard-outline" size={24} color="#E85D26" />
                 </View>
 
-                <ArenaBadge label="COURT STATUS ALLOCATION" variant="stone" size="sm" />
+                <ArenaBadge label="COURT STATUS" variant="stone" size="sm" />
 
-                <Text className="text-graphite text-lg font-black uppercase tracking-tight mt-2">
+                <Text className="text-[#F4F6F7] text-lg font-black uppercase tracking-tight mt-2">
                   {editModalCourt.name}
                 </Text>
 
-                <Text className="text-stone-muted text-xs leading-4 mt-1">
+                <Text className="text-[#A0A5AD] text-xs leading-4 mt-1">
                   Update operational status on the central server for this playing space.
                 </Text>
 
                 {updateError ? (
-                  <View className="mt-3 p-2 rounded-xs bg-rust/10 border border-rust/30 flex-row items-center">
-                    <Ionicons name="alert-circle" size={13} color="#875646" />
-                    <Text className="text-rust text-xs font-medium ml-1.5 flex-1">
+                  <View className="mt-3 p-3 rounded-xl bg-[#F4A261]/10 border border-[#F4A261]/30 flex-row items-center">
+                    <Ionicons name="alert-circle" size={16} color="#F4A261" />
+                    <Text className="text-[#F4A261] text-xs font-medium ml-2 flex-1">
                       {updateError}
                     </Text>
                   </View>
@@ -940,30 +920,30 @@ export default function HubCourtsScreen() {
                         onPress={() => handleUpdateStatus(st)}
                         accessibilityRole="button"
                         accessibilityLabel={`Set status to ${meta.label}`}
-                        className={`p-3 rounded-xs border flex-row items-center justify-between ${
+                        className={`p-3.5 rounded-xl border flex-row items-center justify-between ${
                           isCurrent
-                            ? 'bg-white border-graphite shadow-2xs'
-                            : 'bg-warm-white border-stone active:bg-stone/20'
+                            ? 'bg-[#272C31] border-[#E85D26]'
+                            : 'bg-[#1F2327] border-white/10 active:bg-[#272C31]'
                         }`}
                       >
                         <View className="flex-1 pr-2">
                           <View className="flex-row items-center">
                             <Text
                               className={`text-xs font-black uppercase ${
-                                isCurrent ? 'text-graphite' : 'text-stone-muted'
+                                isCurrent ? 'text-[#E85D26]' : 'text-[#F4F6F7]'
                               }`}
                             >
                               {meta.label}
                             </Text>
                             {isCurrent ? (
-                              <View className="ml-2 bg-graphite/10 px-1 py-0.5 rounded-xs">
-                                <Text className="text-graphite text-[9px] font-mono">
+                              <View className="ml-2 bg-[#E85D26]/20 px-1.5 py-0.5 rounded-md">
+                                <Text className="text-[#E85D26] text-[9px] font-mono">
                                   CURRENT
                                 </Text>
                               </View>
                             ) : null}
                           </View>
-                          <Text className="text-stone-muted text-[10px] mt-0.5 leading-3">
+                          <Text className="text-[#7F8993] text-[10px] mt-0.5 leading-3">
                             {meta.hint}
                           </Text>
                         </View>
@@ -982,10 +962,10 @@ export default function HubCourtsScreen() {
                 <Pressable
                   onPress={() => setEditModalCourt(null)}
                   disabled={isUpdatingStatus}
-                  className="py-2.5 items-center mt-3 bg-stone/20 rounded-xs border border-stone active:bg-stone/40"
+                  className="py-3 items-center mt-3 bg-[#272C31] rounded-xl border border-white/10"
                 >
-                  <Text className="text-graphite text-xs font-bold uppercase tracking-wider">
-                    CLOSE
+                  <Text className="text-[#A0A5AD] text-xs font-bold uppercase tracking-wider">
+                    Close
                   </Text>
                 </Pressable>
               </>
@@ -1003,21 +983,21 @@ export default function HubCourtsScreen() {
         animationType="fade"
         onRequestClose={() => setDeleteConfirmCourt(null)}
       >
-        <View className="flex-1 bg-graphite/80 items-center justify-center p-5">
-          <View className="w-full max-w-sm bg-warm-white rounded-sm p-5 border border-stone shadow-xl">
+        <View className="flex-1 bg-[#171A1D]/85 items-center justify-center p-5">
+          <View className="w-full max-w-sm bg-[#1F2327] rounded-2xl p-6 border border-white/10 shadow-2xl">
             {deleteConfirmCourt ? (
               <>
-                <View className="w-12 h-12 rounded-sm items-center justify-center border border-rust/40 bg-rust/10 mb-3">
-                  <Ionicons name="trash-outline" size={24} color="#875646" />
+                <View className="w-12 h-12 rounded-xl items-center justify-center border border-[#F4A261]/30 bg-[#F4A261]/10 mb-3">
+                  <Ionicons name="trash-outline" size={24} color="#F4A261" />
                 </View>
 
                 <ArenaBadge label="DELETE CONFIRMATION" variant="rust" size="sm" />
 
-                <Text className="text-graphite text-lg font-black uppercase tracking-tight mt-2">
-                  DELETE {deleteConfirmCourt.name}?
+                <Text className="text-[#F4F6F7] text-lg font-black uppercase tracking-tight mt-2">
+                  Delete {deleteConfirmCourt.name}?
                 </Text>
 
-                <Text className="text-stone-muted text-xs leading-4 mt-1">
+                <Text className="text-[#A0A5AD] text-xs leading-4 mt-1">
                   Are you sure you want to permanently remove this playing space from your registered inventory?
                 </Text>
 
@@ -1025,13 +1005,13 @@ export default function HubCourtsScreen() {
                   <Pressable
                     onPress={handleDeleteCourt}
                     disabled={isDeleting}
-                    className="py-3 items-center bg-rust rounded-xs border border-rust active:opacity-90"
+                    className="py-3 items-center bg-[#F4A261] rounded-xl active:opacity-90"
                   >
                     {isDeleting ? (
-                      <ActivityIndicator size="small" color="#F4F1EA" />
+                      <ActivityIndicator size="small" color="#171A1D" />
                     ) : (
-                      <Text className="text-warm-white text-xs font-mono uppercase font-black">
-                        CONFIRM DELETE
+                      <Text className="text-[#171A1D] text-xs font-mono uppercase font-black">
+                        Confirm Delete
                       </Text>
                     )}
                   </Pressable>
@@ -1039,10 +1019,10 @@ export default function HubCourtsScreen() {
                   <Pressable
                     onPress={() => setDeleteConfirmCourt(null)}
                     disabled={isDeleting}
-                    className="py-2.5 items-center mt-2 bg-stone/20 rounded-xs border border-stone active:bg-stone/40"
+                    className="py-3 items-center mt-2 bg-[#272C31] rounded-xl border border-white/10"
                   >
-                    <Text className="text-graphite text-xs font-bold uppercase tracking-wider">
-                      CANCEL
+                    <Text className="text-[#A0A5AD] text-xs font-bold uppercase tracking-wider">
+                      Cancel
                     </Text>
                   </Pressable>
                 </View>

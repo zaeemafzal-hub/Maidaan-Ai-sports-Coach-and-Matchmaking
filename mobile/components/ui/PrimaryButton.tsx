@@ -1,86 +1,63 @@
 import React, { useState } from 'react';
-import { Pressable, Text, ActivityIndicator, GestureResponderEvent } from 'react-native';
+import { Pressable, Text, ActivityIndicator, GestureResponderEvent, View } from 'react-native';
 
-interface PrimaryButtonProps {
+export interface PrimaryButtonProps {
   title: string;
   onPress: (event: GestureResponderEvent) => void;
-  variant?: 'primary' | 'outline' | 'ghost' | 'rust';
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'warm' | 'rust';
+  size?: 'sm' | 'md' | 'lg' | string;
   disabled?: boolean;
   loading?: boolean;
   className?: string;
   testID?: string;
+  icon?: React.ReactNode;
 }
 
 export const PrimaryButton: React.FC<PrimaryButtonProps> = ({
   title,
   onPress,
   variant = 'primary',
+  size = 'md',
   disabled = false,
   loading = false,
   className = '',
   testID,
+  icon,
 }) => {
   const [isPressed, setIsPressed] = useState(false);
 
-  if (variant === 'ghost') {
-    return (
-      <Pressable
-        testID={testID}
-        onPress={onPress}
-        onPressIn={() => setIsPressed(true)}
-        onPressOut={() => setIsPressed(false)}
-        disabled={disabled || loading}
-        className={`w-full min-h-[44px] py-3 items-center justify-center ${
-          isPressed ? 'opacity-60 scale-[0.98]' : 'opacity-100'
-        } ${className}`}
-      >
-        <Text className="text-graphite text-sm font-bold tracking-wide">
-          {title}
-        </Text>
-      </Pressable>
-    );
+  // Variant Styles
+  let containerStyle = 'bg-[#E85D26] shadow-lg shadow-[#E85D26]/35';
+  let textStyle = 'text-white font-extrabold';
+  let indicatorColor = '#FFFFFF';
+
+  if (variant === 'secondary') {
+    containerStyle = 'bg-[#1B1D22] border border-[rgba(255,255,255,0.08)] active:bg-[#22252B]';
+    textStyle = 'text-white font-semibold';
+    indicatorColor = '#FFFFFF';
+  } else if (variant === 'outline') {
+    containerStyle = 'bg-transparent border border-[rgba(255,255,255,0.15)] active:bg-[rgba(255,255,255,0.05)]';
+    textStyle = 'text-white font-semibold';
+    indicatorColor = '#FFFFFF';
+  } else if (variant === 'ghost') {
+    containerStyle = 'bg-transparent active:bg-[rgba(255,255,255,0.05)]';
+    textStyle = 'text-[#A0A5AD] font-semibold';
+    indicatorColor = '#A0A5AD';
+  } else if (variant === 'warm' || variant === 'rust') {
+    containerStyle = 'bg-[#E85D26] shadow-lg shadow-[#E85D26]/35';
+    textStyle = 'text-white font-extrabold';
+    indicatorColor = '#FFFFFF';
   }
 
-  if (variant === 'outline') {
-    return (
-      <Pressable
-        testID={testID}
-        onPress={onPress}
-        onPressIn={() => setIsPressed(true)}
-        onPressOut={() => setIsPressed(false)}
-        disabled={disabled || loading}
-        className={`w-full min-h-[48px] py-3.5 px-6 rounded-xl border border-graphite items-center justify-center bg-warm-white ${
-          isPressed ? 'scale-[0.98] bg-stone-light' : 'scale-100'
-        } ${disabled ? 'opacity-50' : ''} ${className}`}
-      >
-        <Text className="text-graphite text-base font-bold tracking-tight">
-          {title}
-        </Text>
-      </Pressable>
-    );
-  }
-
-  if (variant === 'rust') {
-    return (
-      <Pressable
-        testID={testID}
-        onPress={onPress}
-        onPressIn={() => setIsPressed(true)}
-        onPressOut={() => setIsPressed(false)}
-        disabled={disabled || loading}
-        className={`w-full min-h-[48px] py-3.5 px-6 rounded-xl items-center justify-center bg-rust shadow-sm ${
-          isPressed ? 'scale-[0.98] bg-rust-dark' : 'scale-100'
-        } ${disabled ? 'opacity-50' : ''} ${className}`}
-      >
-        {loading ? (
-          <ActivityIndicator color="#F4F1EA" />
-        ) : (
-          <Text className="text-warm-white text-base font-bold tracking-tight uppercase">
-            {title}
-          </Text>
-        )}
-      </Pressable>
-    );
+  // Size Styles
+  let sizeStyle = 'min-h-[54px] py-3.5 px-6 rounded-full';
+  let textSizeStyle = 'text-sm';
+  if (size === 'sm') {
+    sizeStyle = 'min-h-[42px] py-2 px-4 rounded-full';
+    textSizeStyle = 'text-xs';
+  } else if (size === 'lg') {
+    sizeStyle = 'min-h-[58px] py-4 px-7 rounded-full';
+    textSizeStyle = 'text-base';
   }
 
   return (
@@ -90,17 +67,31 @@ export const PrimaryButton: React.FC<PrimaryButtonProps> = ({
       onPressIn={() => setIsPressed(true)}
       onPressOut={() => setIsPressed(false)}
       disabled={disabled || loading}
-      className={`w-full min-h-[48px] py-3.5 px-6 rounded-xl items-center justify-center bg-olive shadow-sm ${
-        isPressed ? 'scale-[0.98] bg-olive-dark' : 'scale-100'
-      } ${disabled ? 'opacity-50' : ''} ${className}`}
+      className={`w-full ${sizeStyle} items-center justify-center flex-row ${containerStyle} ${
+        isPressed ? 'scale-[0.98] bg-[#FF723A] opacity-95' : 'scale-100'
+      } ${disabled ? 'opacity-40' : ''} ${className}`}
     >
       {loading ? (
-        <ActivityIndicator color="#F4F1EA" />
+        <ActivityIndicator color={indicatorColor} />
       ) : (
-        <Text className="text-warm-white text-base font-bold tracking-tight uppercase">
-          {title}
-        </Text>
+        <View className="flex-row items-center justify-center">
+          {icon && <View className="mr-2">{icon}</View>}
+          <Text
+            style={{ color: variant === 'ghost' ? '#A0A5AD' : '#FFFFFF' }}
+            className={`${textSizeStyle} tracking-wider uppercase ${textStyle}`}
+          >
+            {title}
+          </Text>
+        </View>
       )}
     </Pressable>
   );
 };
+
+export const SecondaryButton: React.FC<PrimaryButtonProps> = (props) => (
+  <PrimaryButton {...props} variant="secondary" />
+);
+
+export const GhostButton: React.FC<PrimaryButtonProps> = (props) => (
+  <PrimaryButton {...props} variant="ghost" />
+);

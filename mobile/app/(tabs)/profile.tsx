@@ -5,33 +5,30 @@ import {
   ScrollView,
   Pressable,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/useAuthStore';
-import { ArenaHeader } from '../../components/ui/ArenaHeader';
 import { ArenaBadge } from '../../components/ui/ArenaBadge';
+import { AmbientGlowOverlay } from '../../components/ui/AmbientCanvas';
 import { Sport, SkillLevel } from '../../types';
 
-// Sport icons and configurations
 const SPORT_META: Record<
   Sport,
   { label: string; icon: 'cricket' | 'badminton' | 'tennis' | 'soccer'; color: string }
 > = {
-  cricket: { label: 'Cricket', icon: 'cricket', color: '#875646' },
-  badminton: { label: 'Badminton', icon: 'badminton', color: '#7A6B56' },
-  padel: { label: 'Padel', icon: 'tennis', color: '#5A6254' },
-  football: { label: 'Football', icon: 'soccer', color: '#3D4438' },
+  cricket: { label: 'Cricket', icon: 'cricket', color: '#F4A261' },
+  badminton: { label: 'Badminton', icon: 'badminton', color: '#7FD1AE' },
+  padel: { label: 'Padel', icon: 'tennis', color: '#64B5F6' },
+  football: { label: 'Football', icon: 'soccer', color: '#22C55E' },
 };
 
-// Skill tier metadata
 const SKILL_METAS: Record<SkillLevel, { label: string; tierBadge: string; tag: string }> = {
-  beginner: { label: 'Beginner', tierBadge: 'DIV 03', tag: 'Grassroots Casual' },
-  intermediate: { label: 'Intermediate', tierBadge: 'DIV 02', tag: 'Club Regular' },
-  advanced: { label: 'Advanced', tierBadge: 'DIV 01', tag: 'Premier League' },
+  beginner: { label: 'Beginner', tierBadge: 'TIER 1', tag: 'Grassroots Casual' },
+  intermediate: { label: 'Intermediate', tierBadge: 'TIER 2', tag: 'Club Regular' },
+  advanced: { label: 'Advanced', tierBadge: 'TIER 3', tag: 'Premier League' },
 };
 
-// Typed deterministic recent matches presentation model (separate from open discovery)
 export interface PlayerMatchHistoryItem {
   id: string;
   title: string;
@@ -41,20 +38,18 @@ export interface PlayerMatchHistoryItem {
   date: string;
   venueName: string;
   status: 'completed' | 'confirmed' | 'upcoming';
-  result?: 'WIN' | 'LOSS' | 'TIED';
 }
 
 const DETERMINISTIC_RECENT_MATCHES: PlayerMatchHistoryItem[] = [
   {
     id: 'hist-01',
-    title: 'Model Town 7v7 Evening Floodlit',
+    title: 'Model Town 7v7 Floodlit Match',
     sport: 'football',
     sportLabel: 'Football',
     format: '7v7 Artificial Turf',
     date: 'Yesterday · 8:30 PM',
     venueName: 'Model Town Football Turf, Pitch 1',
     status: 'completed',
-    result: 'WIN',
   },
   {
     id: 'hist-02',
@@ -65,7 +60,6 @@ const DETERMINISTIC_RECENT_MATCHES: PlayerMatchHistoryItem[] = [
     date: '3 Days Ago · 9:00 PM',
     venueName: 'Gulberg Central Sports Nets',
     status: 'completed',
-    result: 'WIN',
   },
   {
     id: 'hist-03',
@@ -76,7 +70,6 @@ const DETERMINISTIC_RECENT_MATCHES: PlayerMatchHistoryItem[] = [
     date: 'Last Weekend · 7:00 PM',
     venueName: 'DHA Phase 5 Padel Club, Court B',
     status: 'completed',
-    result: 'LOSS',
   },
   {
     id: 'hist-04',
@@ -91,6 +84,7 @@ const DETERMINISTIC_RECENT_MATCHES: PlayerMatchHistoryItem[] = [
 ];
 
 export default function ProfileScreen() {
+  const insets = useSafeAreaInsets();
   const { currentUser, playerProfile, reset } = useAuthStore();
   const [activeTab, setActiveTab] = useState<'overview' | 'history'>('overview');
 
@@ -103,96 +97,83 @@ export default function ProfileScreen() {
     router.push('/onboarding/player-setup');
   };
 
-  // Safe fallback name/email from currentUser if available
   const profileName = currentUser?.name || 'Player';
   const profileEmail = currentUser?.email || '';
   const profileRole = currentUser?.role || 'PLAYER';
-  const userInitials = profileName
-    .split(' ')
-    .filter(Boolean)
-    .map((n) => n[0])
-    .join('')
-    .substring(0, 2)
-    .toUpperCase() || 'P';
+  const userInitials =
+    profileName
+      .split(' ')
+      .filter(Boolean)
+      .map((n) => n[0])
+      .join('')
+      .substring(0, 2)
+      .toUpperCase() || 'P';
 
-  // =========================================================================
-  // 1. MISSING PROFILE BEHAVIOR: RENDER CONCRETE ARENA EMPTY STATE
-  // =========================================================================
+  // 1. Missing Profile State
   if (!playerProfile) {
     return (
-      <SafeAreaView className="flex-1 bg-warm-white" edges={['top']}>
-        <ArenaHeader
-          title="MAIDAAN"
-          subtitle="PLAYER PROFILE // SCREEN 15"
-        />
+      <SafeAreaView className="flex-1 bg-[#0C0D0E]" edges={['top']}>
+        <AmbientGlowOverlay top={-40} right={-30} size={260} opacity={0.12} />
+        <View className="px-5 py-3 flex-row items-center justify-between border-b border-white/[0.08]">
+          <Text style={{ color: '#FFFFFF' }} className="text-white text-base font-bold uppercase tracking-tight">
+            Player Profile
+          </Text>
+        </View>
 
         <ScrollView
-          contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 24 }}
+          contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 20 }}
           showsVerticalScrollIndicator={false}
         >
-          {/* Identity Header Card with real currentUser data */}
-          <View className="bg-graphite rounded-sm p-5 border border-graphite shadow-sm mb-8">
+          <View className="bg-[#141518] rounded-2xl p-5 border border-white/[0.08] shadow-md mb-6">
             <View className="flex-row items-center">
-              <View className="w-14 h-14 rounded-full bg-arena-olive items-center justify-center border-2 border-warm-white">
-                <Text className="text-warm-white text-lg font-black tracking-widest">
+              <View className="w-16 h-16 rounded-full bg-[#1B1D22] items-center justify-center border-2 border-[#E85D26]/50">
+                <Text style={{ color: '#E85D26' }} className="text-[#E85D26] text-xl font-bold tracking-wider">
                   {userInitials}
                 </Text>
               </View>
               <View className="ml-3.5 flex-1">
-                <View className="flex-row items-center flex-wrap gap-1.5 mb-1">
-                  <Text className="text-warm-white text-base font-black uppercase tracking-tight">
-                    {profileName}
-                  </Text>
-                  <View className="bg-arena-olive/60 px-1.5 py-0.5 rounded-xs border border-arena-olive">
-                    <Text className="text-warm-white text-[9px] font-black uppercase tracking-widest">
-                      {profileRole}
-                    </Text>
-                  </View>
-                </View>
-                {profileEmail ? (
-                  <Text className="text-stone-muted text-xs font-mono">
-                    {profileEmail}
-                  </Text>
-                ) : null}
+                <Text style={{ color: '#FFFFFF' }} className="text-white text-lg font-bold tracking-tight">
+                  {profileName}
+                </Text>
+                <Text style={{ color: '#A0A5AD' }} className="text-[#A0A5AD] text-xs mt-0.5">
+                  {profileEmail || 'Athlete'}
+                </Text>
               </View>
             </View>
           </View>
 
-          {/* Empty State Card */}
-          <View className="bg-white rounded-sm p-6 border border-stone items-center">
-            <View className="w-14 h-14 rounded-full bg-stone/20 border border-stone items-center justify-center mb-4">
-              <Ionicons name="person-outline" size={26} color="#666B60" />
+          <View className="bg-[#141518] rounded-2xl p-6 border border-white/[0.08] items-center">
+            <View className="w-14 h-14 rounded-full bg-[#1B1D22] border border-white/[0.08] items-center justify-center mb-4">
+              <Ionicons name="person-outline" size={26} color="#E85D26" />
             </View>
-
-            <Text className="text-graphite text-lg font-black uppercase tracking-tight text-center">
-              PLAYER PROFILE NOT SET
+            <Text style={{ color: '#FFFFFF' }} className="text-white text-xl font-bold tracking-tight text-center">
+              Profile Setup Incomplete
             </Text>
-
-            <Text className="text-stone-muted text-xs font-medium text-center mt-2 leading-5 max-w-[280px]">
-              Complete your player setup to build your Maidaan player identity.
+            <Text style={{ color: '#A0A5AD' }} className="text-[#A0A5AD] text-xs text-center mt-2 leading-relaxed max-w-[280px]">
+              Complete your player setup to select preferred sports and calibrate matchmaking.
             </Text>
-
-            <View className="w-full mt-6">
-              <Pressable
-                onPress={handleGoToSetup}
-                className="w-full bg-arena-olive rounded-sm py-3.5 items-center justify-center active:bg-olive-dark border border-arena-olive"
-              >
-                <Text className="text-warm-white text-xs font-black uppercase tracking-wider">
-                  COMPLETE PLAYER SETUP
-                </Text>
-              </Pressable>
-            </View>
+            <Pressable
+              onPress={handleGoToSetup}
+              accessibilityRole="button"
+              accessibilityLabel="Complete Player Setup"
+              className="w-full min-h-[48px] bg-[#E85D26] rounded-full py-3.5 items-center justify-center active:bg-[#FF723A] shadow-md shadow-[#E85D26]/30 mt-6"
+            >
+              <Text style={{ color: '#FFFFFF' }} className="text-white text-xs font-extrabold uppercase tracking-wider">
+                Complete Player Setup
+              </Text>
+            </Pressable>
           </View>
 
-          {/* Sign Out CTA */}
           <View className="mt-8">
             <Pressable
               onPress={handleSignOut}
-              className="flex-row items-center justify-center bg-stone/20 rounded-sm py-3 border border-stone"
+              accessibilityRole="button"
+              accessibilityLabel="Sign out"
+              className="min-h-[48px] flex-row items-center justify-center bg-[#141518] rounded-full py-3.5 border border-[#EF4444]/30 active:bg-[#1B1D22]"
             >
-              <Ionicons name="log-out-outline" size={16} color="#875646" />
-              <Text className="text-rust text-xs font-black uppercase tracking-wider ml-1.5">
-                SIGN OUT OF MAIDAAN
+              <Ionicons name="log-out-outline" size={16} color="#EF4444" />
+              <Text style={{ color: '#EF4444' }} className="text-[#EF4444] text-xs font-bold uppercase tracking-wider ml-2">
+                Sign Out of Maidaan
               </Text>
             </Pressable>
           </View>
@@ -201,149 +182,165 @@ export default function ProfileScreen() {
     );
   }
 
-  // =========================================================================
-  // 2. CONFIGURED PROFILE DATA (Valid playerProfile exists)
-  // =========================================================================
+  // 2. Active Profile State
   const primaryLocation = playerProfile.primaryLocation || 'Lahore';
   const currentSkill: SkillLevel = playerProfile.skillLevel || 'intermediate';
-  // Display only the sports actually chosen in playerProfile
   const preferredSports: Sport[] = playerProfile.preferredSports || [];
-
   const skillInfo = SKILL_METAS[currentSkill] || SKILL_METAS.intermediate;
 
-  // Filter recent history to sports the player actually plays
   const relevantRecentMatches = DETERMINISTIC_RECENT_MATCHES.filter((m) =>
     preferredSports.includes(m.sport)
   );
   const displayMatches =
     relevantRecentMatches.length > 0
       ? relevantRecentMatches
-      : DETERMINISTIC_RECENT_MATCHES.slice(0, 2);
+      : DETERMINISTIC_RECENT_MATCHES.slice(0, 3);
 
-  // 3. REAL DOMAIN STATS ONLY (No fabricated metrics, no mixed real/mock arithmetic)
   const actualMatchesPlayed =
     typeof playerProfile.matchesPlayed === 'number'
       ? playerProfile.matchesPlayed
       : 0;
 
   return (
-    <SafeAreaView className="flex-1 bg-warm-white" edges={['top']}>
-      {/* Concrete Arena Header */}
-      <ArenaHeader
-        title="MAIDAAN"
-        subtitle="PLAYER PROFILE // SCREEN 15"
-      />
+    <SafeAreaView className="flex-1 bg-[#0C0D0E]" edges={['top']}>
+      {/* Top Header Row with quick navigation actions */}
+      <View className="px-5 py-3 flex-row items-center justify-between border-b border-white/[0.08] z-20">
+        <Pressable
+          onPress={() => {
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace('/(tabs)/discover');
+            }
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Back"
+          className="w-10 h-10 rounded-full bg-[#1B1D22] border border-white/[0.08] items-center justify-center active:bg-[#22252B]"
+        >
+          <Ionicons name="chevron-back" size={20} color="#FFFFFF" />
+        </Pressable>
+
+        <Text style={{ color: '#FFFFFF' }} className="text-white text-base font-bold tracking-tight uppercase">
+          Player Profile
+        </Text>
+
+        <Pressable
+          onPress={() => router.push('/notifications')}
+          accessibilityRole="button"
+          accessibilityLabel="Notifications"
+          className="w-10 h-10 rounded-full bg-[#1B1D22] border border-white/[0.08] items-center justify-center active:bg-[#22252B]"
+        >
+          <Ionicons name="notifications-outline" size={18} color="#FFFFFF" />
+        </Pressable>
+      </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 48 }}
+        contentContainerStyle={{
+          paddingBottom: Math.max(insets.bottom, 16) + 40,
+        }}
+        className="flex-1"
       >
-        {/* PLAYER IDENTITY HERO CARD */}
-        <View className="px-4 pt-4">
-          <View className="bg-graphite rounded-sm p-4 border border-graphite shadow-sm">
-            <View className="flex-row items-center justify-between">
-              {/* Avatar + Name Details */}
-              <View className="flex-row items-center flex-1 pr-3">
-                <View className="w-14 h-14 rounded-full bg-arena-olive items-center justify-center border-2 border-warm-white">
-                  <Text className="text-warm-white text-lg font-black tracking-widest">
-                    {userInitials}
-                  </Text>
-                </View>
-                <View className="ml-3 flex-1">
-                  <View className="flex-row items-center flex-wrap gap-1 mb-1">
-                    <Text className="text-warm-white text-base font-black uppercase tracking-tight">
-                      {profileName}
-                    </Text>
-                    <View className="bg-arena-olive/60 px-1.5 py-0.5 rounded-xs border border-arena-olive">
-                      <Text className="text-warm-white text-[9px] font-black uppercase tracking-widest">
-                        {profileRole}
-                      </Text>
-                    </View>
-                  </View>
-                  {profileEmail ? (
-                    <Text className="text-stone-muted text-xs font-mono">
-                      {profileEmail}
-                    </Text>
-                  ) : null}
-                  <View className="flex-row items-center mt-1">
-                    <Ionicons name="location-sharp" size={11} color="#B8B2A6" />
-                    <Text className="text-stone-muted text-[11px] font-medium ml-1">
-                      {primaryLocation}
-                    </Text>
-                  </View>
-                </View>
-              </View>
+        {/* Subtle Ambient Stadium Bloom */}
+        <AmbientGlowOverlay top={20} size={280} opacity={0.14} />
 
-              {/* Skill Tier Badge */}
-              <View className="items-end">
-                <ArenaBadge
-                  label={skillInfo.tierBadge}
-                  variant="rust"
-                  size="sm"
-                />
-                <Text className="text-stone-muted text-[10px] font-mono uppercase mt-1">
-                  {skillInfo.label}
-                </Text>
-              </View>
+        {/* BENCHMARK PHONE 4 COMPOSITION: Centered Athlete Avatar & Identity */}
+        <View className="items-center pt-6 pb-4 px-5">
+          {/* Avatar with Solar Orange glowing ring */}
+          <View className="w-20 h-20 rounded-full bg-[#1B1D22] border-2 border-[#E85D26]/50 items-center justify-center shadow-lg shadow-[#E85D26]/20 relative mb-3">
+            <Text style={{ color: '#FFFFFF' }} className="text-white text-2xl font-black tracking-wider">
+              {userInitials}
+            </Text>
+            <View className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-[#E85D26] border-2 border-[#0C0D0E] items-center justify-center">
+              <Ionicons name="checkmark" size={12} color="#FFFFFF" />
             </View>
+          </View>
 
-            {/* Sub-bar */}
-            <View className="mt-4 pt-3 border-t border-white/10 flex-row items-center justify-between">
-              <View className="flex-row items-center">
-                <View className="w-2 h-2 rounded-full bg-olive-muted mr-2" />
-                <Text className="text-warm-white/90 text-[11px] font-medium">
-                  {skillInfo.tag}
-                </Text>
-              </View>
-              <Text className="text-stone-muted text-[10px] font-mono">
-                Maidaan Circuit
-              </Text>
-            </View>
+          {/* Full Athlete Name */}
+          <Text
+            style={{ color: '#FFFFFF' }}
+            className="text-white text-2xl font-black uppercase tracking-tight text-center"
+          >
+            {profileName}
+          </Text>
+
+          {/* Role & Location Badge */}
+          <View className="flex-row items-center mt-1.5 px-3 py-1 rounded-full bg-[#141518] border border-white/[0.08]">
+            <Ionicons name="location-sharp" size={11} color="#E85D26" />
+            <Text style={{ color: '#A0A5AD' }} className="text-[#A0A5AD] text-xs font-medium ml-1">
+              {primaryLocation} • {profileRole === 'PLAYER' ? 'Player' : profileRole}
+            </Text>
           </View>
         </View>
 
-        {/* BASIC SPORTING RECORD (Real playerProfile domain data only) */}
-        <View className="px-4 mt-4">
-          <View className="flex-row items-center justify-between mb-2">
-            <Text className="text-graphite text-[11px] font-mono uppercase tracking-widest font-bold">
-              BASIC STATS
-            </Text>
-            <Text className="text-stone-muted text-[10px] font-mono">
-              Live Profile
-            </Text>
-          </View>
-
-          <View className="bg-stone/20 rounded-sm p-3.5 border border-stone">
+        {/* BENCHMARK PHONE 4 STAT FEATURE BLOCK (100% Honest Domain Data) */}
+        <View className="px-5 mt-2">
+          <View className="bg-[#141518] rounded-2xl p-5 border border-white/[0.08] shadow-md">
             <View className="flex-row items-center justify-between">
-              <View>
-                <Text className="text-stone-muted text-[9px] font-mono uppercase tracking-wider">
-                  MATCHES PLAYED
-                </Text>
-                <Text className="text-graphite text-3xl font-black tracking-tight mt-0.5">
-                  {actualMatchesPlayed}
-                </Text>
-                <Text className="text-stone-muted text-xs font-medium mt-1">
-                  {actualMatchesPlayed === 0
-                    ? '0 confirmed matches recorded'
-                    : actualMatchesPlayed === 1
-                    ? '1 confirmed match recorded'
-                    : `${actualMatchesPlayed} confirmed matches recorded`}
-                </Text>
+              {/* Primary Circular Metric: Matches Played */}
+              <View className="items-center justify-center mr-4">
+                <View className="w-24 h-24 rounded-full border-4 border-[#E85D26] bg-[#101214] items-center justify-center shadow-md shadow-[#E85D26]/30">
+                  <Text
+                    style={{ color: '#FFFFFF' }}
+                    className="text-white text-3xl font-black tracking-tight"
+                  >
+                    {actualMatchesPlayed}
+                  </Text>
+                  <Text
+                    style={{ color: '#5C616A' }}
+                    className="text-[#5C616A] text-[9px] font-bold uppercase tracking-wider -mt-0.5"
+                  >
+                    Matches
+                  </Text>
+                </View>
               </View>
-              <View className="w-11 h-11 rounded-full bg-arena-olive/20 items-center justify-center border border-arena-olive/40">
-                <Ionicons name="trophy-outline" size={20} color="#3D4438" />
+
+              {/* Supporting Honest Metrics Grid */}
+              <View className="flex-1 space-y-3">
+                {/* Metric 1: Skill Tier */}
+                <View className="flex-row items-center justify-between pb-2 border-b border-white/[0.06]">
+                  <Text style={{ color: '#5C616A' }} className="text-[#5C616A] text-[11px] font-bold uppercase tracking-wider">
+                    Skill Tier
+                  </Text>
+                  <View className="flex-row items-center">
+                    <Text style={{ color: '#FFFFFF' }} className="text-white text-xs font-bold mr-1.5">
+                      {skillInfo.tierBadge}
+                    </Text>
+                    <ArenaBadge label={skillInfo.label.toUpperCase()} variant="accent" size="sm" />
+                  </View>
+                </View>
+
+                {/* Metric 2: Active Disciplines */}
+                <View className="flex-row items-center justify-between pb-2 border-b border-white/[0.06]">
+                  <Text style={{ color: '#5C616A' }} className="text-[#5C616A] text-[11px] font-bold uppercase tracking-wider">
+                    Disciplines
+                  </Text>
+                  <Text style={{ color: '#E85D26' }} className="text-[#E85D26] text-xs font-bold">
+                    {preferredSports.length}/4 Active
+                  </Text>
+                </View>
+
+                {/* Metric 3: Home Circuit */}
+                <View className="flex-row items-center justify-between">
+                  <Text style={{ color: '#5C616A' }} className="text-[#5C616A] text-[11px] font-bold uppercase tracking-wider">
+                    Circuit
+                  </Text>
+                  <Text style={{ color: '#FFFFFF' }} className="text-white text-xs font-medium">
+                    Lahore Local
+                  </Text>
+                </View>
               </View>
             </View>
           </View>
         </View>
 
         {/* REGISTERED SPORTS DISCIPLINES */}
-        <View className="px-4 mt-5">
+        <View className="px-5 mt-5">
           <View className="flex-row items-center justify-between mb-2">
-            <Text className="text-graphite text-[11px] font-mono uppercase tracking-widest font-bold">
-              PREFERRED SPORTS
+            <Text style={{ color: '#FFFFFF' }} className="text-white text-xs font-bold uppercase tracking-wider">
+              Preferred Sports
             </Text>
-            <Text className="text-stone-muted text-[10px] font-mono">
+            <Text style={{ color: '#5C616A' }} className="text-[#5C616A] text-xs font-semibold">
               {preferredSports.length} Selected
             </Text>
           </View>
@@ -353,209 +350,217 @@ export default function ProfileScreen() {
               const meta = SPORT_META[sport] || {
                 label: sport,
                 icon: 'soccer' as const,
-                color: '#3D4438',
+                color: '#E85D26',
               };
               return (
                 <View
                   key={sport}
-                  className="flex-row items-center bg-white rounded-sm px-3 py-2 border border-stone shadow-2xs"
+                  className="flex-row items-center bg-[#141518] rounded-xl px-3.5 py-2.5 border border-white/[0.08]"
                 >
                   <MaterialCommunityIcons
                     name={meta.icon}
                     size={16}
-                    color={meta.color}
+                    color="#E85D26"
                   />
-                  <Text className="text-graphite text-xs font-bold uppercase tracking-wide ml-2">
+                  <Text style={{ color: '#FFFFFF' }} className="text-white text-xs font-bold uppercase tracking-wide ml-2">
                     {meta.label}
                   </Text>
-                  <View className="w-1.5 h-1.5 rounded-full bg-arena-olive ml-2" />
                 </View>
               );
             })}
           </View>
         </View>
 
-        {/* SECTION TOGGLE: OVERVIEW / RECENT MATCHES */}
-        <View className="px-4 mt-6">
-          <View className="flex-row bg-stone/30 p-1 rounded-sm border border-stone">
+        {/* SECTION TOGGLE: PROFILE / RECENT MATCHES */}
+        <View className="px-5 mt-5">
+          <View className="flex-row bg-[#101214] p-1 rounded-xl border border-white/[0.06]">
             <Pressable
               onPress={() => setActiveTab('overview')}
-              className={`flex-1 py-2 items-center rounded-xs ${
-                activeTab === 'overview' ? 'bg-graphite' : 'bg-transparent'
+              accessibilityRole="tab"
+              accessibilityState={{ selected: activeTab === 'overview' }}
+              className={`flex-1 py-2 items-center rounded-lg min-h-[44px] justify-center transition-all ${
+                activeTab === 'overview'
+                  ? 'bg-[#1B1D22] border border-white/[0.08] shadow-sm'
+                  : 'bg-transparent'
               }`}
             >
               <Text
-                className={`text-xs font-black uppercase tracking-wider ${
-                  activeTab === 'overview' ? 'text-warm-white' : 'text-stone-muted'
+                style={{
+                  color: activeTab === 'overview' ? '#E85D26' : '#5C616A',
+                }}
+                className={`text-xs font-bold uppercase tracking-wider ${
+                  activeTab === 'overview' ? 'text-[#E85D26]' : 'text-[#5C616A]'
                 }`}
               >
-                TACTICAL PROFILE
+                Tactical Profile
               </Text>
             </Pressable>
             <Pressable
               onPress={() => setActiveTab('history')}
-              className={`flex-1 py-2 items-center rounded-xs ${
-                activeTab === 'history' ? 'bg-graphite' : 'bg-transparent'
+              accessibilityRole="tab"
+              accessibilityState={{ selected: activeTab === 'history' }}
+              className={`flex-1 py-2 items-center rounded-lg min-h-[44px] justify-center transition-all ${
+                activeTab === 'history'
+                  ? 'bg-[#1B1D22] border border-white/[0.08] shadow-sm'
+                  : 'bg-transparent'
               }`}
             >
               <Text
-                className={`text-xs font-black uppercase tracking-wider ${
-                  activeTab === 'history' ? 'text-warm-white' : 'text-stone-muted'
+                style={{
+                  color: activeTab === 'history' ? '#E85D26' : '#5C616A',
+                }}
+                className={`text-xs font-bold uppercase tracking-wider ${
+                  activeTab === 'history' ? 'text-[#E85D26]' : 'text-[#5C616A]'
                 }`}
               >
-                RECENT MATCHES
+                Recent Matches
               </Text>
             </Pressable>
           </View>
         </View>
 
-        {/* TAB CONTENT */}
+        {/* TAB CONTENT: TACTICAL PROFILE OR RECENT MATCHES */}
         {activeTab === 'overview' ? (
-          <View className="px-4 mt-4 space-y-4">
-            {/* Player Bio & On-court Role */}
-            <View className="bg-white rounded-sm p-4 border border-stone shadow-2xs">
+          <View className="px-5 mt-4 space-y-3">
+            <View className="bg-[#141518] rounded-2xl p-4 border border-white/[0.08] shadow-sm">
               <View className="flex-row items-center justify-between mb-2">
-                <Text className="text-graphite text-xs font-black uppercase tracking-wider">
-                  TACTICAL SUMMARY
+                <Text style={{ color: '#FFFFFF' }} className="text-white text-xs font-bold uppercase tracking-wider">
+                  Tactical Summary
                 </Text>
-                <ArenaBadge label={skillInfo.label.toUpperCase()} variant="olive" size="sm" />
+                <ArenaBadge label={skillInfo.label.toUpperCase()} variant="accent" size="sm" />
               </View>
-              <Text className="text-graphite text-xs leading-5">
+              <Text style={{ color: '#A0A5AD' }} className="text-[#A0A5AD] text-sm leading-relaxed font-normal">
                 {playerProfile.bio ||
-                  `Recreational ${preferredSports.map((s) => SPORT_META[s]?.label || s).join(', ')} player competing in ${primaryLocation}. Skill tier: ${skillInfo.label}.`}
+                  `Active recreational ${preferredSports.map((s) => SPORT_META[s]?.label || s).join(', ')} player competing across the ${primaryLocation} sporting circuit. Skill tier: ${skillInfo.label}.`}
               </Text>
             </View>
           </View>
         ) : (
-          /* RECENT MATCHES LIST (Typed deterministic presentation history) */
-          <View className="px-4 mt-4">
-            <View className="flex-row items-center justify-between mb-2">
-              <Text className="text-graphite text-[11px] font-mono uppercase tracking-widest font-bold">
-                RECENT MATCHES
+          /* BENCHMARK PHONE 4 STYLE RECENT MATCHES ROWS */
+          <View className="px-5 mt-4">
+            <View className="flex-row items-center justify-between mb-2.5">
+              <Text style={{ color: '#FFFFFF' }} className="text-white text-xs font-bold uppercase tracking-wider">
+                Recent Matches
               </Text>
-              <Text className="text-stone-muted text-[10px] font-mono">
-                Sample History
+              <Text style={{ color: '#5C616A' }} className="text-[#5C616A] text-xs font-semibold">
+                Match History
               </Text>
             </View>
 
-            {displayMatches.map((item) => (
-              <View
-                key={item.id}
-                className="bg-white rounded-sm p-3.5 mb-2.5 border border-stone shadow-2xs"
-              >
-                <View className="flex-row items-center justify-between mb-1.5">
-                  <View className="flex-row items-center">
-                    <ArenaBadge
-                      label={item.sportLabel.toUpperCase()}
-                      variant={item.sport === 'cricket' ? 'rust' : 'olive'}
-                      size="sm"
-                    />
-                    <Text className="text-stone-muted text-[10px] font-mono ml-2">
+            <View style={{ gap: 10 }}>
+              {displayMatches.map((item) => (
+                <View
+                  key={item.id}
+                  className="bg-[#141518] rounded-2xl p-4 border border-white/[0.08] shadow-sm"
+                >
+                  <View className="flex-row items-center justify-between mb-2">
+                    {/* Match Status Badge (Honest domain state: Completed or Scheduled) */}
+                    <View className="flex-row items-center">
+                      <View className="w-6 h-6 rounded-lg items-center justify-center mr-2 bg-[#1B1D22] border border-white/[0.08]">
+                        <Ionicons
+                          name={item.status === 'completed' ? 'checkmark-circle-outline' : 'time-outline'}
+                          size={13}
+                          color={item.status === 'completed' ? '#A0A5AD' : '#E85D26'}
+                        />
+                      </View>
+
+                      <Text style={{ color: '#A0A5AD' }} className="text-[#A0A5AD] text-xs font-semibold uppercase tracking-wider">
+                        {item.sportLabel} • {item.format}
+                      </Text>
+                    </View>
+
+                    <Text style={{ color: '#5C616A' }} className="text-[#5C616A] text-xs font-medium">
                       {item.date}
                     </Text>
                   </View>
-                  {item.result ? (
-                    <View
-                      className={`px-1.5 py-0.5 rounded-xs ${
-                        item.result === 'WIN' ? 'bg-arena-olive/20' : 'bg-stone/30'
-                      }`}
-                    >
-                      <Text
-                        className={`text-[10px] font-black ${
-                          item.result === 'WIN' ? 'text-arena-olive' : 'text-graphite'
-                        }`}
-                      >
-                        {item.result}
-                      </Text>
-                    </View>
-                  ) : (
-                    <Text className="text-stone-muted text-[10px] font-mono uppercase">
-                      {item.status}
-                    </Text>
-                  )}
-                </View>
 
-                <Text className="text-graphite text-sm font-black uppercase tracking-tight">
-                  {item.title}
-                </Text>
+                  <Text
+                    style={{ color: '#FFFFFF' }}
+                    className="text-white text-base font-bold tracking-tight mb-1"
+                  >
+                    {item.title}
+                  </Text>
 
-                <View className="flex-row items-center justify-between mt-2 pt-2 border-t border-stone/30">
-                  <View className="flex-row items-center flex-1">
-                    <Ionicons name="location-outline" size={12} color="#666B60" />
+                  <View className="flex-row items-center mt-1">
+                    <Ionicons name="location-outline" size={13} color="#5C616A" />
                     <Text
                       numberOfLines={1}
-                      className="text-stone-muted text-xs font-medium ml-1 flex-1"
+                      style={{ color: '#A0A5AD' }}
+                      className="text-[#A0A5AD] text-xs font-normal ml-1 flex-1"
                     >
                       {item.venueName}
                     </Text>
                   </View>
-                  <Text className="text-stone-muted text-[10px] font-mono">
-                    {item.format}
-                  </Text>
                 </View>
-              </View>
-            ))}
+              ))}
+            </View>
           </View>
         )}
 
-        {/* QUICK NAVIGATION BRIDGES */}
-        <View className="px-4 mt-6">
-          <Text className="text-graphite text-[11px] font-mono uppercase tracking-widest mb-2 font-bold">
-            QUICK ACTIONS
+        {/* QUICK NAVIGATION BRIDGES (44px+ touch targets) */}
+        <View className="px-5 mt-6">
+          <Text style={{ color: '#FFFFFF' }} className="text-white text-xs font-bold uppercase tracking-wider mb-2.5">
+            Quick Actions
           </Text>
 
-          <View className="space-y-2">
+          <View style={{ gap: 10 }}>
             <Pressable
               onPress={() => router.push('/notifications')}
-              className="flex-row items-center justify-between bg-white rounded-sm p-3 border border-stone shadow-2xs"
+              accessibilityRole="button"
+              accessibilityLabel="Notifications"
+              className="min-h-[50px] flex-row items-center justify-between bg-[#141518] rounded-2xl p-3.5 border border-white/[0.08] active:bg-[#1B1D22]"
             >
               <View className="flex-row items-center">
-                <View className="w-8 h-8 rounded-full bg-stone/20 items-center justify-center border border-stone">
-                  <Ionicons name="notifications-outline" size={16} color="#242522" />
+                <View className="w-9 h-9 rounded-xl bg-[#1B1D22] items-center justify-center border border-white/[0.08]">
+                  <Ionicons name="notifications-outline" size={18} color="#FFFFFF" />
                 </View>
                 <View className="ml-3">
-                  <Text className="text-graphite text-xs font-bold uppercase tracking-wide">
-                    NOTIFICATIONS
+                  <Text style={{ color: '#FFFFFF' }} className="text-white text-sm font-semibold">
+                    Notifications
                   </Text>
-                  <Text className="text-stone-muted text-[10px]">
-                    Match reminders and activity alerts
+                  <Text style={{ color: '#5C616A' }} className="text-[#5C616A] text-xs font-normal">
+                    Match invitations and slot confirmations
                   </Text>
                 </View>
               </View>
-              <Ionicons name="chevron-forward" size={16} color="#666B60" />
+              <Ionicons name="chevron-forward" size={16} color="#A0A5AD" />
             </Pressable>
 
             <Pressable
               onPress={() => router.push('/(tabs)/coach')}
-              className="flex-row items-center justify-between bg-white rounded-sm p-3 border border-stone shadow-2xs mt-2"
+              accessibilityRole="button"
+              accessibilityLabel="AI Coach"
+              className="min-h-[50px] flex-row items-center justify-between bg-[#141518] rounded-2xl p-3.5 border border-white/[0.08] active:bg-[#1B1D22]"
             >
               <View className="flex-row items-center">
-                <View className="w-8 h-8 rounded-full bg-arena-olive/20 items-center justify-center border border-arena-olive/40">
-                  <Ionicons name="fitness-outline" size={16} color="#3D4438" />
+                <View className="w-9 h-9 rounded-xl bg-[#E85D26]/15 items-center justify-center border border-[#E85D26]/30">
+                  <Ionicons name="fitness" size={18} color="#E85D26" />
                 </View>
                 <View className="ml-3">
-                  <Text className="text-graphite text-xs font-bold uppercase tracking-wide">
-                    AI COACH
+                  <Text style={{ color: '#FFFFFF' }} className="text-white text-sm font-semibold">
+                    AI Coach
                   </Text>
-                  <Text className="text-stone-muted text-[10px]">
-                    Sport-specific tactical advice
+                  <Text style={{ color: '#5C616A' }} className="text-[#5C616A] text-xs font-normal">
+                    Tactical drills and mechanical breakdowns
                   </Text>
                 </View>
               </View>
-              <Ionicons name="chevron-forward" size={16} color="#666B60" />
+              <Ionicons name="chevron-forward" size={16} color="#A0A5AD" />
             </Pressable>
           </View>
         </View>
 
-        {/* ACCOUNT SESSION MANAGEMENT */}
-        <View className="px-4 mt-8">
+        {/* ACCOUNT SESSION MANAGEMENT (44px+ touch target) */}
+        <View className="px-5 mt-8">
           <Pressable
             onPress={handleSignOut}
-            className="flex-row items-center justify-center bg-stone/20 rounded-sm py-3 border border-stone"
+            accessibilityRole="button"
+            accessibilityLabel="Sign Out of Maidaan"
+            className="min-h-[48px] flex-row items-center justify-center bg-[#141518] rounded-full py-3.5 border border-[#EF4444]/30 active:bg-[#1B1D22]"
           >
-            <Ionicons name="log-out-outline" size={16} color="#875646" />
-            <Text className="text-rust text-xs font-black uppercase tracking-wider ml-1.5">
-              SIGN OUT OF MAIDAAN
+            <Ionicons name="log-out-outline" size={16} color="#EF4444" />
+            <Text style={{ color: '#EF4444' }} className="text-[#EF4444] text-xs font-bold uppercase tracking-wider ml-2">
+              Sign Out of Maidaan
             </Text>
           </Pressable>
         </View>

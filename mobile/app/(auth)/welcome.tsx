@@ -2,19 +2,17 @@ import React from 'react';
 import {
   View,
   Text,
-  ImageBackground,
+  Image,
   StyleSheet,
   Pressable,
-  Dimensions,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { IMAGES } from '../../constants/images';
-import { PrimaryButton } from '../../components/ui/PrimaryButton';
-
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export default function WelcomeScreen() {
+  const insets = useSafeAreaInsets();
+
   const handleGetStarted = () => {
     router.push('/(auth)/role-selection');
   };
@@ -24,97 +22,123 @@ export default function WelcomeScreen() {
   };
 
   return (
-    <View className="flex-1 bg-graphite">
-      {/* Full-Bleed Atmospheric Sports Photography */}
-      <ImageBackground
-        source={IMAGES.arenaSplash}
-        style={styles.heroImage}
+    <View className="flex-1 bg-[#0C0D0E]">
+      {/* Full-Bleed Athletic Hero Photography (Cricket, Football, Padel) */}
+      <Image
+        source={IMAGES.welcomeAthletes}
+        style={StyleSheet.absoluteFill}
         resizeMode="cover"
+      />
+
+      {/* Cinematic Vignette Overlays for Depth and Text Legibility */}
+      <View style={styles.topVignette} pointerEvents="none" />
+      <View style={styles.bottomGradient} pointerEvents="none" />
+      <View style={styles.solidBottomBase} pointerEvents="none" />
+
+      {/* Responsive Content Container */}
+      <View
+        className="flex-1 justify-between px-6"
+        style={{
+          paddingTop: Math.max(insets.top, 16) + 6,
+          paddingBottom: Math.max(insets.bottom, 16) + 16,
+        }}
       >
-        {/* Controlled Graphite Overlays & Vignette */}
-        <View style={styles.topVignette} />
-        <View style={styles.bottomSolidOverlay} />
-
-        <SafeAreaView className="flex-1 justify-between px-6 pt-4 pb-6">
-          {/* Top Brand Header */}
-          <View className="items-center pt-2">
-            <View className="flex-row items-center justify-center">
-              <Text className="text-warm-white text-3xl font-black tracking-widest uppercase">
-                MAIDAAN
-              </Text>
-            </View>
-
-            {/* Match-Day Sub-Header Badge */}
-            <View className="flex-row items-center mt-2 px-3 py-1 rounded-sm bg-graphite/90 border border-stone/30">
-              <Text className="text-stone text-[10px] font-bold tracking-[0.2em] uppercase">
-                LOCAL ARENAS • EVENING MATCHES • TEAMS
-              </Text>
-            </View>
+        {/* Top Centered Brand Title matching Reference Phone Mockup */}
+        <View className="items-center pt-3">
+          <View className="flex-row items-center justify-center">
+            <Text
+              style={styles.brandText}
+              className="text-white text-4xl tracking-tight"
+            >
+              Ma<Text style={{ color: '#E85D26' }}>i</Text>daan
+            </Text>
           </View>
+        </View>
 
-          {/* Hero Content Section */}
-          <View className="w-full">
-            {/* Sports Strip Indicator */}
-            <View className="flex-row items-center self-start px-3 py-1 rounded-sm bg-graphite/95 border border-stone/40 mb-3.5">
-              <View className="w-2 h-2 rounded-full bg-rust mr-2" />
-              <Text className="text-stone text-[11px] font-bold tracking-wider uppercase">
-                FOOTBALL • CRICKET • PADEL • BADMINTON
-              </Text>
-            </View>
+        {/* Lower Content & Actions Section */}
+        <View className="w-full items-center">
+          {/* Centered Headline */}
+          <Text
+            style={{ color: '#FFFFFF' }}
+            className="text-white text-3xl font-black tracking-tight text-center"
+          >
+            Your Arena Awaits.
+          </Text>
 
-            {/* Athletic Headline */}
-            <Text className="text-warm-white text-4xl font-black tracking-tight leading-[1.08] uppercase">
-              Your next game is closer than you think.
-            </Text>
+          {/* Centered Supporting Copy */}
+          <Text
+            style={{ color: '#A0A5AD' }}
+            className="text-[#A0A5AD] text-sm text-center mt-2.5 max-w-[280px] leading-relaxed font-medium"
+          >
+            Find local matches, join squads,{'\n'}and train with AI.
+          </Text>
 
-            {/* Supporting Copy */}
-            <Text className="text-stone text-sm leading-relaxed mt-3 pr-2 font-medium">
-              Join neighborhood matches under floodlights, reserve local grounds, organize teams, and step onto the pitch.
-            </Text>
-
-            {/* Bottom Actions */}
-            <View className="w-full mt-7 space-y-3">
-              <PrimaryButton
-                title="Get started"
-                onPress={handleGetStarted}
-                variant="primary"
-              />
-
-              <Pressable
-                onPress={handleLogin}
-                className="w-full py-3 items-center justify-center active:opacity-70 min-h-[44px]"
-                accessibilityRole="button"
-                accessibilityLabel="I already have an account"
+          {/* Action Buttons Stack */}
+          <View className="w-full mt-7" style={{ gap: 12 }}>
+            {/* Primary Action Button: Solar Orange with Glow */}
+            <Pressable
+              onPress={handleGetStarted}
+              accessibilityRole="button"
+              accessibilityLabel="Get Started"
+              className="w-full py-4 rounded-full bg-[#E85D26] items-center justify-center active:scale-[0.98] shadow-lg shadow-[#E85D26]/40"
+            >
+              <Text
+                style={{ color: '#0C0D0E' }}
+                className="text-[#0C0D0E] text-base font-extrabold tracking-wide"
               >
-                <Text className="text-stone text-xs font-bold uppercase tracking-wider">
-                  I ALREADY HAVE AN ACCOUNT{' '}
-                  <Text className="text-warm-white font-black underline">LOG IN</Text>
-                </Text>
-              </Pressable>
-            </View>
+                Get Started
+              </Text>
+            </Pressable>
+
+            {/* Secondary Action Button: Frosted Glass Log In */}
+            <Pressable
+              onPress={handleLogin}
+              accessibilityRole="button"
+              accessibilityLabel="Log In"
+              className="w-full py-4 rounded-full bg-white/[0.12] border border-white/[0.18] items-center justify-center active:scale-[0.98] active:bg-white/[0.16]"
+            >
+              <Text
+                style={{ color: '#FFFFFF' }}
+                className="text-white text-base font-bold tracking-wide"
+              >
+                Log In
+              </Text>
+            </Pressable>
           </View>
-        </SafeAreaView>
-      </ImageBackground>
+        </View>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  heroImage: {
-    flex: 1,
-    width: '100%',
-    height: '100%',
+  brandText: {
+    fontStyle: 'italic',
+    fontWeight: '900',
   },
   topVignette: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(36, 37, 34, 0.45)',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 140,
+    backgroundColor: 'rgba(12, 13, 14, 0.45)',
   },
-  bottomSolidOverlay: {
+  bottomGradient: {
+    position: 'absolute',
+    top: '48%',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(12, 13, 14, 0.78)',
+  },
+  solidBottomBase: {
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
-    height: SCREEN_HEIGHT * 0.62,
-    backgroundColor: 'rgba(36, 37, 34, 0.88)',
+    height: '35%',
+    backgroundColor: '#0C0D0E',
+    opacity: 0.94,
   },
 });

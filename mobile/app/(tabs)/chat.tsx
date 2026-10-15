@@ -96,26 +96,26 @@ export default function ChatScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-warm-white" edges={['top']}>
-      {/* Concrete Arena Header */}
+    <SafeAreaView className="flex-1 bg-[#171A1D]" edges={['top']}>
+      {/* Modern Header */}
       <ArenaHeader
-        title="MAIDAAN"
-        subtitle="MATCH COMMS // ACTIVE CHANNELS"
-        locationBadge="LAHORE CIRCUIT"
+        title="Messages"
+        subtitle="Squad & direct conversations"
+        locationBadge="Lahore"
         rightAction={
           <Pressable
             onPress={() => router.push('/notifications')}
-            className="w-10 h-10 rounded-xl bg-warm-white border border-stone items-center justify-center active:bg-stone-light"
+            className="w-10 h-10 rounded-xl bg-[#1F2327] border border-white/10 items-center justify-center active:bg-[#272C31]"
             accessibilityRole="button"
             accessibilityLabel="Notifications"
           >
-            <Ionicons name="notifications-outline" size={19} color="#242522" />
+            <Ionicons name="notifications-outline" size={19} color="#F4F6F7" />
           </Pressable>
         }
       />
 
       {/* Channel Filters Strip */}
-      <View className="px-4 py-3 bg-warm-white border-b border-stone">
+      <View className="px-4 py-3 bg-[#171A1D] border-b border-white/5">
         <View className="flex-row items-center justify-between">
           <View className="flex-row space-x-1.5">
             {(
@@ -135,13 +135,13 @@ export default function ChatScreen() {
                   accessibilityLabel={`Filter ${filter.label}`}
                   className={`px-3 py-1.5 rounded-lg border transition-all ${
                     isSelected
-                      ? 'bg-olive border-olive-dark'
-                      : 'bg-warm-white border-stone active:bg-stone-light'
+                      ? 'bg-[#E85D26] border-[#E85D26]'
+                      : 'bg-[#1F2327] border-white/10 active:bg-[#272C31]'
                   }`}
                 >
                   <Text
-                    className={`text-xs font-black uppercase tracking-wider ${
-                      isSelected ? 'text-warm-white' : 'text-graphite'
+                    className={`text-xs font-bold uppercase tracking-wider ${
+                      isSelected ? 'text-[#171A1D]' : 'text-[#A0A5AD]'
                     }`}
                   >
                     {filter.label}
@@ -153,7 +153,7 @@ export default function ChatScreen() {
 
           {/* Activity State Badge */}
           <View className="flex-row items-center">
-            <Text className="text-stone-muted text-[10px] font-bold uppercase tracking-wider">
+            <Text className="text-[#7F8993] text-[10px] font-bold uppercase tracking-wider">
               {rooms.length} {rooms.length === 1 ? 'CHANNEL' : 'CHANNELS'}
             </Text>
           </View>
@@ -163,28 +163,28 @@ export default function ChatScreen() {
       {/* Main Conversation Feed */}
       {loading ? (
         <View className="flex-1 items-center justify-center p-8">
-          <ActivityIndicator size="large" color="#3D4438" />
-          <Text className="text-graphite text-xs font-black uppercase tracking-wider mt-3">
+          <ActivityIndicator size="large" color="#E85D26" />
+          <Text className="text-[#A0A5AD] text-xs font-bold uppercase tracking-wider mt-3">
             SYNCING CHAT CHANNELS...
           </Text>
         </View>
       ) : error ? (
         <View className="flex-1 items-center justify-center p-8">
-          <View className="p-8 mx-4 rounded-xl bg-stone-light/40 border border-stone items-center justify-center">
-            <View className="w-14 h-14 rounded-full bg-rust/10 border border-rust/40 items-center justify-center mb-3">
-              <Ionicons name="alert-circle-outline" size={26} color="#875646" />
+          <View className="p-8 mx-4 rounded-2xl bg-[#1F2327] border border-white/10 items-center justify-center">
+            <View className="w-14 h-14 rounded-full bg-[#F4A261]/10 border border-[#F4A261]/30 items-center justify-center mb-3">
+              <Ionicons name="alert-circle-outline" size={26} color="#F4A261" />
             </View>
-            <Text className="text-graphite text-base font-black uppercase tracking-tight text-center">
+            <Text className="text-[#F4F6F7] text-base font-bold uppercase tracking-tight text-center">
               CHANNELS UNAVAILABLE
             </Text>
-            <Text className="text-stone-muted text-xs text-center mt-1.5 max-w-[260px] leading-4">
+            <Text className="text-[#A0A5AD] text-xs text-center mt-1.5 max-w-[260px] leading-4">
               {error}
             </Text>
             <Pressable
               onPress={() => loadRooms()}
-              className="mt-4 px-4 py-2 rounded-lg bg-olive active:opacity-90"
+              className="mt-4 px-4 py-2 rounded-lg bg-[#E85D26] active:opacity-90"
             >
-              <Text className="text-warm-white text-xs font-black uppercase tracking-wider">
+              <Text className="text-[#171A1D] text-xs font-black uppercase tracking-wider">
                 RETRY
               </Text>
             </Pressable>
@@ -200,28 +200,27 @@ export default function ChatScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={() => loadRooms(true)}
-              tintColor="#3D4438"
+              tintColor="#E85D26"
             />
           }
           ListEmptyComponent={
-            /* Concrete Arena Empty State */
-            <View className="p-8 mt-6 rounded-xl bg-stone-light/40 border border-stone items-center justify-center">
-              <View className="w-14 h-14 rounded-full bg-stone/30 border border-stone items-center justify-center mb-3">
-                <Ionicons name="chatbubbles-outline" size={26} color="#666B60" />
+            <View className="p-8 mt-6 rounded-2xl bg-[#1F2327] border border-white/10 items-center justify-center">
+              <View className="w-14 h-14 rounded-full bg-[#272C31] border border-white/10 items-center justify-center mb-3">
+                <Ionicons name="chatbubbles-outline" size={26} color="#E85D26" />
               </View>
-              <Text className="text-graphite text-base font-black uppercase tracking-tight text-center">
+              <Text className="text-[#F4F6F7] text-base font-bold uppercase tracking-tight text-center">
                 NO ACTIVE CHANNELS
               </Text>
-              <Text className="text-stone-muted text-xs text-center mt-1.5 max-w-[260px] leading-4">
+              <Text className="text-[#A0A5AD] text-xs text-center mt-1.5 max-w-[260px] leading-4">
                 Match squad chats and direct messages will appear here when you join fixtures or connect with captains.
               </Text>
               <Pressable
                 onPress={() => router.push('/(tabs)/discover')}
                 accessibilityRole="button"
                 accessibilityLabel="Discover Matches"
-                className="mt-5 px-5 py-2.5 rounded-lg bg-olive active:opacity-90"
+                className="mt-5 px-5 py-2.5 rounded-xl bg-[#E85D26] active:opacity-90 shadow-sm"
               >
-                <Text className="text-warm-white text-xs font-black uppercase tracking-wider">
+                <Text className="text-[#171A1D] text-xs font-black uppercase tracking-wider">
                   DISCOVER MATCHES
                 </Text>
               </Pressable>
@@ -238,18 +237,18 @@ export default function ChatScreen() {
                 accessibilityLabel={`${item.title}, ${
                   isDirect ? 'direct channel' : 'match squad'
                 }. Latest message: ${item.lastMessage || 'No messages yet'}`}
-                className="w-full p-4 rounded-xl border mb-3 transition-all active:scale-[0.99] bg-warm-white border-stone shadow-xs"
+                className="w-full p-4 rounded-2xl border mb-3 transition-all active:scale-[0.99] bg-[#1F2327] border-white/10 shadow-sm"
               >
                 <View className="flex-row items-start">
                   {/* Identity Well */}
                   <View className="mr-3.5 pt-0.5">
                     {isDirect ? (
-                      <View className="w-12 h-12 rounded-xl bg-graphite border border-stone items-center justify-center relative">
-                        <MaterialCommunityIcons name="account" size={24} color="#F4F1EA" />
+                      <View className="w-12 h-12 rounded-xl bg-[#272C31] border border-white/10 items-center justify-center relative">
+                        <MaterialCommunityIcons name="account" size={24} color="#E85D26" />
                       </View>
                     ) : (
-                      <View className="w-12 h-12 rounded-xl bg-olive/15 border border-olive/40 items-center justify-center relative">
-                        <Ionicons name="people" size={22} color="#3D4438" />
+                      <View className="w-12 h-12 rounded-xl bg-[#E85D26]/15 border border-[#E85D26]/30 items-center justify-center relative">
+                        <Ionicons name="people" size={22} color="#E85D26" />
                       </View>
                     )}
                   </View>
@@ -266,7 +265,7 @@ export default function ChatScreen() {
                       </View>
 
                       {item.lastMessageAt && (
-                        <Text className="text-stone-muted text-[10px] font-bold uppercase tracking-wider">
+                        <Text className="text-[#7F8993] text-[10px] font-bold uppercase tracking-wider">
                           {formatTime(item.lastMessageAt)}
                         </Text>
                       )}
@@ -275,14 +274,14 @@ export default function ChatScreen() {
                     {/* Room Title */}
                     <Text
                       numberOfLines={1}
-                      className="text-sm font-black uppercase tracking-tight text-graphite flex-1 mr-2"
+                      className="text-sm font-bold uppercase tracking-tight text-[#F4F6F7] flex-1 mr-2"
                     >
                       {item.title}
                     </Text>
 
                     {/* Member Count info */}
                     <View className="flex-row items-center mt-0.5 mb-1.5">
-                      <Text className="text-stone-muted text-[10px] font-bold uppercase tracking-wider">
+                      <Text className="text-[#7F8993] text-[10px] font-bold uppercase tracking-wider">
                         {isDirect
                           ? '1-ON-1 CONVERSATION'
                           : `${memberCount} CONFIRMED MEMBERS`}
@@ -293,7 +292,7 @@ export default function ChatScreen() {
                     <View className="flex-row items-center">
                       <Text
                         numberOfLines={1}
-                        className="text-xs leading-4 flex-1 text-stone-muted font-normal"
+                        className="text-xs leading-4 flex-1 text-[#A0A5AD] font-normal"
                       >
                         {item.lastMessage ? item.lastMessage : 'Channel opened. Send the first message.'}
                       </Text>
@@ -301,7 +300,7 @@ export default function ChatScreen() {
                       <Ionicons
                         name="chevron-forward"
                         size={14}
-                        color="#3D4438"
+                        color="#E85D26"
                         style={{ marginLeft: 6 }}
                       />
                     </View>

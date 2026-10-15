@@ -17,7 +17,6 @@ import { matchService } from '../../services/matchService';
 import {
   joinRequestService,
   CaptainJoinRequest,
-  JoinRequestStatus,
 } from '../../services/joinRequestService';
 import { ArenaHeader } from '../../components/ui/ArenaHeader';
 import { ArenaBadge } from '../../components/ui/ArenaBadge';
@@ -25,14 +24,14 @@ import { PrimaryButton } from '../../components/ui/PrimaryButton';
 import { IMAGES } from '../../constants/images';
 import { Sport, SkillLevel } from '../../types';
 
-// Concrete Arena skill tier badges
+// Skill tier badges
 const SKILL_METAS: Record<
   SkillLevel,
   { label: string; badge: string; variant: 'stone' | 'olive' | 'rust' }
 > = {
-  beginner: { label: 'Beginner', badge: 'DIV 03', variant: 'stone' },
-  intermediate: { label: 'Intermediate', badge: 'DIV 02', variant: 'olive' },
-  advanced: { label: 'Advanced', badge: 'DIV 01', variant: 'rust' },
+  beginner: { label: 'Beginner', badge: 'Tier 3', variant: 'stone' },
+  intermediate: { label: 'Intermediate', badge: 'Tier 2', variant: 'olive' },
+  advanced: { label: 'Advanced', badge: 'Tier 1', variant: 'rust' },
 };
 
 const SPORT_ICONS: Record<Sport, 'soccer' | 'cricket' | 'tennis' | 'badminton'> = {
@@ -63,7 +62,7 @@ export default function JoinRequestsScreen() {
   const [processingRequestId, setProcessingRequestId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  // Lightweight confirmation dialog state
+  // Confirmation dialog state
   const [confirmModal, setConfirmModal] = useState<{
     type: 'accept' | 'decline';
     request: CaptainJoinRequest;
@@ -81,7 +80,6 @@ export default function JoinRequestsScreen() {
         setActionError(null);
       }
 
-      // 1. Fetch captain-owned fixtures from backend
       const fixtures = await matchService.getCaptainMatches();
       if (isMountedRef.current) {
         setOwnedFixtures(fixtures);
@@ -94,8 +92,6 @@ export default function JoinRequestsScreen() {
         return;
       }
 
-      // 2. Fetch requests
-      // If route specified matchId, fetch for that match, else fetch for all owned matches
       if (routeMatchId) {
         const matchRequests = await joinRequestService.getMatchJoinRequests(routeMatchId);
         if (isMountedRef.current) {
@@ -137,25 +133,25 @@ export default function JoinRequestsScreen() {
   // =========================================================================
   if (!isCaptain) {
     return (
-      <SafeAreaView className="flex-1 bg-warm-white" edges={['top']}>
+      <SafeAreaView className="flex-1 bg-[#171A1D]" edges={['top']}>
         <ArenaHeader
-          title="MAIDAAN"
-          subtitle="CAPTAIN DESK // ROLE RESTRICTION"
+          title="Join Requests"
+          subtitle="Role Restriction"
           showBack
           onBack={() => router.replace('/(tabs)/discover')}
         />
-        <View className="flex-1 items-center justify-center p-6 bg-warm-white">
-          <View className="w-16 h-16 rounded-full bg-rust/10 items-center justify-center border border-rust/30 mb-5">
-            <Ionicons name="lock-closed" size={28} color="#875646" />
+        <View className="flex-1 items-center justify-center p-6 bg-[#171A1D]">
+          <View className="w-16 h-16 rounded-full bg-[#F4A261]/10 items-center justify-center border border-[#F4A261]/30 mb-5">
+            <Ionicons name="lock-closed" size={28} color="#F4A261" />
           </View>
 
-          <ArenaBadge label="CAPTAIN ACCESS REQUIRED" variant="rust" size="md" />
+          <ArenaBadge label="CAPTAIN REQUIRED" variant="rust" size="md" />
 
-          <Text className="text-graphite text-lg font-black uppercase tracking-tight text-center mt-3">
-            CAPTAIN ACCESS REQUIRED
+          <Text className="text-[#F4F6F7] text-lg font-black uppercase tracking-tight text-center mt-3">
+            Captain Access Required
           </Text>
 
-          <Text className="text-stone-muted text-sm text-center mt-2 max-w-[310px] leading-5">
+          <Text className="text-[#A0A5AD] text-sm text-center mt-2 max-w-[310px] leading-5">
             Player join request management is restricted to Team Captain accounts.
           </Text>
 
@@ -176,25 +172,25 @@ export default function JoinRequestsScreen() {
   // =========================================================================
   if (!captainProfile) {
     return (
-      <SafeAreaView className="flex-1 bg-warm-white" edges={['top']}>
+      <SafeAreaView className="flex-1 bg-[#171A1D]" edges={['top']}>
         <ArenaHeader
-          title="MAIDAAN"
-          subtitle="CAPTAIN DESK // SETUP REQUIRED"
+          title="Join Requests"
+          subtitle="Setup Required"
           showBack
           onBack={() => router.replace('/captain/dashboard')}
         />
-        <View className="flex-1 items-center justify-center p-6 bg-warm-white">
-          <View className="w-16 h-16 rounded-full bg-stone/20 border border-stone items-center justify-center mb-5">
-            <Ionicons name="clipboard-outline" size={30} color="#666B60" />
+        <View className="flex-1 items-center justify-center p-6 bg-[#171A1D]">
+          <View className="w-16 h-16 rounded-full bg-[#272C31] border border-white/10 items-center justify-center mb-5">
+            <Ionicons name="clipboard-outline" size={30} color="#A0A5AD" />
           </View>
 
-          <ArenaBadge label="CAPTAIN PROFILE NOT SET" variant="stone" size="md" />
+          <ArenaBadge label="PROFILE REQUIRED" variant="stone" size="md" />
 
-          <Text className="text-graphite text-lg font-black uppercase tracking-tight text-center mt-3">
-            CAPTAIN PROFILE NOT SET
+          <Text className="text-[#F4F6F7] text-lg font-black uppercase tracking-tight text-center mt-3">
+            Captain Profile Not Set
           </Text>
 
-          <Text className="text-stone-muted text-sm text-center mt-2 max-w-[310px] leading-5">
+          <Text className="text-[#A0A5AD] text-sm text-center mt-2 max-w-[310px] leading-5">
             Please complete your captain setup before reviewing player join requests.
           </Text>
 
@@ -254,7 +250,7 @@ export default function JoinRequestsScreen() {
   }, [requests, activeFilter]);
 
   // =========================================================================
-  // ACTION HANDLERS (Real backend PATCH)
+  // ACTION HANDLERS
   // =========================================================================
   const handleOpenConfirm = (type: 'accept' | 'decline', request: CaptainJoinRequest) => {
     const match = fixturesMap.get(request.matchId);
@@ -273,18 +269,15 @@ export default function JoinRequestsScreen() {
       setActionError(null);
 
       await joinRequestService.updateJoinRequest(request.id, action);
-
-      // Re-fetch requests & fixture list upon backend success
       await loadData();
     } catch (err: any) {
       console.warn('[JoinRequestsScreen] Update request error:', err);
       setActionError(
         err?.message ||
           (action === 'ACCEPT'
-            ? 'THIS FIXTURE NO LONGER HAS AN OPEN SLOT'
+            ? 'This fixture no longer has an open slot.'
             : 'Failed to decline request. Please try again.')
       );
-      // Refresh to ensure state is synchronized with server
       loadData();
     } finally {
       setProcessingRequestId(null);
@@ -292,11 +285,11 @@ export default function JoinRequestsScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-warm-white" edges={['top']}>
-      {/* Concrete Arena Header */}
+    <SafeAreaView className="flex-1 bg-[#171A1D]" edges={['top']}>
+      {/* Modern Athletic Header */}
       <ArenaHeader
-        title="MAIDAAN"
-        subtitle="CAPTAIN DESK // MATCH OPERATIONS"
+        title="Join Requests"
+        subtitle="Match Lineup Applications"
         showBack
         fallbackRoute="/captain/dashboard"
         onBack={() => {
@@ -306,7 +299,6 @@ export default function JoinRequestsScreen() {
             router.replace('/captain/dashboard');
           }
         }}
-        rightAction={<ArenaBadge label="SCREEN 18" variant="stone" size="sm" />}
       />
 
       <ScrollView
@@ -315,22 +307,22 @@ export default function JoinRequestsScreen() {
       >
         {/* Banner */}
         <View className="px-4 pt-3">
-          <View className="h-14 w-full rounded-sm overflow-hidden border border-stone relative bg-graphite">
+          <View className="h-16 w-full rounded-2xl overflow-hidden border border-white/10 relative bg-[#1F2327]">
             <Image
               source={IMAGES.arenaTeam}
               className="w-full h-full opacity-30"
               resizeMode="cover"
             />
-            <View className="absolute inset-0 px-3.5 py-2 flex-row items-center justify-between">
+            <View className="absolute inset-0 px-4 py-2.5 flex-row items-center justify-between bg-gradient-to-r from-[#171A1D]/80 to-transparent">
               <View>
-                <Text className="text-stone-muted text-[9px] font-mono uppercase tracking-widest">
-                  SELECTION BOARD
+                <Text className="text-[#7F8993] text-[10px] font-mono uppercase tracking-widest font-bold">
+                  Team Lineup
                 </Text>
                 <Text
                   numberOfLines={1}
-                  className="text-warm-white text-xs font-black uppercase tracking-tight"
+                  className="text-[#F4F6F7] text-sm font-black uppercase tracking-tight"
                 >
-                  {captainProfile.teamName?.trim() || 'TEAM CAPTAIN'}
+                  {captainProfile.teamName?.trim() || 'Team Captain'}
                 </Text>
               </View>
               <ArenaBadge
@@ -344,19 +336,19 @@ export default function JoinRequestsScreen() {
 
         {/* Page Title & Context */}
         <View className="px-4 pt-3 pb-1">
-          <Text className="text-graphite text-xl font-black uppercase tracking-tight">
-            JOIN REQUESTS
+          <Text className="text-[#F4F6F7] text-xl font-black uppercase tracking-tight">
+            Join Requests
           </Text>
-          <Text className="text-stone-muted text-xs leading-4 mt-0.5">
+          <Text className="text-[#A0A5AD] text-xs leading-4 mt-0.5">
             Review applicant player profiles and approve open slot call-ups for your squad fixtures.
           </Text>
         </View>
 
         {/* Action Error Message Banner */}
         {actionError && (
-          <View className="mx-4 mt-3 p-3 bg-rust/10 border border-rust/40 rounded-sm flex-row items-center">
-            <Ionicons name="alert-circle" size={16} color="#875646" />
-            <Text className="text-rust text-xs font-bold ml-2 flex-1">
+          <View className="mx-4 mt-3 p-3 bg-[#F4A261]/10 border border-[#F4A261]/30 rounded-xl flex-row items-center">
+            <Ionicons name="alert-circle" size={16} color="#F4A261" />
+            <Text className="text-[#F4A261] text-xs font-bold ml-2 flex-1">
               {actionError}
             </Text>
           </View>
@@ -368,55 +360,55 @@ export default function JoinRequestsScreen() {
             {/* PENDING */}
             <Pressable
               onPress={() => setActiveFilter('pending')}
-              className={`flex-1 rounded-sm p-3 border ${
+              className={`flex-1 rounded-2xl p-3.5 border ${
                 activeFilter === 'pending'
-                  ? 'bg-rust/15 border-rust'
-                  : 'bg-stone/20 border-stone'
+                  ? 'bg-[#F4A261]/15 border-[#F4A261]'
+                  : 'bg-[#1F2327] border-white/10'
               }`}
             >
-              <Text className="text-stone-muted text-[9px] font-mono uppercase tracking-wider font-bold">
+              <Text className="text-[#7F8993] text-[10px] font-mono uppercase tracking-wider font-bold">
                 PENDING
               </Text>
-              <Text className="text-rust text-xl font-black tracking-tight mt-0.5">
+              <Text className="text-[#F4A261] text-2xl font-black tracking-tight mt-0.5">
                 {pendingCount}
               </Text>
-              <Text className="text-stone-muted text-[10px] font-medium">Awaiting</Text>
+              <Text className="text-[#A0A5AD] text-[10px] font-medium mt-0.5">Awaiting</Text>
             </Pressable>
 
             {/* ACCEPTED */}
             <Pressable
               onPress={() => setActiveFilter('accepted')}
-              className={`flex-1 rounded-sm p-3 border ${
+              className={`flex-1 rounded-2xl p-3.5 border ${
                 activeFilter === 'accepted'
-                  ? 'bg-arena-olive/20 border-arena-olive'
-                  : 'bg-stone/20 border-stone'
+                  ? 'bg-[#E85D26]/15 border-[#E85D26]'
+                  : 'bg-[#1F2327] border-white/10'
               }`}
             >
-              <Text className="text-stone-muted text-[9px] font-mono uppercase tracking-wider font-bold">
+              <Text className="text-[#7F8993] text-[10px] font-mono uppercase tracking-wider font-bold">
                 ACCEPTED
               </Text>
-              <Text className="text-arena-olive text-xl font-black tracking-tight mt-0.5">
+              <Text className="text-[#E85D26] text-2xl font-black tracking-tight mt-0.5">
                 {acceptedCount}
               </Text>
-              <Text className="text-stone-muted text-[10px] font-medium">Cleared</Text>
+              <Text className="text-[#A0A5AD] text-[10px] font-medium mt-0.5">Cleared</Text>
             </Pressable>
 
             {/* DECLINED */}
             <Pressable
               onPress={() => setActiveFilter('declined')}
-              className={`flex-1 rounded-sm p-3 border ${
+              className={`flex-1 rounded-2xl p-3.5 border ${
                 activeFilter === 'declined'
-                  ? 'bg-stone/40 border-graphite'
-                  : 'bg-stone/20 border-stone'
+                  ? 'bg-[#272C31] border-white/30'
+                  : 'bg-[#1F2327] border-white/10'
               }`}
             >
-              <Text className="text-stone-muted text-[9px] font-mono uppercase tracking-wider font-bold">
+              <Text className="text-[#7F8993] text-[10px] font-mono uppercase tracking-wider font-bold">
                 DECLINED
               </Text>
-              <Text className="text-stone-muted text-xl font-black tracking-tight mt-0.5">
+              <Text className="text-[#A0A5AD] text-2xl font-black tracking-tight mt-0.5">
                 {declinedCount}
               </Text>
-              <Text className="text-stone-muted text-[10px] font-medium">Closed</Text>
+              <Text className="text-[#7F8993] text-[10px] font-medium mt-0.5">Closed</Text>
             </Pressable>
           </View>
         </View>
@@ -424,31 +416,31 @@ export default function JoinRequestsScreen() {
         {/* REQUESTS LIST SECTION */}
         <View className="px-4 mt-5">
           <View className="flex-row items-center justify-between mb-2">
-            <Text className="text-graphite text-[11px] font-mono uppercase tracking-widest font-bold">
-              CANDIDATE APPLICATIONS
+            <Text className="text-[#A0A5AD] text-xs font-mono uppercase tracking-wider font-bold">
+              Candidate Applications
             </Text>
-            <Text className="text-stone-muted text-[10px] font-mono">
+            <Text className="text-[#7F8993] text-[10px] font-mono">
               {displayedRequests.length} of {requests.length} Shown
             </Text>
           </View>
 
           {/* ASYNC STATES: LOADING / ERROR / EMPTY / LIST */}
           {isLoading ? (
-            <View className="bg-white rounded-sm p-8 border border-stone items-center justify-center">
-              <ActivityIndicator size="small" color="#1A1C19" />
-              <Text className="text-stone-muted text-[10px] font-mono uppercase tracking-widest mt-3">
-                SYNCING JOIN REQUESTS...
+            <View className="bg-[#1F2327] rounded-2xl p-8 border border-white/10 items-center justify-center">
+              <ActivityIndicator size="small" color="#E85D26" />
+              <Text className="text-[#A0A5AD] text-xs font-mono uppercase tracking-wider mt-3">
+                Syncing Join Requests...
               </Text>
             </View>
           ) : error ? (
-            <View className="bg-white rounded-sm p-6 border border-rust/40 items-center">
-              <View className="w-12 h-12 rounded-full bg-rust/10 border border-rust/30 items-center justify-center mb-3">
-                <Ionicons name="cloud-offline-outline" size={24} color="#875646" />
+            <View className="bg-[#1F2327] rounded-2xl p-6 border border-[#F4A261]/30 items-center">
+              <View className="w-12 h-12 rounded-full bg-[#F4A261]/10 border border-[#F4A261]/30 items-center justify-center mb-3">
+                <Ionicons name="cloud-offline-outline" size={24} color="#F4A261" />
               </View>
-              <Text className="text-graphite text-sm font-black uppercase tracking-tight text-center">
-                FAILED TO LOAD REQUESTS
+              <Text className="text-[#F4F6F7] text-sm font-black uppercase tracking-tight text-center">
+                Failed to Load Requests
               </Text>
-              <Text className="text-stone-muted text-xs font-medium text-center mt-1.5 leading-5 max-w-[260px]">
+              <Text className="text-[#A0A5AD] text-xs font-medium text-center mt-1.5 leading-5 max-w-[260px]">
                 {error}
               </Text>
               <View className="w-full mt-5">
@@ -456,23 +448,23 @@ export default function JoinRequestsScreen() {
                   onPress={loadData}
                   accessibilityRole="button"
                   accessibilityLabel="Retry Loading Requests"
-                  className="w-full bg-arena-olive rounded-sm py-3 items-center justify-center active:bg-olive-dark border border-arena-olive"
+                  className="w-full bg-[#E85D26] rounded-xl py-3 items-center justify-center active:opacity-90"
                 >
-                  <Text className="text-warm-white text-xs font-black uppercase tracking-wider">
-                    RETRY
+                  <Text className="text-[#171A1D] text-xs font-black uppercase tracking-wider">
+                    Retry
                   </Text>
                 </Pressable>
               </View>
             </View>
           ) : displayedRequests.length === 0 ? (
-            <View className="bg-white rounded-sm p-8 border border-stone items-center">
-              <View className="w-12 h-12 rounded-full bg-stone/20 border border-stone items-center justify-center mb-3">
-                <Ionicons name="people-outline" size={24} color="#666B60" />
+            <View className="bg-[#1F2327] rounded-2xl p-8 border border-white/10 items-center">
+              <View className="w-12 h-12 rounded-full bg-[#272C31] border border-white/10 items-center justify-center mb-3">
+                <Ionicons name="people-outline" size={24} color="#A0A5AD" />
               </View>
-              <Text className="text-graphite text-sm font-black uppercase tracking-tight text-center">
-                NO PENDING REQUESTS
+              <Text className="text-[#F4F6F7] text-sm font-black uppercase tracking-tight text-center">
+                No Pending Requests
               </Text>
-              <Text className="text-stone-muted text-xs font-medium text-center mt-1.5 leading-5 max-w-[260px]">
+              <Text className="text-[#A0A5AD] text-xs font-medium text-center mt-1.5 leading-5 max-w-[260px]">
                 {activeFilter === 'pending'
                   ? 'There are no awaiting player applications for your match fixtures right now.'
                   : 'No request records match the selected status filter.'}
@@ -490,20 +482,20 @@ export default function JoinRequestsScreen() {
               return (
                 <View
                   key={req.id}
-                  className="bg-white rounded-sm border border-stone p-4 mb-3 shadow-2xs"
+                  className="bg-[#1F2327] rounded-2xl border border-white/10 p-4 mb-3 shadow-sm"
                 >
                   {/* Top Bar: Player Name & Status Badge */}
                   <View className="flex-row items-start justify-between">
                     <View className="flex-1 pr-2">
                       <View className="flex-row items-center">
                         <Text
-                          className="text-graphite text-base font-black uppercase tracking-tight"
+                          className="text-[#F4F6F7] text-base font-black uppercase tracking-tight"
                           numberOfLines={1}
                         >
                           {req.playerName}
                         </Text>
-                        <View className="ml-2 bg-stone/20 px-1.5 py-0.5 rounded-xs border border-stone/50">
-                          <Text className="text-stone-muted text-[9px] font-mono uppercase font-bold">
+                        <View className="ml-2 bg-[#272C31] px-2 py-0.5 rounded-lg border border-white/10">
+                          <Text className="text-[#E85D26] text-[10px] font-mono uppercase font-bold">
                             PLAYER
                           </Text>
                         </View>
@@ -513,14 +505,14 @@ export default function JoinRequestsScreen() {
                       <View className="flex-row items-center mt-1 flex-wrap">
                         {req.primaryLocation ? (
                           <View className="flex-row items-center mr-2">
-                            <Ionicons name="location-outline" size={11} color="#666B60" />
-                            <Text className="text-stone-muted text-[10px] ml-0.5 font-medium">
+                            <Ionicons name="location-outline" size={12} color="#A0A5AD" />
+                            <Text className="text-[#A0A5AD] text-xs ml-0.5 font-medium">
                               {req.primaryLocation}
                             </Text>
                           </View>
                         ) : null}
 
-                        <Text className="text-stone-muted text-[10px] font-mono">
+                        <Text className="text-[#7F8993] text-xs font-mono">
                           • {new Date(req.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </Text>
                       </View>
@@ -537,10 +529,10 @@ export default function JoinRequestsScreen() {
                   </View>
 
                   {/* Sport & Skill Strip */}
-                  <View className="flex-row items-center space-x-2 mt-2.5 pt-2.5 border-t border-stone/30">
-                    <View className="flex-row items-center bg-stone/20 px-2 py-1 rounded-xs border border-stone/40 mr-2">
-                      <MaterialCommunityIcons name={sportIcon} size={12} color="#242522" />
-                      <Text className="text-graphite text-[10px] font-mono uppercase font-bold ml-1">
+                  <View className="flex-row items-center space-x-2 mt-2.5 pt-2.5 border-t border-white/5">
+                    <View className="flex-row items-center bg-[#272C31] px-2.5 py-1 rounded-lg border border-white/10 mr-2">
+                      <MaterialCommunityIcons name={sportIcon} size={12} color="#E85D26" />
+                      <Text className="text-[#F4F6F7] text-[10px] font-bold uppercase ml-1">
                         {sport.toUpperCase()}
                       </Text>
                     </View>
@@ -554,11 +546,11 @@ export default function JoinRequestsScreen() {
 
                   {/* Player Message if provided */}
                   {req.message ? (
-                    <View className="mt-2.5 p-2 bg-stone/10 rounded-xs border border-stone/30">
-                      <Text className="text-stone-muted text-[10px] font-mono uppercase font-bold mb-0.5">
-                        PLAYER NOTE
+                    <View className="mt-2.5 p-2.5 bg-[#272C31] rounded-xl border border-white/5">
+                      <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold mb-0.5">
+                        Player Note
                       </Text>
-                      <Text className="text-graphite text-xs italic">
+                      <Text className="text-[#F4F6F7] text-xs italic">
                         "{req.message}"
                       </Text>
                     </View>
@@ -566,28 +558,28 @@ export default function JoinRequestsScreen() {
 
                   {/* Fixture Context Box */}
                   {match ? (
-                    <View className="mt-3 bg-stone/15 rounded-xs p-2.5 border border-stone/40">
+                    <View className="mt-3 bg-[#272C31] rounded-xl p-3 border border-white/10">
                       <View className="flex-row items-center justify-between mb-1">
-                        <Text className="text-stone-muted text-[9px] font-mono uppercase font-bold">
-                          TARGET FIXTURE
+                        <Text className="text-[#7F8993] text-[9px] font-mono uppercase font-bold">
+                          Target Fixture
                         </Text>
-                        <Text className="text-stone-muted text-[9px] font-mono">
-                          {match.slotsOpen} / {match.totalSlots} SLOTS OPEN
+                        <Text className="text-[#E85D26] text-[10px] font-mono font-bold">
+                          {match.slotsOpen} / {match.totalSlots} Slots Open
                         </Text>
                       </View>
 
                       <Text
-                        className="text-graphite text-xs font-black uppercase tracking-tight"
+                        className="text-[#F4F6F7] text-xs font-black uppercase tracking-tight"
                         numberOfLines={1}
                       >
                         {match.title}
                       </Text>
 
-                      <View className="flex-row items-center justify-between mt-1 pt-1 border-t border-stone/20">
-                        <Text className="text-stone-muted text-[10px] font-mono" numberOfLines={1}>
+                      <View className="flex-row items-center justify-between mt-1 pt-1 border-t border-white/5">
+                        <Text className="text-[#A0A5AD] text-[10px] font-mono" numberOfLines={1}>
                           {match.date} • {match.startTime || match.time}
                         </Text>
-                        <Text className="text-stone-muted text-[10px] font-mono" numberOfLines={1}>
+                        <Text className="text-[#A0A5AD] text-[10px] font-mono" numberOfLines={1}>
                           {match.groundName}
                         </Text>
                       </View>
@@ -595,14 +587,14 @@ export default function JoinRequestsScreen() {
                   ) : null}
 
                   {/* Action Buttons for PENDING */}
-                  <View className="mt-3 pt-2.5 border-t border-stone/30">
+                  <View className="mt-3 pt-2.5 border-t border-white/5">
                     {req.status === 'PENDING' ? (
                       <View>
                         {isMatchFull ? (
-                          <View className="mb-2 p-2 bg-rust/10 border border-rust/30 rounded-xs flex-row items-center">
-                            <Ionicons name="alert-circle-outline" size={14} color="#875646" />
-                            <Text className="text-rust text-[10px] font-mono font-bold uppercase ml-1.5 flex-1">
-                              NO OPEN SLOT • ROSTER CAPACITY REACHED
+                          <View className="mb-2 p-2 bg-[#F4A261]/10 border border-[#F4A261]/30 rounded-xl flex-row items-center">
+                            <Ionicons name="alert-circle-outline" size={14} color="#F4A261" />
+                            <Text className="text-[#F4A261] text-[10px] font-mono font-bold uppercase ml-1.5 flex-1">
+                              No Open Slot • Roster Capacity Reached
                             </Text>
                           </View>
                         ) : null}
@@ -614,10 +606,10 @@ export default function JoinRequestsScreen() {
                             disabled={isProcessing}
                             accessibilityRole="button"
                             accessibilityLabel={`Decline request from ${req.playerName}`}
-                            className="flex-1 py-2.5 rounded-xs bg-warm-white border border-stone items-center justify-center active:bg-stone/20"
+                            className="flex-1 py-3 rounded-xl bg-[#272C31] border border-white/10 items-center justify-center active:bg-white/5"
                           >
-                            <Text className="text-graphite text-xs font-bold uppercase tracking-wide">
-                              DECLINE
+                            <Text className="text-[#F4F6F7] text-xs font-bold uppercase tracking-wide">
+                              Decline
                             </Text>
                           </Pressable>
 
@@ -627,51 +619,51 @@ export default function JoinRequestsScreen() {
                             disabled={isMatchFull || isProcessing}
                             accessibilityRole="button"
                             accessibilityLabel={`Accept ${req.playerName} for match`}
-                            className={`flex-1 py-2.5 rounded-xs items-center justify-center ${
+                            className={`flex-1 py-3 rounded-xl items-center justify-center ${
                               isMatchFull || isProcessing
-                                ? 'bg-stone/30 border border-stone opacity-60'
-                                : 'bg-arena-olive border border-arena-olive active:bg-olive-dark'
+                                ? 'bg-[#272C31] border border-white/10 opacity-50'
+                                : 'bg-[#E85D26] border border-[#E85D26] active:opacity-90'
                             }`}
                           >
                             {isProcessing ? (
-                              <ActivityIndicator size="small" color="#F4F1EA" />
+                              <ActivityIndicator size="small" color="#171A1D" />
                             ) : (
                               <Text
                                 className={`text-xs font-black uppercase tracking-wider ${
-                                  isMatchFull ? 'text-stone-muted' : 'text-warm-white'
+                                  isMatchFull ? 'text-[#7F8993]' : 'text-[#171A1D]'
                                 }`}
                               >
-                                ACCEPT
+                                Accept
                               </Text>
                             )}
                           </Pressable>
                         </View>
                       </View>
                     ) : req.status === 'ACCEPTED' ? (
-                      <View className="p-2.5 bg-arena-olive/15 rounded-xs border border-arena-olive/30 flex-row items-center justify-between">
+                      <View className="p-3 bg-[#E85D26]/10 rounded-xl border border-[#E85D26]/30 flex-row items-center justify-between">
                         <View className="flex-row items-center">
-                          <Ionicons name="checkmark-circle" size={16} color="#3D4438" />
+                          <Ionicons name="checkmark-circle" size={18} color="#E85D26" />
                           <View className="ml-2">
-                            <Text className="text-arena-olive text-xs font-black uppercase tracking-tight">
-                              SPOT APPROVED
+                            <Text className="text-[#E85D26] text-xs font-black uppercase tracking-tight">
+                              Spot Approved
                             </Text>
-                            <Text className="text-stone-muted text-[9px] font-mono">
-                              PLAYER CONFIRMED IN MATCH ROSTER
+                            <Text className="text-[#A0A5AD] text-[10px] font-mono">
+                              Player confirmed in match roster
                             </Text>
                           </View>
                         </View>
                         <ArenaBadge label="APPROVED" variant="olive" size="sm" />
                       </View>
                     ) : (
-                      <View className="p-2.5 bg-stone/20 rounded-xs border border-stone/50 flex-row items-center justify-between">
+                      <View className="p-3 bg-[#272C31] rounded-xl border border-white/10 flex-row items-center justify-between">
                         <View className="flex-row items-center">
-                          <Ionicons name="close-circle-outline" size={16} color="#666B60" />
+                          <Ionicons name="close-circle-outline" size={18} color="#A0A5AD" />
                           <View className="ml-2">
-                            <Text className="text-graphite text-xs font-bold uppercase tracking-tight">
-                              REQUEST DECLINED
+                            <Text className="text-[#F4F6F7] text-xs font-bold uppercase tracking-tight">
+                              Request Declined
                             </Text>
-                            <Text className="text-stone-muted text-[9px] font-mono">
-                              SLOT REMAINS VACANT
+                            <Text className="text-[#7F8993] text-[10px] font-mono">
+                              Slot remains vacant
                             </Text>
                           </View>
                         </View>
@@ -693,21 +685,21 @@ export default function JoinRequestsScreen() {
         animationType="fade"
         onRequestClose={() => setConfirmModal(null)}
       >
-        <View className="flex-1 bg-graphite/80 items-center justify-center p-5">
-          <View className="w-full max-w-sm bg-warm-white rounded-sm p-5 border border-stone shadow-xl">
+        <View className="flex-1 bg-[#171A1D]/85 items-center justify-center p-5">
+          <View className="w-full max-w-sm bg-[#1F2327] rounded-2xl p-6 border border-white/10 shadow-2xl">
             {confirmModal ? (
               <>
                 <View
-                  className={`w-12 h-12 rounded-sm items-center justify-center border mb-3 ${
+                  className={`w-12 h-12 rounded-xl items-center justify-center mb-3 ${
                     confirmModal.type === 'accept'
-                      ? 'bg-arena-olive border-warm-white/20'
-                      : 'bg-stone/30 border-stone'
+                      ? 'bg-[#E85D26]'
+                      : 'bg-[#272C31] border border-white/10'
                   }`}
                 >
                   <Ionicons
                     name={confirmModal.type === 'accept' ? 'checkmark-sharp' : 'close-sharp'}
                     size={24}
-                    color={confirmModal.type === 'accept' ? '#F4F1EA' : '#242522'}
+                    color={confirmModal.type === 'accept' ? '#171A1D' : '#F4F6F7'}
                   />
                 </View>
 
@@ -721,30 +713,30 @@ export default function JoinRequestsScreen() {
                   size="sm"
                 />
 
-                <Text className="text-graphite text-lg font-black uppercase tracking-tight mt-2">
+                <Text className="text-[#F4F6F7] text-lg font-black uppercase tracking-tight mt-2">
                   {confirmModal.type === 'accept'
-                    ? `ACCEPT ${confirmModal.request.playerName}?`
-                    : `DECLINE REQUEST?`}
+                    ? `Accept ${confirmModal.request.playerName}?`
+                    : `Decline Request?`}
                 </Text>
 
-                <Text className="text-stone-muted text-xs leading-4 mt-1">
+                <Text className="text-[#A0A5AD] text-xs leading-4 mt-1">
                   {confirmModal.type === 'accept'
                     ? `This will atomically decrement an open slot and confirm ${confirmModal.request.playerName} on the fixture lineup.`
                     : `This will mark ${confirmModal.request.playerName}'s application as rejected.`}
                 </Text>
 
                 {confirmModal.match && (
-                  <View className="my-3 p-2.5 bg-white rounded-xs border border-stone">
-                    <Text className="text-graphite text-xs font-black uppercase" numberOfLines={1}>
+                  <View className="my-3 p-3 bg-[#272C31] rounded-xl border border-white/10">
+                    <Text className="text-[#F4F6F7] text-xs font-black uppercase" numberOfLines={1}>
                       {confirmModal.match.title}
                     </Text>
-                    <Text className="text-stone-muted text-[10px] font-mono mt-0.5">
+                    <Text className="text-[#A0A5AD] text-[10px] font-mono mt-0.5">
                       {confirmModal.match.date} • {confirmModal.match.startTime || confirmModal.match.time}
                     </Text>
                   </View>
                 )}
 
-                <View className="space-y-2 mt-1">
+                <View className="space-y-2 mt-2">
                   <PrimaryButton
                     title={
                       confirmModal.type === 'accept' ? 'CONFIRM ACCEPT' : 'CONFIRM DECLINE'
@@ -755,10 +747,10 @@ export default function JoinRequestsScreen() {
 
                   <Pressable
                     onPress={() => setConfirmModal(null)}
-                    className="py-2.5 items-center mt-1"
+                    className="py-3 items-center mt-1"
                   >
-                    <Text className="text-stone-muted text-xs font-bold uppercase tracking-wider">
-                      CANCEL
+                    <Text className="text-[#A0A5AD] text-xs font-bold uppercase tracking-wider">
+                      Cancel
                     </Text>
                   </Pressable>
                 </View>
