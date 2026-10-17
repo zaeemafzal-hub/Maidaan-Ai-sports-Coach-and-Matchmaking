@@ -161,7 +161,9 @@ export const CoachController = {
       res.status(200).json({
         message: result.message,
         sport: result.sport,
-        provider: 'nvidia',
+        provider: result.provider,
+        usedBackup: result.usedBackup ?? false,
+        isFallback: false,
         requestId: result.requestId,
       });
     } catch (err: any) {

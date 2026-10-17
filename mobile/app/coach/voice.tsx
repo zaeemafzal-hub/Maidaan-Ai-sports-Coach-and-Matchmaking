@@ -218,7 +218,7 @@ export default function VoiceCoachScreen() {
       setSessionState('error');
       setErrorMessage(
         perm.status === 'unavailable'
-          ? 'Speech recognition is unavailable in this runtime.'
+          ? 'Voice input is unavailable here. Open Text Coach and type your question or use your keyboard’s microphone.'
           : 'Microphone permission was denied.'
       );
       return;

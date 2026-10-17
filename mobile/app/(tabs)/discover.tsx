@@ -12,6 +12,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { MatchFixtureCard } from '../../components/ui/MatchFixtureCard';
 import { ArenaBadge } from '../../components/ui/ArenaBadge';
+import { VenueBrowseCard } from '../../components/venues/VenueBrowseCard';
 import { SkeletonCard } from '../../components/ui/SkeletonCard';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { IMAGES } from '../../constants/images';
@@ -247,6 +248,9 @@ export default function DiscoverScreen() {
           </View>
         </View>
 
+        <View style={{ paddingHorizontal: 20, paddingBottom: 12 }}>
+          <VenueBrowseCard />
+        </View>
         {/* Compact Weather Summary Bar */}
         <View className="px-5 pb-3">
           <WeatherCompactBar weather={weather} loading={weatherLoading} />

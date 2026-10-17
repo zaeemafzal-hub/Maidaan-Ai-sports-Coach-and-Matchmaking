@@ -1,32 +1,11 @@
 import React, { useEffect, useRef } from 'react';
-import { View, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
 import { useAuthStore } from '../store/useAuthStore';
 
 export default function Index() {
-  const { isInitialized, currentUser, authStatus, activeMode } = useAuthStore();
+  const { isInitialized, currentUser, authStatus, activeMode, initializeAuth, errorMessage } = useAuthStore();
   const hasNavigated = useRef(false);
-
-  const isInitializedRef = useRef(isInitialized);
-  const authStatusRef = useRef(authStatus);
-  isInitializedRef.current = isInitialized;
-  authStatusRef.current = authStatus;
-
-  useEffect(() => {
-    // Failsafe: If initialization hangs or takes longer than 3.5 seconds,
-    // gracefully route to the welcome screen instead of leaving user stuck.
-    const safetyTimer = setTimeout(() => {
-      if (!hasNavigated.current) {
-        if (!isInitializedRef.current || authStatusRef.current === 'BOOTING' || authStatusRef.current === 'PROFILE_LOADING') {
-          console.warn('[Index] Boot timeout: forcing transition to welcome screen');
-          hasNavigated.current = true;
-          router.replace('/(auth)/welcome');
-        }
-      }
-    }, 3500);
-
-    return () => clearTimeout(safetyTimer);
-  }, []);
 
   useEffect(() => {
     if (!isInitialized || authStatus === 'BOOTING' || authStatus === 'PROFILE_LOADING') {
@@ -70,15 +49,23 @@ export default function Index() {
       return;
     }
 
-    if (authStatus === 'ERROR') {
-      hasNavigated.current = true;
-      router.replace('/(auth)/welcome');
-    }
+
   }, [isInitialized, authStatus, currentUser, activeMode]);
 
   return (
     <View style={{ flex: 1, backgroundColor: '#0C0D0E', justifyContent: 'center', alignItems: 'center' }}>
-      <ActivityIndicator size="large" color="#E85D26" />
+      {authStatus === 'ERROR' ? (
+        <View className="px-6 items-center">
+          <Text accessibilityRole="alert" className="text-white text-center mb-4">
+            {errorMessage || 'Unable to restore your session. Please try again.'}
+          </Text>
+          <Pressable accessibilityRole="button" onPress={() => void initializeAuth()} className="bg-[#E85D26] rounded-xl p-4">
+            <Text className="text-white font-bold">Try Again</Text>
+          </Pressable>
+        </View>
+      ) : (
+        <ActivityIndicator size="large" color="#E85D26" />
+      )}
     </View>
   );
 }

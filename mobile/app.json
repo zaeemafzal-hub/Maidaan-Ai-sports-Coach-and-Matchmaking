@@ -7,7 +7,11 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
-    "platforms": ["ios", "android", "web"],
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ],
     "ios": {
       "supportsTablet": false,
       "infoPlist": {
@@ -41,7 +45,8 @@
           "microphonePermission": "Allow Maidaan to access your microphone for AI sports coaching voice queries.",
           "speechRecognitionPermission": "Allow Maidaan to recognize your speech for tactical coaching."
         }
-      ]
+      ],
+      "expo-web-browser"
     ]
   }
 }

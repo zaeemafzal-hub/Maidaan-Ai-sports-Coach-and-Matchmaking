@@ -1,4 +1,4 @@
-import { GoogleGenAI } from '@google/genai';
+import { generateAIText, isAIConfigured } from '../../ai/providerFactory.js';
 import { AgentState, AgentUpdate } from '../state.js';
 import { AgentClassificationResult, AgentIntent } from '../types.js';
 import { SUPERVISOR_SYSTEM_PROMPT } from '../prompts/supervisor.js';
@@ -275,10 +275,9 @@ export function deterministicFallbackClassifier(message: string): AgentClassific
  */
 export async function classifyIntentNode(state: AgentState): Promise<AgentUpdate> {
   const message = state.message || '';
-  const apiKey = process.env.GEMINI_API_KEY;
 
   // If in test mode or no key, immediately use deterministic classifier
-  if (process.env.NODE_ENV === 'test' || !apiKey) {
+  if (process.env.NODE_ENV === 'test' || !isAIConfigured()) {
     const fallback = deterministicFallbackClassifier(message);
     return {
       intent: fallback.intent,
@@ -289,26 +288,15 @@ export async function classifyIntentNode(state: AgentState): Promise<AgentUpdate
   }
 
   try {
-    const ai = new GoogleGenAI({ apiKey });
-
-    // Timeout after 6 seconds
-    const timeoutPromise = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error('Supervisor classification timeout')), 6000)
-    );
-
-    const callPromise = ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: [{ role: 'user', parts: [{ text: message }] }],
-      config: {
-        systemInstruction: SUPERVISOR_SYSTEM_PROMPT,
-        temperature: 0.1,
-        maxOutputTokens: 200,
-        responseMimeType: 'application/json',
-      },
+    const result = await generateAIText({
+      systemPrompt: SUPERVISOR_SYSTEM_PROMPT,
+      message,
+      temperature: 0.1,
+      maxTokens: 512,
+      jsonMode: true,
+      timeoutMs: 6000,
     });
-
-    const result = await Promise.race([callPromise, timeoutPromise]);
-    const text = result.text?.trim() || '';
+    const text = result.message;
 
     // Strip code fences if present
     const cleanJson = text.replace(/^```json/i, '').replace(/```$/i, '').trim();

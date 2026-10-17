@@ -1,11 +1,5 @@
-let NativeSpeechModule: any = null;
-try {
-  // Dynamically require to avoid crash in Expo Go where native module is missing
-  const speechPkg = require('expo-speech-recognition');
-  NativeSpeechModule = speechPkg?.ExpoSpeechRecognitionModule || null;
-} catch (e) {
-  NativeSpeechModule = null;
-}
+import { requireOptionalNativeModule } from 'expo';
+import { Platform } from 'react-native';
 
 export interface SpeechRecognitionCallbacks {
   onStart?: () => void;
@@ -24,16 +18,24 @@ export interface SpeechPermissionStatus {
 class SpeechRecognitionService {
   private activeSubscriptions: Array<{ remove: () => void }> = [];
   private isListeningActive = false;
+  private moduleChecked = false;
+  private speechModule: any = null;
 
   private getModule(): any {
-    if (NativeSpeechModule) return NativeSpeechModule;
+    if (this.moduleChecked) return this.speechModule;
+    this.moduleChecked = true;
     try {
+      // Metro can report a failed module evaluation even inside require's catch.
+      // Probe first so Expo Go never evaluates the unsupported native package.
+      if (Platform.OS !== 'web' && !requireOptionalNativeModule('ExpoSpeechRecognition')) {
+        return null;
+      }
       const speechPkg = require('expo-speech-recognition');
-      NativeSpeechModule = speechPkg?.ExpoSpeechRecognitionModule || null;
+      this.speechModule = speechPkg?.ExpoSpeechRecognitionModule || null;
     } catch {
-      NativeSpeechModule = null;
+      this.speechModule = null;
     }
-    return NativeSpeechModule;
+    return this.speechModule;
   }
 
   /**

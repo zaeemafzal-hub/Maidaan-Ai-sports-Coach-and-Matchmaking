@@ -1,10 +1,21 @@
 import { Router } from 'express';
+import { VenueController } from '../controllers/venueController.js';
 import { HubCourtController } from '../controllers/hubCourtController.js';
 import { HubVerificationController } from '../controllers/hubVerificationController.js';
 import { HubDashboardController } from '../controllers/hubDashboardController.js';
 import { authenticateSupabaseUser, authorizeRoles } from '../middleware/auth.js';
 
 const router = Router();
+const owner = [authenticateSupabaseUser, authorizeRoles('HUB_OWNER')];
+router.get('/venue', ...owner, VenueController.own);
+router.put('/venue', ...owner, VenueController.saveVenue);
+router.post('/spaces', ...owner, VenueController.saveSpace);
+router.put('/spaces/:id', ...owner, VenueController.saveSpace);
+router.delete('/spaces/:id', ...owner, VenueController.deleteSpace);
+router.post('/slots', ...owner, VenueController.saveSlot);
+router.put('/slots/:id', ...owner, VenueController.saveSlot);
+router.delete('/slots/:id', ...owner, VenueController.deleteSlot);
+router.post('/photos', ...owner, VenueController.uploadPhoto);
 
 // Hub Dashboard Aggregated Summary (Strictly HUB_OWNER role required)
 router.get(

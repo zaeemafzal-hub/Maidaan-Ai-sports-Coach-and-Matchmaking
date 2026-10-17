@@ -55,11 +55,11 @@ export const FormInput: React.FC<FormInputProps> = ({
       </Text>
 
       <View
-        className={`w-full min-h-[52px] flex-row items-center px-4 py-3 rounded-[16px] bg-[#1B1D22] border transition-all ${
+        className={`w-full min-h-[52px] flex-row items-center px-4 py-3 rounded-[16px] bg-[#1B1D22] border ${
           error
             ? 'border-[#EF4444]'
             : isFocused
-            ? 'border-[#E85D26] shadow-sm shadow-[#E85D26]/20'
+            ? 'border-[#E85D26]'
             : 'border-[rgba(255,255,255,0.08)]'
         }`}
       >

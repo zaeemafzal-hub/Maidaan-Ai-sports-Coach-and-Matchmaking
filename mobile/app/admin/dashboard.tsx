@@ -32,10 +32,7 @@ export interface AdminActivityItem {
 export default function AdminDashboardScreen() {
   const { currentUser, roles = [] } = useAuthStore();
 
-  const isAdmin =
-    roles.includes('ADMIN') ||
-    currentUser?.roles?.includes('ADMIN') ||
-    currentUser?.role === 'ADMIN';
+  const isAdmin = roles.includes('ADMIN');
 
   // Live operational metrics
   const [loading, setLoading] = useState(true);
@@ -66,6 +63,7 @@ export default function AdminDashboardScreen() {
         adminService.getReports(),
       ]);
 
+      if (summaryRes.error || verifRes.error || reportsRes.error) throw new Error(summaryRes.error || verifRes.error || reportsRes.error);
       if (summaryRes.data && isMountedRef.current) {
         setMetrics(summaryRes.data);
       }
@@ -209,6 +207,7 @@ export default function AdminDashboardScreen() {
           />
         }
       >
+        <View style={{padding:20,gap:12}}><PrimaryButton title="BOOKING REFUNDS" onPress={()=>router.push('/bookings?scope=refunds' as any)}/><PrimaryButton title="ACCOUNTS & SUPER-USERS" onPress={()=>router.push('/admin/accounts' as any)}/><PrimaryButton title="MANAGE HUB OWNERS" onPress={()=>router.push('/admin/accounts?role=HUB_OWNER' as any)}/></View>
         {/* Operational Identity Card */}
         <View className="px-5 pt-3">
           <View className="p-4 rounded-2xl bg-[#141518] border border-white/[0.08] flex-row items-center justify-between">

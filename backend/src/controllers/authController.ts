@@ -1,5 +1,8 @@
+import crypto from 'node:crypto';
 import { Request, Response } from 'express';
-import { supabaseAdmin, isServerSupabaseConfigured } from '../lib/supabase.js';
+import { isServerSupabaseConfigured } from '../lib/supabase.js';
+import { createClient } from '@supabase/supabase-js';
+import { isTest } from '../config/runtime.js';
 import { SupabaseRepo, Role } from '../models/supabaseRepo.js';
 
 const ALLOWED_PUBLIC_ROLES: Role[] = ['PLAYER', 'TEAM_CAPTAIN', 'HUB_OWNER'];
@@ -7,8 +10,8 @@ const ALLOWED_PUBLIC_ROLES: Role[] = ['PLAYER', 'TEAM_CAPTAIN', 'HUB_OWNER'];
 export const AuthController = {
   /**
    * POST /api/auth/register
-   * Registers a new account, auto-confirms email so user can immediately sign in,
-   * initializes public.profiles and public.user_roles row.
+   * Registers a new account using the project's normal email confirmation policy.
+   * The profile is initialized after the verified user signs in.
    */
   async register(req: Request, res: Response): Promise<void> {
     try {
@@ -24,8 +27,8 @@ export const AuthController = {
         return;
       }
 
-      if (!password || typeof password !== 'string' || password.length < 6) {
-        res.status(400).json({ error: 'Password must be at least 6 characters long.' });
+      if (!password || typeof password !== 'string' || password.length < 8) {
+        res.status(400).json({ error: 'Password must be at least 8 characters long.' });
         return;
       }
 
@@ -42,39 +45,36 @@ export const AuthController = {
 
       const normalizedEmail = email.trim().toLowerCase();
 
-      let userId: string;
-
-      if (isServerSupabaseConfigured) {
-        // Create user in Supabase with email_confirm: true so user can immediately sign in
-        const { data: created, error: createError } = await (supabaseAdmin.auth as any).admin.createUser({
-          email: normalizedEmail,
-          password: password,
-          email_confirm: true,
-          user_metadata: {
-            name: name.trim(),
-            role: assignedRole,
-          },
+      if (!isTest()) {
+        const publicKey = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY;
+        if (!isServerSupabaseConfigured || !publicKey) {
+          res.status(503).json({ error: 'Public authentication is not configured.' });
+          return;
+        }
+        // Honor the project's email confirmation settings. Never use admin.createUser
+        // or auto-confirm an address supplied to this public endpoint.
+        const auth = createClient(process.env.SUPABASE_URL!, publicKey, {
+          auth: { persistSession: false, autoRefreshToken: false },
         });
-
-        if (createError) {
-          const msg = createError.message?.toLowerCase() || '';
-          if (msg.includes('already') || createError.status === 422) {
-            res.status(409).json({ error: 'An account with this email already exists.' });
-            return;
-          }
-          res.status(400).json({ error: createError.message || 'Registration failed.' });
+        const { data, error } = await auth.auth.signUp({
+          email: normalizedEmail,
+          password,
+          options: { data: { name: name.trim() } },
+        });
+        if (error || !data.user) {
+          res.status(error?.code === 'user_already_exists' ? 409 : 400)
+            .json({ error: error?.message || 'Registration failed.' });
           return;
         }
-
-        if (!created?.user) {
-          res.status(500).json({ error: 'User creation returned empty user record.' });
-          return;
-        }
-
-        userId = created.user.id;
-      } else {
-        userId = `local_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+        res.status(201).json({
+          success: true,
+          needsEmailConfirmation: !data.session,
+          user: { id: data.user.id, name: name.trim(), email: normalizedEmail, role: 'PLAYER', roles: ['PLAYER'], createdAt: data.user.created_at },
+        });
+        return;
       }
+
+      const userId = crypto.randomUUID();
 
       // Initialize profile and roles in database
       let profile = await SupabaseRepo.getProfile(userId);

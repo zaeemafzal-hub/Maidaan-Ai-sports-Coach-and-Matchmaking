@@ -1,5 +1,5 @@
 import { AgentState, AgentUpdate } from '../state.js';
-import { GoogleGenAI } from '@google/genai';
+import { generateAIText, isAIConfigured } from '../../ai/providerFactory.js';
 import { sharedRAGEngine } from '../../rag/ragEngine.js';
 import { SourceMetadata } from '../../rag/types.js';
 
@@ -36,10 +36,8 @@ export async function fallbackNode(state: AgentState): Promise<AgentUpdate> {
       .map((c, i) => `[Source ${i + 1}: ${c.source} | Section: ${c.section}]\n${c.content}`)
       .join('\n\n---\n\n');
 
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (apiKey && process.env.NODE_ENV !== 'test') {
+    if (isAIConfigured() && process.env.NODE_ENV !== 'test') {
       try {
-        const ai = new GoogleGenAI({ apiKey });
         const userPrompt = `USER REQUEST:
 "${message}"
 
@@ -50,17 +48,14 @@ ${formattedContext}
 
 Instruction: Explain the answer clearly and concisely based ONLY on the factual reference above.`;
 
-        const result = await ai.models.generateContent({
-          model: 'gemini-2.5-flash',
-          contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
-          config: {
-            systemInstruction: RAG_GENERAL_SYSTEM_PROMPT,
-            temperature: 0.1,
-            maxOutputTokens: 350,
-          },
+        const result = await generateAIText({
+          systemPrompt: RAG_GENERAL_SYSTEM_PROMPT,
+          message: userPrompt,
+          temperature: 0.1,
+          maxTokens: 1024,
         });
 
-        const reply = result.text?.trim();
+        const reply = result.message.trim();
         if (reply) {
           return {
             response: reply,

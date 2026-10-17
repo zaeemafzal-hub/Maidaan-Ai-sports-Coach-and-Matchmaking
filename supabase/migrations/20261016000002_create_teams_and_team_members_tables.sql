@@ -23,7 +23,7 @@ create table if not exists public.team_members (
   id uuid primary key default gen_random_uuid(),
   team_id uuid not null references public.teams(id) on delete cascade,
   user_id uuid not null references public.profiles(id) on delete cascade,
-  member_role text not null default 'PLAYER' check (member_role in ('CAPTAIN', 'PLAYER')),
+  member_role text not null default 'PLAYER' check (member_role in ('CAPTAIN', 'VICE_CAPTAIN', 'PLAYER')),
   status text not null default 'ACTIVE' check (status in ('ACTIVE', 'INVITED', 'LEFT', 'REMOVED')),
   joined_at timestamptz not null default timezone('utc'::text, now()),
   constraint uq_team_members_team_user unique (team_id, user_id)
@@ -40,6 +40,17 @@ alter table public.matches
 create index if not exists idx_matches_team_id on public.matches(team_id);
 
 -- 4. Set updated_at trigger for teams
+create or replace function public.set_updated_at()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
 drop trigger if exists set_teams_updated_at on public.teams;
 create trigger set_teams_updated_at
   before update on public.teams
@@ -62,22 +73,25 @@ create policy "Captains can insert own teams"
   on public.teams
   for insert
   to authenticated
-  with check (captain_id = auth.uid());
+  with check (
+    captain_id = auth.uid()
+    and exists (select 1 from public.user_roles where user_id = auth.uid() and role = 'TEAM_CAPTAIN' and status = 'ACTIVE')
+  );
 
 drop policy if exists "Captains can update own teams" on public.teams;
 create policy "Captains can update own teams"
   on public.teams
   for update
   to authenticated
-  using (captain_id = auth.uid())
-  with check (captain_id = auth.uid());
+  using (captain_id = auth.uid() and exists (select 1 from public.user_roles where user_id = auth.uid() and role = 'TEAM_CAPTAIN' and status = 'ACTIVE'))
+  with check (captain_id = auth.uid() and exists (select 1 from public.user_roles where user_id = auth.uid() and role = 'TEAM_CAPTAIN' and status = 'ACTIVE'));
 
 drop policy if exists "Captains can delete own teams" on public.teams;
 create policy "Captains can delete own teams"
   on public.teams
   for delete
   to authenticated
-  using (captain_id = auth.uid());
+  using (captain_id = auth.uid() and exists (select 1 from public.user_roles where user_id = auth.uid() and role = 'TEAM_CAPTAIN' and status = 'ACTIVE'));
 
 -- Team Members policies
 drop policy if exists "Authenticated users can view team members" on public.team_members;
@@ -97,6 +111,7 @@ create policy "Captains can manage team members"
       select 1 from public.teams
       where teams.id = public.team_members.team_id
         and teams.captain_id = auth.uid()
+        and exists (select 1 from public.user_roles where user_id = auth.uid() and role = 'TEAM_CAPTAIN' and status = 'ACTIVE')
     )
   )
   with check (
@@ -104,6 +119,7 @@ create policy "Captains can manage team members"
       select 1 from public.teams
       where teams.id = public.team_members.team_id
         and teams.captain_id = auth.uid()
+        and exists (select 1 from public.user_roles where user_id = auth.uid() and role = 'TEAM_CAPTAIN' and status = 'ACTIVE')
     )
   );
 

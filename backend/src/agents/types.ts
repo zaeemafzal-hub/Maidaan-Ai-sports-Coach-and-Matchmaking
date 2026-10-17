@@ -135,6 +135,7 @@ export interface CoachingResult {
   provider?: string;
   requestId?: string;
   isFallback?: boolean;
+  usedBackup?: boolean;
 }
 
 import { CaptainActionSummary } from './actions/types.js';

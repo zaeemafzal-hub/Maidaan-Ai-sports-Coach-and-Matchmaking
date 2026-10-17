@@ -34,10 +34,7 @@ const SPORT_META: Record<
 export default function HubVerificationScreen() {
   const { currentUser, roles = [] } = useAuthStore();
 
-  const isAdmin =
-    roles.includes('ADMIN') ||
-    currentUser?.roles?.includes('ADMIN') ||
-    currentUser?.role === 'ADMIN';
+  const isAdmin = roles.includes('ADMIN');
 
   // Live state
   const [submissions, setSubmissions] = useState<HubVerificationRequest[]>([]);

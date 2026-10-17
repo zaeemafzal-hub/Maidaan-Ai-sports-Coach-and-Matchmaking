@@ -13,6 +13,9 @@ import reportRoutes from './routes/reportRoutes.js';
 import coachRoutes from './routes/coachRoutes.js';
 import weatherRoutes from './routes/weatherRoutes.js';
 import agentRoutes from './routes/agentRoutes.js';
+import { VenueController } from './controllers/venueController.js';
+import { authenticateSupabaseUser, authorizeRoles } from './middleware/auth.js';
+import {BookingController,bookingRoutes} from './controllers/bookingController.js';
 
 const app = express();
 
@@ -24,6 +27,10 @@ app.use(
     allowedHeaders: ['Content-Type', 'Authorization'],
   })
 );
+app.use('/api/hub/photos', express.json({ limit: '7mb' }));
+app.post('/api/payments/safepay/webhook',express.raw({type:'application/json',limit:'128kb'}),BookingController.safepayWebhook);
+app.post('/api/payments/jazzcash/return',express.urlencoded({extended:false,limit:'32kb'}),express.json({limit:'32kb'}),BookingController.jazzcashReturn);
+app.get('/api/payments/return',BookingController.returnPage);
 app.use(express.json());
 
 // Health check endpoint
@@ -45,6 +52,9 @@ app.use('/api/join-requests', joinRequestRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/hub', hubRoutes);
+app.use('/api/bookings',bookingRoutes);
+app.get('/api/hubs', authenticateSupabaseUser, authorizeRoles('PLAYER','TEAM_CAPTAIN','HUB_OWNER','ADMIN'), VenueController.browse);
+app.get('/api/hubs/:id', authenticateSupabaseUser, authorizeRoles('PLAYER','TEAM_CAPTAIN','HUB_OWNER','ADMIN'), VenueController.details);
 app.use('/api/admin', adminRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/coach', coachRoutes);

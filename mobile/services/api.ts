@@ -98,7 +98,9 @@ class ApiClient {
 
     // Use AbortController timeout to guarantee requests never hang mobile UI indefinitely
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 6000);
+    // Concierge can classify first, then try both coaching providers.
+    const timeoutMs = path.startsWith('/api/coach/') || path.startsWith('/api/agent/') ? 65000 : path.includes('/checkout') ? 70000 : path === '/api/hub/photos' ? 25000 : 15000;
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
       const headers = await this.getHeaders(options.headers);

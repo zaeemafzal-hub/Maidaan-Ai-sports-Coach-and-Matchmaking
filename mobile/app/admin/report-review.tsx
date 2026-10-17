@@ -100,10 +100,7 @@ function formatTimeAgo(dateString: string): string {
 export default function ReportReviewScreen() {
   const { currentUser, roles = [] } = useAuthStore();
 
-  const isAdmin =
-    roles.includes('ADMIN') ||
-    currentUser?.roles?.includes('ADMIN') ||
-    currentUser?.role === 'ADMIN';
+  const isAdmin = roles.includes('ADMIN');
 
   // Live state
   const [reports, setReports] = useState<AdminReport[]>([]);

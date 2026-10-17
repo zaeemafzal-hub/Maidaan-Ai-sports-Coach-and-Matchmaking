@@ -13,6 +13,15 @@ export type ActionStatus =
   | 'EXPIRED'
   | 'FAILED';
 
+export interface CaptainActionExecutionResponse {
+  success: boolean;
+  message: string;
+  result?: CaptainExecutionResult;
+  status: ActionStatus;
+  code?: string;
+  error?: string;
+}
+
 export interface CreateMatchDraftPayload {
   sport: Sport;
   title: string;

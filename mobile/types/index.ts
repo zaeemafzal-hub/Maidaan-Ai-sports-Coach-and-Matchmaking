@@ -243,7 +243,9 @@ export interface CoachConversationMessage {
 export interface CoachResponse {
   message: string;
   sport: CoachSport;
-  provider: 'nvidia';
+  provider: 'gemini' | 'groq' | 'mock';
+  usedBackup?: boolean;
+  isFallback?: boolean;
   requestId?: string;
 }
 

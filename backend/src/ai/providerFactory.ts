@@ -1,8 +1,9 @@
-import { AIProvider, CoachProviderInput, CoachProviderResponse } from './types.js';
-import { NvidiaNimProvider } from './nvidiaProvider.js';
+import { AIProvider, CoachProviderInput, CoachProviderResponse, TextGenerationInput, TextGenerationResponse } from './types.js';
+import { GeminiAIProvider } from './geminiProvider.js';
+import { GroqAIProvider } from './groqProvider.js';
+import { FailoverAIProvider } from './failoverProvider.js';
 
 let mockAIProviderInstance: AIProvider | null = null;
-let activeNvidiaProvider: NvidiaNimProvider | null = null;
 
 export class MockTestAIProvider implements AIProvider {
   readonly name = 'mock_test_provider';
@@ -20,7 +21,7 @@ export class MockTestAIProvider implements AIProvider {
     return {
       message: `[AI Coach - ${input.sport.toUpperCase()}] ${guidance}`,
       sport: input.sport,
-      provider: 'nvidia',
+      provider: 'mock',
       requestId: `req_mock_${Date.now()}`,
     };
   }
@@ -35,7 +36,7 @@ export function setMockAIProvider(provider: AIProvider | null): void {
 
 /**
  * Resolves the configured AI provider.
- * NVIDIA NIM is the primary (and only) live AI provider for Maidaan.
+ * Gemini is primary and Groq is backup. Test mode uses no live credentials.
  * In test mode (NODE_ENV=test), returns an injected mock or the default MockTestAIProvider.
  */
 export function getAIProvider(): AIProvider {
@@ -48,14 +49,23 @@ export function getAIProvider(): AIProvider {
     return new MockTestAIProvider();
   }
 
-  // ─── NVIDIA NIM — primary AI provider ────────────────────────────────────
-  if (!activeNvidiaProvider) {
-    activeNvidiaProvider = new NvidiaNimProvider({
-      apiKey: process.env.NVIDIA_API_KEY,
-      model: process.env.NVIDIA_MODEL || 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning',
-      baseUrl: process.env.NVIDIA_BASE_URL || 'https://integrate.api.nvidia.com/v1',
-    });
-  }
+  return createLiveProvider();
+}
 
-  return activeNvidiaProvider;
+function createLiveProvider(): FailoverAIProvider {
+  const primary = process.env.AI_PROVIDER?.trim() || 'gemini';
+  const backup = process.env.AI_FALLBACK_PROVIDER?.trim() || 'groq';
+  const names = [...new Set([primary, backup].filter(Boolean))];
+  const providers = names.map((name) => {
+    if (name === 'gemini') return new GeminiAIProvider();
+    if (name === 'groq') return new GroqAIProvider();
+    throw new Error(`Unsupported AI provider "${name}". Use gemini or groq.`);
+  });
+  return new FailoverAIProvider(providers);
+}
+
+export const isAIConfigured = (): boolean => Boolean(process.env.GEMINI_API_KEY?.trim() || process.env.GROQ_API_KEY?.trim());
+
+export async function generateAIText(input: TextGenerationInput): Promise<TextGenerationResponse> {
+  return createLiveProvider().generateText(input);
 }

@@ -1,4 +1,7 @@
 import * as Linking from 'expo-linking';
+import * as WebBrowser from 'expo-web-browser';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
+import { Platform } from 'react-native';
 import { api } from './api';
 import { AuthStorage } from './storage';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
@@ -41,465 +44,182 @@ export interface MeResult {
   hubOwnerProfile?: HubOwnerProfile | null;
 }
 
-function generateUUID(): string {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-    const r = (Math.random() * 16) | 0;
-    const v = c === 'x' ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
+
+function requireConfiguration(): void {
+  if (!isSupabaseConfigured) throw new Error('Authentication is not configured. Please contact support.');
 }
 
+export function getAuthRedirectUrl(path = 'auth/callback'): string {
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    return new URL('/' + path, window.location.origin).toString();
+  }
+  return 'maidaan://' + path;
+}
+
+let profileRequest: Promise<MeResult> | null = null;
+let lastCallback: { url: string; promise: Promise<{ type?: string; access_token?: string } | null> } | null = null;
+
 export const authService = {
-  /**
-   * Register a new user account with Supabase Auth.
-   * Public registration rejects ADMIN accounts.
-   * Initializes public.profiles row upon successful signup.
-   */
   async register(params: RegisterParams): Promise<RegisterResult> {
-    const assignedRole = params.role || 'PLAYER';
-    if (assignedRole === 'ADMIN') {
-      throw new Error('Administrator accounts cannot be created via public registration.');
-    }
-
-    const normalizedEmail = params.email.trim().toLowerCase();
-
-    // 1. Try backend registration first (auto-confirms email and creates database profile)
-    try {
-      const regRes = await api.post<{ user: User }>('/api/auth/register', {
-        name: params.name.trim(),
-        email: normalizedEmail,
-        password: params.password,
-        role: assignedRole,
-      });
-
-      if (regRes.data?.user) {
-        // Sign in immediately to acquire active session
-        if (isSupabaseConfigured) {
-          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-            email: normalizedEmail,
-            password: params.password,
-          });
-
-          if (!signInError && signInData?.session?.access_token) {
-            const token = signInData.session.access_token;
-            await AuthStorage.setToken(token);
-            return {
-              user: regRes.data.user,
-              token,
-              needsEmailConfirmation: false,
-            };
-          }
-        } else {
-          const mockToken = `test_token:${regRes.data.user.id}:${encodeURIComponent(normalizedEmail)}`;
-          await AuthStorage.setToken(mockToken);
-          return {
-            user: regRes.data.user,
-            token: mockToken,
-            needsEmailConfirmation: false,
-          };
-        }
-      } else if (regRes.status === 409 || (regRes.error && regRes.error.toLowerCase().includes('already exists'))) {
-        throw new Error(regRes.error || 'An account with this email already exists.');
-      }
-    } catch (backendErr: any) {
-      if (backendErr.message?.toLowerCase().includes('already exists')) {
-        throw backendErr;
-      }
-      // If server error, proceed to direct Supabase Auth fallback
-    }
-
-    // 2. Direct Supabase Auth fallback
-    if (isSupabaseConfigured) {
-      const { data, error } = await supabase.auth.signUp({
-        email: normalizedEmail,
-        password: params.password,
-        options: {
-          data: {
-            name: params.name.trim(),
-            role: assignedRole,
-          },
-        },
-      });
-
-      if (error) {
-        throw new Error(error.message || 'Registration failed.');
-      }
-
-      // If Supabase project requires email confirmation and returns no active session
-      if (!data.session?.access_token) {
-        return {
-          user: {
-            id: data.user?.id || generateUUID(),
-            name: params.name.trim(),
-            email: normalizedEmail,
-            role: assignedRole,
-            roles: ['PLAYER'],
-            createdAt: new Date().toISOString(),
-          },
-          token: undefined,
-          needsEmailConfirmation: true,
-        };
-      }
-
-      const token = data.session.access_token;
-      await AuthStorage.setToken(token);
-
-      // Initialize public.profiles row via backend Express API
-      const initRes = await api.post<{ user: User }>(
-        '/api/profile/init',
-        {
-          name: params.name.trim(),
-          role: assignedRole,
-        },
-        { Authorization: `Bearer ${token}` }
-      );
-
-      const user: User = initRes.data?.user || {
-        id: data.user?.id || generateUUID(),
-        name: params.name.trim(),
-        email: normalizedEmail,
-        role: assignedRole,
-        roles: ['PLAYER'],
-        createdAt: new Date().toISOString(),
-      };
-
-      return { user, token };
-    }
-
-    // 3. Demo / local fallback when placeholder Supabase URL is active
-    const mockUserId = generateUUID();
-    const mockToken = `test_token:${mockUserId}:${encodeURIComponent(normalizedEmail)}`;
-    await AuthStorage.setToken(mockToken);
-
-    const initRes = await api.post<{ user: User }>('/api/profile/init', {
-      name: params.name.trim(),
-      role: params.role,
+    requireConfiguration();
+    if (params.role === 'ADMIN') throw new Error('Administrator accounts cannot be created via public registration.');
+    if (params.name.trim().length < 2) throw new Error('Full name must be at least 2 characters.');
+    if (params.password.length < 8) throw new Error('Password must be at least 8 characters.');
+    const email = params.email.trim().toLowerCase();
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password: params.password,
+      options: {
+        emailRedirectTo: getAuthRedirectUrl(),
+        data: { name: params.name.trim() },
+      },
     });
-
-    const user: User = initRes.data?.user || {
-      id: mockUserId,
-      name: params.name.trim(),
-      email: normalizedEmail,
-      role: params.role || 'PLAYER',
-      roles: [params.role || 'PLAYER'],
-      createdAt: new Date().toISOString(),
-    };
-
-    return { user, token: mockToken };
-  },
-
-  /**
-   * Authenticate with Supabase Auth using email and password.
-   */
-  async login(params: LoginParams): Promise<LoginResult> {
-    const normalizedEmail = params.email.trim().toLowerCase();
-
-    // 1. Real Supabase Auth authentication if configured
-    if (isSupabaseConfigured) {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: normalizedEmail,
-        password: params.password,
-      });
-
-      if (error) {
-        throw new Error(error.message || 'Invalid email or password.');
-      }
-
-      if (!data?.session?.access_token) {
-        throw new Error('No active session returned after sign in.');
-      }
-
-      const token = data.session.access_token;
-      await AuthStorage.setToken(token);
-
-      // Fetch verified user & profile from backend passing token directly in headers
-      let meRes = await api.get<MeResult>('/api/profile/me', {
-        Authorization: `Bearer ${token}`,
-      });
-
-      if (meRes.status === 404) {
-        // Auto-initialize profile only if missing in database (404)
-        const userMeta = data.user?.user_metadata || {};
-        const role = (userMeta.role as Role) || 'PLAYER';
-        const name = userMeta.name || normalizedEmail.split('@')[0] || 'Athlete';
-        await api.post(
-          '/api/profile/init',
-          { name, role },
-          { Authorization: `Bearer ${token}` }
-        ).catch(() => {});
-        meRes = await api.get<MeResult>('/api/profile/me', {
-          Authorization: `Bearer ${token}`,
-        });
-      }
-
-      if (!meRes.data?.user) {
-        // Resilient fallback: Construct user from active Supabase session so login never hangs
-        const userMeta = data.user?.user_metadata || {};
-        const role = (userMeta.role as Role) || 'PLAYER';
-        const name = userMeta.name || normalizedEmail.split('@')[0] || 'Athlete';
-        const fallbackUser: User = {
-          id: data.user.id,
-          name,
-          email: normalizedEmail,
-          role,
-          roles: [role],
-          createdAt: new Date().toISOString(),
-        };
-        return {
-          user: fallbackUser,
-          token,
-          profile: null,
-        };
-      }
-
+    if (error) throw new Error(error.message || 'Registration failed.');
+    if (!data.user) throw new Error('Registration did not return an account.');
+    // Supabase may obscure duplicate accounts; never claim an authenticated session.
+    if (!data.session) {
       return {
-        user: meRes.data.user,
-        token,
-        profile:
-          meRes.data.playerProfile ||
-          meRes.data.captainProfile ||
-          meRes.data.hubOwnerProfile ||
-          null,
+        user: { id: data.user.id, name: params.name.trim(), email, role: 'PLAYER', roles: ['PLAYER'], createdAt: data.user.created_at },
+        needsEmailConfirmation: true,
       };
     }
+    await AuthStorage.setToken(data.session.access_token);
+    const me = await this.me();
+    return { user: me.user, token: data.session.access_token, needsEmailConfirmation: false };
+  },
 
-    // 2. Demo / local fallback when running in sandbox without external Supabase credentials
-    let mockUserId = generateUUID();
-    let mockRole: Role = 'PLAYER';
-    let mockName = normalizedEmail.split('@')[0] || 'Athlete';
-
-    if (normalizedEmail === 'admin@maidaan.pk') {
-      if (params.password !== 'admin123456') {
-        throw new Error('Invalid email or password.');
-      }
-      mockUserId = '00000000-0000-0000-0000-000000000001';
-      mockRole = 'ADMIN';
-      mockName = 'Platform Administrator';
-    }
-
-    const mockToken = `test_token:${mockUserId}:${encodeURIComponent(normalizedEmail)}`;
-    await AuthStorage.setToken(mockToken);
-
-    // Ensure backend profile exists
-    await api.post('/api/profile/init', {
-      name: mockName,
-      role: mockRole,
-    }).catch(() => {});
-
-    // Retrieve profile from backend
-    const meRes = await api.get<MeResult>('/api/profile/me');
-    const user: User = meRes.data?.user || {
-      id: mockUserId,
-      name: mockName,
-      email: normalizedEmail,
-      role: mockRole,
-      roles: [mockRole],
-      createdAt: new Date().toISOString(),
-    };
-
+  async login(params: LoginParams): Promise<LoginResult> {
+    requireConfiguration();
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: params.email.trim().toLowerCase(),
+      password: params.password,
+    });
+    if (error) throw new Error(error.message || 'Invalid email or password.');
+    if (!data.session) throw new Error('No active session returned after sign in.');
+    await AuthStorage.setToken(data.session.access_token);
+    const me = await this.me();
     return {
-      user,
-      token: mockToken,
-      profile:
-        meRes.data?.playerProfile ||
-        meRes.data?.captainProfile ||
-        meRes.data?.hubOwnerProfile ||
-        null,
+      user: me.user,
+      token: data.session.access_token,
+      profile: me.playerProfile || me.captainProfile || me.hubOwnerProfile || null,
     };
   },
 
-  /**
-   * Initiate Google OAuth flow via Supabase Auth.
-   * Directs to Google Sign-In and redirects back to maidaan://auth/callback.
-   */
-  async signInWithGoogle(): Promise<{ url?: string; success: boolean }> {
-    const redirectUrl = Linking.createURL('auth/callback');
-
-    if (isSupabaseConfigured) {
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: redirectUrl,
-          skipBrowserRedirect: true,
-        },
-      });
-
-      if (error) {
-        throw new Error(error.message || 'Google sign-in initialization failed.');
-      }
-
-      if (data?.url) {
-        await Linking.openURL(data.url);
-        return { url: data.url, success: true };
-      }
-      return { success: false };
+  async signInWithGoogle(): Promise<{ success: boolean }> {
+    requireConfiguration();
+    if (Platform.OS !== 'web' && Constants.executionEnvironment === ExecutionEnvironment.StoreClient) {
+      throw new Error('Google sign-in needs the Maidaan development app. In Expo Go, please use email and password.');
     }
-
-    // Mock / offline sandbox fallback
+    const redirectTo = getAuthRedirectUrl();
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo, skipBrowserRedirect: true, queryParams: { prompt: 'select_account' } },
+    });
+    if (error) throw new Error(error.message || 'Google sign-in could not start.');
+    if (!data.url) throw new Error('Google sign-in did not return a sign-in link.');
+    if (Platform.OS === 'web') {
+      window.location.assign(data.url);
+      return { success: false }; // Full-page redirect; the callback completes authentication.
+    }
+    const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+    if (result.type !== 'success') return { success: false }; // User dismissed or cancelled.
+    const callback = await this.handleAuthCallbackUrl(result.url);
+    if (!callback?.access_token) throw new Error('Google sign-in did not return a valid session.');
     return { success: true };
   },
 
-  /**
-   * Parses and applies session tokens from deep link callback URL (e.g. from Google OAuth or password recovery).
-   */
   async handleAuthCallbackUrl(url: string): Promise<{ type?: string; access_token?: string } | null> {
-    if (!url) return null;
-
-    try {
-      // Check for hash parameters (#access_token=...&refresh_token=...)
-      const hashIndex = url.indexOf('#');
-      let paramsString = '';
-      if (hashIndex !== -1) {
-        paramsString = url.substring(hashIndex + 1);
-      } else {
-        const queryIndex = url.indexOf('?');
-        if (queryIndex !== -1) {
-          paramsString = url.substring(queryIndex + 1);
-        }
-      }
-
-      if (!paramsString) return null;
-
-      const params = new URLSearchParams(paramsString);
-      const accessToken = params.get('access_token');
-      const refreshToken = params.get('refresh_token');
-      const type = params.get('type') || undefined;
-
-      if (accessToken && refreshToken) {
-        const { error } = await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken,
-        });
-        if (error) {
-          console.error('[authService.handleAuthCallbackUrl] Failed to set session:', error);
-          return null;
-        }
-        return { type, access_token: accessToken };
-      }
-    } catch (e) {
-      console.warn('[authService.handleAuthCallbackUrl] Error parsing URL:', e);
-    }
-    return null;
+    if (lastCallback?.url === url) return lastCallback.promise;
+    const promise = this.applyAuthCallbackUrl(url);
+    lastCallback = { url, promise };
+    return promise;
   },
 
-  /**
-   * Send password recovery email via Supabase Auth.
-   */
+  async applyAuthCallbackUrl(url: string): Promise<{ type?: string; access_token?: string } | null> {
+    let parsed: URL;
+    try { parsed = new URL(url); } catch { return null; }
+    const allowed = ['auth/callback', 'reset-password'].some((path) => {
+      const expected = new URL(getAuthRedirectUrl(path));
+      return parsed.protocol === expected.protocol && parsed.host === expected.host && parsed.pathname === expected.pathname;
+    });
+    // Expo Go can still receive password recovery links created by expo-linking.
+    const recovery = new URL(Linking.createURL('reset-password'));
+    const isRecovery = parsed.protocol === recovery.protocol && parsed.host === recovery.host && parsed.pathname === recovery.pathname;
+    if (!allowed && !isRecovery) return null;
+    const params = new URLSearchParams(parsed.search);
+    const hash = new URLSearchParams(parsed.hash.slice(1));
+    hash.forEach((value, key) => params.set(key, value));
+    if (params.has('error') || params.has('error_code')) {
+      throw new Error(params.get('error_description') || 'Sign-in was cancelled or the link expired. Please try again.');
+    }
+    const type = params.get('type') || (isRecovery ? 'recovery' : undefined);
+    const code = params.get('code');
+    if (code) {
+      const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+      if (error || !data.session) throw new Error(error?.message || 'The sign-in link expired. Please try again.');
+      await AuthStorage.setToken(data.session.access_token);
+      return { type, access_token: data.session.access_token };
+    }
+    const access_token = params.get('access_token');
+    const refresh_token = params.get('refresh_token');
+    if (!access_token || !refresh_token) return null;
+    const { data, error } = await supabase.auth.setSession({ access_token, refresh_token });
+    if (error || !data.session) throw new Error(error?.message || 'The sign-in link is invalid.');
+    await AuthStorage.setToken(data.session.access_token);
+    return { type, access_token: data.session.access_token };
+  },
+
   async resetPasswordForEmail(email: string): Promise<void> {
-    const normalizedEmail = email.trim().toLowerCase();
-    const redirectUrl = Linking.createURL('reset-password');
-
-    if (isSupabaseConfigured) {
-      const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
-        redirectTo: redirectUrl,
-      });
-
-      if (error) {
-        throw new Error(error.message || 'Failed to send password recovery email.');
-      }
-      return;
-    }
-
-    // Mock / sandbox fallback
-    await new Promise((resolve) => setTimeout(resolve, 400));
+    requireConfiguration();
+    const redirectTo = Platform.OS === 'web' ? getAuthRedirectUrl('reset-password') : Linking.createURL('reset-password');
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), { redirectTo });
+    if (error) throw new Error(error.message || 'Failed to send password recovery email.');
   },
 
-  /**
-   * Update authenticated user's password (e.g. from password recovery screen).
-   */
   async updatePassword(newPassword: string): Promise<void> {
-    if (newPassword.length < 8) {
-      throw new Error('Password must be at least 8 characters long.');
-    }
-
-    if (isSupabaseConfigured) {
-      const { error } = await supabase.auth.updateUser({
-        password: newPassword,
-      });
-
-      if (error) {
-        throw new Error(error.message || 'Failed to update password.');
-      }
-      return;
-    }
-
-    // Mock / sandbox fallback
-    await new Promise((resolve) => setTimeout(resolve, 400));
+    requireConfiguration();
+    if (newPassword.length < 8) throw new Error('Password must be at least 8 characters long.');
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) throw new Error(error.message || 'Failed to update password.');
   },
 
-  /**
-   * Initialize or sync public.profiles row on backend Express API.
-   */
   async initProfile(params: { name: string; role?: Role }): Promise<User> {
     const res = await api.post<{ user: User }>('/api/profile/init', {
-      name: params.name.trim(),
-      role: params.role || 'PLAYER',
+      name: params.name.trim(), role: params.role || 'PLAYER',
     });
-
-    if (!res.data?.user || res.error) {
-      throw new Error(res.error || 'Failed to initialize profile.');
-    }
-
+    if (!res.data?.user || res.error) throw new Error(res.error || 'Failed to initialize profile.');
     return res.data.user;
   },
 
-  /**
-   * Quick access demo social login (Google/Apple) for sandbox testing.
-   */
-  async socialLogin(provider: 'Google' | 'Apple', role: Role): Promise<LoginResult> {
-    const mockUserId = generateUUID();
-    const normalizedEmail = `${provider.toLowerCase()}.athlete@maidaan.pk`;
-    const name = `${provider} Athlete`;
-    const token = `test_token:${mockUserId}:${encodeURIComponent(normalizedEmail)}`;
-
-    if (!isSupabaseConfigured) {
-      await AuthStorage.setToken(token);
-    }
-
-    // Initialize backend profile so authorizeRoles and profile routes find it
-    await api.post('/api/profile/init', { name, role }).catch(() => {});
-
-    const user: User = {
-      id: mockUserId,
-      name,
-      email: normalizedEmail,
-      role,
-      roles: [role],
-      createdAt: new Date().toISOString(),
-    };
-
-    return { user, token };
-  },
-
-  /**
-   * Retrieve current user profile and session identity.
-   */
   async me(): Promise<MeResult> {
-    const res = await api.get<MeResult>('/api/profile/me');
-
-    if (!res.data || res.error) {
-      const error: any = new Error(res.error || 'Session expired or invalid.');
-      error.status = res.status;
-      throw error;
-    }
-
-    return res.data;
+    if (profileRequest) return profileRequest;
+    profileRequest = (async () => {
+      let res = await api.get<MeResult>('/api/profile/me');
+      if (res.status === 404) {
+        const { data, error } = await supabase.auth.getUser();
+        if (error || !data.user) throw new Error('Please sign in again.');
+        const metadata = data.user.user_metadata || {};
+        const name = String(metadata.full_name || metadata.name || data.user.email?.split('@')[0] || 'Athlete');
+        // OAuth metadata can provide a name, never account permissions.
+        await this.initProfile({ name: name.length >= 2 ? name : 'Athlete', role: 'PLAYER' });
+        res = await api.get<MeResult>('/api/profile/me');
+      }
+      if (!res.data?.user || res.error) {
+        const error = new Error(res.error || 'Unable to load your account.') as Error & { status: number };
+        error.status = res.status;
+        throw error;
+      }
+      return res.data;
+    })().finally(() => { profileRequest = null; });
+    return profileRequest;
   },
 
-  /**
-   * Sign out from Supabase Auth and clear local session.
-   */
   async logout(): Promise<void> {
     try {
-      await supabase.auth.signOut();
-    } catch {
-      // ignore
-    }
-    try {
-      await api.post('/api/auth/logout');
-    } catch {
-      // ignore
+      const { error } = await supabase.auth.signOut({ scope: 'local' });
+      if (error) throw error;
     } finally {
+      lastCallback = null;
       await AuthStorage.removeToken();
     }
   },

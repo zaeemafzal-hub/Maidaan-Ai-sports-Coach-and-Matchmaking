@@ -11,24 +11,14 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuthStore } from '../../store/useAuthStore';
-import { User } from '../../types';
 import { authService } from '../../services/authService';
 import { FormInput } from '../../components/ui/FormInput';
 import { PrimaryButton } from '../../components/ui/PrimaryButton';
 import { ArenaHeader } from '../../components/ui/ArenaHeader';
 import { IMAGES } from '../../constants/images';
-import { isSupabaseConfigured } from '../../lib/supabase';
+import { completeSignIn } from '../../services/completeSignIn';
 
 export default function LoginScreen() {
-  const {
-    currentUser,
-    loadProfile,
-    activeMode,
-    authStatus,
-    setCurrentUser,
-    setOnboardingCompleted,
-  } = useAuthStore();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -63,7 +53,7 @@ export default function LoginScreen() {
   };
 
   const handleLogin = async () => {
-    if (!validate()) {
+    if (isSubmitting || !validate()) {
       return;
     }
 
@@ -71,40 +61,8 @@ export default function LoginScreen() {
     setErrors({});
 
     try {
-      const loginRes = await authService.login({
-        email: email.trim().toLowerCase(),
-        password,
-      });
-
-      setCurrentUser(loginRes.user);
-
-      const isReady = await loadProfile();
-      const currentMode = activeMode;
-      if (isReady) {
-        if (currentMode === 'ADMIN') {
-          router.replace('/admin/dashboard');
-        } else {
-          router.replace('/(tabs)/discover');
-        }
-      } else {
-        switch (currentMode) {
-          case 'PLAYER':
-            router.replace('/onboarding/player-setup');
-            break;
-          case 'TEAM_CAPTAIN':
-            router.replace('/onboarding/captain-setup');
-            break;
-          case 'HUB_OWNER':
-            router.replace('/onboarding/hub-setup');
-            break;
-          case 'ADMIN':
-            router.replace('/admin/dashboard');
-            break;
-          default:
-            router.replace('/onboarding/player-setup');
-            break;
-        }
-      }
+      await authService.login({ email, password });
+      router.replace(await completeSignIn());
     } catch (err: any) {
       setErrors({ general: err?.message || 'Invalid email or password.' });
     } finally {
@@ -117,14 +75,8 @@ export default function LoginScreen() {
     setIsSubmitting(true);
     setErrors({});
     try {
-      if (isSupabaseConfigured) {
-        await authService.signInWithGoogle();
-      } else {
-        const result = await authService.socialLogin('Google', 'PLAYER');
-        setCurrentUser(result.user);
-        setOnboardingCompleted(false);
-        router.replace('/onboarding/player-setup');
-      }
+      const result = await authService.signInWithGoogle();
+      if (result.success) router.replace(await completeSignIn());
     } catch (err: any) {
       setErrors({ general: err?.message || 'Google sign in failed.' });
     } finally {

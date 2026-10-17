@@ -214,13 +214,12 @@ export const ProfileController = {
         return;
       }
 
-      // 4. Save player profile (server controls matches_played: 0)
+      // 4. Update preferences without overwriting server-maintained statistics.
       const record = await SupabaseRepo.upsertPlayerProfile({
         userId,
         preferredSports: preferredSports as Sport[],
         skillLevel: skillLevel as SkillLevel,
         primaryLocation: primaryLocation.trim(),
-        matchesPlayed: 0,
       });
 
       // 5. Mark onboarding complete in public.profiles

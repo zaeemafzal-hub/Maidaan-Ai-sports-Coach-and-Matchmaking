@@ -28,7 +28,7 @@ const SPORT_META: Record<
 };
 
 export default function HubDashboardScreen() {
-  const { roles, activeMode, hubOwnerProfile } = useAuthStore();
+  const { roles, activeMode, hubOwnerProfile, currentUser } = useAuthStore();
 
   const isHubOwner = roles.includes('HUB_OWNER') || activeMode === 'HUB_OWNER';
 
@@ -282,6 +282,7 @@ export default function HubDashboardScreen() {
               </View>
             </View>
 
+            <View style={{gap:10,marginBottom:18}}><PrimaryButton title="VENUE RESERVATIONS" onPress={()=>router.push('/bookings?scope=owner' as any)}/><PrimaryButton title="VENUE DETAILS & PHOTOS" onPress={()=>router.push('/hub/profile')}/><PrimaryButton title="PLAYING SPACES & AVAILABILITY" onPress={()=>router.push('/hub/courts')}/><PrimaryButton title="PREVIEW PUBLIC VENUE" onPress={()=>router.push(`/hubs/${currentUser?.id}` as any)}/></View>
             {/* Verification Status Alert Banner */}
             {verificationStatus === 'REJECTED' && (
               <View className="p-4 rounded-2xl bg-[#3B1A1A]/70 border border-[#EF4444]/30 mb-5">
@@ -408,7 +409,7 @@ export default function HubDashboardScreen() {
               </Pressable>
 
               <Pressable
-                onPress={() => router.push('/onboarding/hub-setup?mode=edit')}
+                onPress={() => router.push('/hub/profile')}
                 className="flex-1 p-4 rounded-2xl bg-[#141518] border border-white/[0.08] items-center justify-center flex-row"
               >
                 <Ionicons name="pencil-outline" size={16} color="#A0A5AD" />

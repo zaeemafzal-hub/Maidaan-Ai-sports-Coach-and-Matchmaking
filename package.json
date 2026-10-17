@@ -8,6 +8,10 @@
     "backend"
   ],
   "scripts": {
+    "postinstall": "node scripts/patch-nativewind.mjs",
+    "test:nativewind": "node --test scripts/nativewind-warning.test.mjs",
+    "test:speech": "node --test scripts/speech-recognition.test.mjs",
+    "test:auth": "node --test scripts/auth-flow.test.mjs",
     "start": "npm --prefix mobile start",
     "android": "npm --prefix mobile run android",
     "ios": "npm --prefix mobile run ios",

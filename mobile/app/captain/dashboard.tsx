@@ -16,6 +16,8 @@ import { MatchSlotItem } from '../../constants/matches';
 import { IMAGES } from '../../constants/images';
 import { ArenaHeader } from '../../components/ui/ArenaHeader';
 import { ArenaBadge } from '../../components/ui/ArenaBadge';
+import { PrimaryButton } from '../../components/ui/PrimaryButton';
+import { VenueBrowseCard } from '../../components/venues/VenueBrowseCard';
 import { SpotProgressRing } from '../../components/ui/SpotProgressRing';
 import { Sport, SkillLevel } from '../../types';
 import { matchService } from '../../services/matchService';
@@ -541,6 +543,10 @@ export default function CaptainDashboardScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 54 }}
       >
+        <View style={{ padding: 16 }}>
+          <VenueBrowseCard />
+          <View style={{marginTop:12}}><PrimaryButton title="My venue bookings" variant="secondary" onPress={()=>router.push('/bookings' as any)}/></View>
+        </View>
         {/* Athletic Team Hero Banner */}
         <View style={{ paddingHorizontal: 16, paddingTop: 14 }}>
           <View

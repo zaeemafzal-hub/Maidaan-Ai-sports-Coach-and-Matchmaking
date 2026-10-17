@@ -73,6 +73,7 @@ export async function verifyAuthToken(token: string): Promise<AuthenticatedConte
     // Load trusted server-side role and capabilities from public.user_roles / public.profiles
     const roles = await SupabaseRepo.getUserRoles(verifiedUserId);
     const profile = await SupabaseRepo.getProfile(verifiedUserId);
+    if (profile?.account_status === 'SUSPENDED') return null;
 
     return {
       userId: verifiedUserId,

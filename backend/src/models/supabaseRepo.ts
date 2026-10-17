@@ -1,3 +1,4 @@
+import { isUpcomingMatch } from '../utils/matchTime.js';
 import crypto from 'crypto';
 import { supabaseAdmin, isServerSupabaseConfigured } from '../lib/supabase.js';
 import { isProduction, isTest, allowsMemoryStores } from '../config/runtime.js';
@@ -14,6 +15,9 @@ export interface ProfileRecord {
   onboarding_completed: boolean;
   created_at: string;
   updated_at: string;
+  account_status?: 'ACTIVE' | 'SUSPENDED';
+  suspension_reason?: string | null;
+  suspended_at?: string | null;
 }
 
 export interface PlayerProfileRecord {
@@ -654,11 +658,25 @@ const isValidUuid = (val: string): boolean =>
   typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
 
 const isInMemoryTestMode = (): boolean => {
-  if (isProduction()) return false;
-  return isTest() || !isServerSupabaseConfigured;
+  return allowsMemoryStores();
 };
 
 export const SupabaseRepo = {
+  async suspendedIds(): Promise<Set<string>> {
+    if (allowsMemoryStores()) return new Set([...memoryProfiles.values()].filter(p => p.account_status === 'SUSPENDED').map(p => p.id));
+    const {data,error} = await supabaseAdmin.from('profiles').select('id').eq('account_status','SUSPENDED');
+    if (error) throw new Error(error.message);
+    return new Set((data || []).map(p => p.id));
+  },
+  // Used only by the account-management repository in isolated tests.
+  listMemoryProfiles(): ProfileRecord[] {
+    if (!isTest()) throw new Error('In-memory accounts are only available in test mode.');
+    return [...memoryProfiles.values()];
+  },
+  revokeMemoryRole(userId: string, role: Role): void {
+    if (!isTest()) throw new Error('In-memory accounts are only available in test mode.');
+    memoryUserRoles.get(userId)?.delete(role);
+  },
   // =========================================================================
   // 1. PUBLIC.PROFILES
   // =========================================================================
@@ -680,12 +698,9 @@ export const SupabaseRepo = {
       if (data) {
         return data as ProfileRecord;
       }
-      if (isProduction()) {
-        return null;
-      }
-      return memoryProfiles.get(userId) || null;
+      return null;
     }
-    if (isProduction()) {
+    if (!isTestMode) {
       return null;
     }
     return memoryProfiles.get(userId) || null;
@@ -713,27 +728,15 @@ export const SupabaseRepo = {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
       }
-      try {
-        const { data: inserted, error } = await supabaseAdmin
-          .from('profiles')
-          .insert([newRecord])
-          .select()
-          .single();
-
-        if (!error && inserted) {
-          const prof = inserted as ProfileRecord;
-          memoryProfiles.set(data.id, prof);
-          await this.addRole(data.id, data.role || 'PLAYER');
-          if (data.role && data.role !== 'ADMIN' && data.role !== 'PLAYER') {
-            await this.addRole(data.id, 'PLAYER');
-          }
-          return prof;
-        }
-      } catch {
-        // Fallback to memory
-      }
+      const { data: inserted, error } = await supabaseAdmin
+        .from('profiles').insert([newRecord]).select().single();
+      if (error || !inserted) throw new Error(error?.message || 'Failed to save profile.');
+      await this.addRole(data.id, data.role);
+      if (data.role !== 'ADMIN' && data.role !== 'PLAYER') await this.addRole(data.id, 'PLAYER');
+      return inserted as ProfileRecord;
     }
 
+    if (!isTestMode) throw new Error('A valid user ID is required.');
     memoryProfiles.set(data.id, newRecord);
     await this.addRole(data.id, data.role || 'PLAYER');
     if (data.role && data.role !== 'ADMIN' && data.role !== 'PLAYER') {
@@ -751,30 +754,23 @@ export const SupabaseRepo = {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
       }
-      try {
-        const { data, error } = await supabaseAdmin
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', userId)
-          .eq('status', 'ACTIVE');
-
-        if (!error && data && data.length > 0) {
-          return data.map((r: any) => r.role as Role);
-        }
-      } catch (err) {
-        console.warn('[SupabaseRepo.getUserRoles] Error querying user_roles:', err);
-      }
+      const { data, error } = await supabaseAdmin
+        .from('user_roles').select('role').eq('user_id', userId).eq('status', 'ACTIVE');
+      if (error) throw new Error(error.message || 'Failed to load account capabilities.');
+      // An empty ACTIVE set means no permissions, including after revocation.
+      return (data || []).map((record: { role: string }) => record.role as Role);
     }
 
-    if (!isProduction()) {
+    if (!isTestMode) return [];
+    if (isTestMode) {
       // Check memory store
       const memRoles = memoryUserRoles.get(userId);
-      if (memRoles && memRoles.size > 0) {
+      if (memRoles) {
         return Array.from(memRoles);
       }
     }
 
-    // Backward compatibility fallback: check legacy profile.role
+    // Only legacy in-memory test fixtures may use profiles.role.
     const profile = await this.getProfile(userId);
     if (profile?.role) {
       if (profile.role === 'ADMIN') {
@@ -802,8 +798,8 @@ export const SupabaseRepo = {
     const now = new Date().toISOString();
     const isTestMode = isInMemoryTestMode();
     if (!isTestMode && isValidUuid(userId)) {
-      try {
-        await supabaseAdmin
+      if (!isServerSupabaseConfigured) throw new Error('Supabase live configuration is required in non-test mode.');
+      const { error } = await supabaseAdmin
           .from('user_roles')
           .upsert(
             [
@@ -816,11 +812,11 @@ export const SupabaseRepo = {
             ],
             { onConflict: 'user_id,role' }
           );
-      } catch (err) {
-        console.warn('[SupabaseRepo.addRole] Database upsert error:', err);
-      }
+      if (error) throw new Error(error.message || 'Failed to save account capability.');
+      return;
     }
 
+    if (!isTestMode) throw new Error('A valid user ID is required.');
     let roles = memoryUserRoles.get(userId);
     if (!roles) {
       roles = new Set<Role>();
@@ -836,22 +832,18 @@ export const SupabaseRepo = {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
       }
-      try {
-        const { data, error } = await supabaseAdmin
+      const { data, error } = await supabaseAdmin
           .from('profiles')
           .update({ onboarding_completed: completed, updated_at: now })
           .eq('id', userId)
           .select()
           .maybeSingle();
 
-        if (!error && data) {
-          return data as ProfileRecord;
-        }
-      } catch {
-        // Fallback to memory
-      }
+      if (error) throw new Error(error.message || 'Failed to update onboarding status.');
+      return data as ProfileRecord | null;
     }
 
+    if (!isTestMode) throw new Error('A valid user ID is required.');
     const mem = memoryProfiles.get(userId);
     if (!mem) return null;
     mem.onboarding_completed = completed;
@@ -882,15 +874,15 @@ export const SupabaseRepo = {
         if (data) {
           return data as PlayerProfileRecord;
         }
-        return memoryPlayerProfiles.get(userId) || null;
+        return isTestMode ? memoryPlayerProfiles.get(userId) || null : null;
       } catch (err: any) {
         if (!isValidUuid(userId)) {
-          return memoryPlayerProfiles.get(userId) || null;
+          return isTestMode ? memoryPlayerProfiles.get(userId) || null : null;
         }
         throw err;
       }
     }
-    return memoryPlayerProfiles.get(userId) || null;
+    return isTestMode ? memoryPlayerProfiles.get(userId) || null : null;
   },
 
   async upsertPlayerProfile(data: {
@@ -901,40 +893,34 @@ export const SupabaseRepo = {
     matchesPlayed?: number;
   }): Promise<PlayerProfileRecord> {
     const now = new Date().toISOString();
+    const existing = memoryPlayerProfiles.get(data.userId);
     const record: PlayerProfileRecord = {
       user_id: data.userId,
       preferred_sports: data.preferredSports,
       skill_level: data.skillLevel,
       primary_location: data.primaryLocation.trim(),
-      matches_played: data.matchesPlayed ?? 0,
-      created_at: now,
+      matches_played: data.matchesPlayed ?? existing?.matches_played ?? 0,
+      created_at: existing?.created_at ?? now,
       updated_at: now,
     };
 
-    const isTestMode = isInMemoryTestMode();
-    if (!isTestMode && isValidUuid(data.userId)) {
-      if (!isServerSupabaseConfigured) {
-        throw new Error('Supabase live configuration is required in non-test mode.');
-      }
-      try {
-        const { data: upserted, error } = await supabaseAdmin
-          .from('player_profiles')
-          .upsert(record, { onConflict: 'user_id' })
-          .select()
-          .single();
-
-        if (error || !upserted) {
-          throw new Error(error?.message || 'Failed to save player profile in Supabase.');
-        }
-        return upserted as PlayerProfileRecord;
-      } catch (err: any) {
-        memoryPlayerProfiles.set(data.userId, record);
-        return record;
-      }
+    if (isInMemoryTestMode()) {
+      memoryPlayerProfiles.set(data.userId, record);
+      return record;
     }
-
-    memoryPlayerProfiles.set(data.userId, record);
-    return record;
+    if (!isServerSupabaseConfigured || !isValidUuid(data.userId)) {
+      throw new Error('A valid user ID and Supabase configuration are required.');
+    }
+    // Omit server-owned statistics unless explicitly supplied by an internal caller.
+    const { created_at, matches_played, ...fields } = record;
+    const payload = data.matchesPlayed === undefined ? fields : { ...fields, matches_played };
+    const { data: saved, error } = await supabaseAdmin
+      .from('player_profiles')
+      .upsert(payload, { onConflict: 'user_id', defaultToNull: false })
+      .select()
+      .single();
+    if (error || !saved) throw new Error(error?.message || 'Failed to save player profile.');
+    return saved as PlayerProfileRecord;
   },
 
   // =========================================================================
@@ -959,15 +945,15 @@ export const SupabaseRepo = {
         if (data) {
           return data as CaptainProfileRecord;
         }
-        return memoryCaptainProfiles.get(userId) || null;
+        return isTestMode ? memoryCaptainProfiles.get(userId) || null : null;
       } catch (err: any) {
         if (!isValidUuid(userId)) {
-          return memoryCaptainProfiles.get(userId) || null;
+          return isTestMode ? memoryCaptainProfiles.get(userId) || null : null;
         }
         throw err;
       }
     }
-    return memoryCaptainProfiles.get(userId) || null;
+    return isTestMode ? memoryCaptainProfiles.get(userId) || null : null;
   },
 
   async upsertCaptainProfile(data: {
@@ -984,107 +970,39 @@ export const SupabaseRepo = {
       sports: data.sports,
       skill_level: data.skillLevel,
       primary_location: data.primaryLocation.trim(),
-      created_at: now,
+      created_at: memoryCaptainProfiles.get(data.userId)?.created_at ?? now,
       updated_at: now,
     };
-
-    const isTestMode = isInMemoryTestMode();
-    if (!isTestMode && isValidUuid(data.userId)) {
-      if (!isServerSupabaseConfigured) {
-        throw new Error('Supabase live configuration is required in non-test mode.');
+    let saved = record;
+    if (isInMemoryTestMode()) {
+      memoryCaptainProfiles.set(data.userId, record);
+    } else {
+      if (!isServerSupabaseConfigured || !isValidUuid(data.userId)) {
+        throw new Error('A valid user ID and Supabase configuration are required.');
       }
-      try {
-        const { data: upserted, error } = await supabaseAdmin
-          .from('captain_profiles')
-          .upsert(record, { onConflict: 'user_id' })
-          .select()
-          .single();
-
-        if (error || !upserted) {
-          throw new Error(error?.message || 'Failed to save captain profile in Supabase.');
-        }
-        await this.addRole(data.userId, 'TEAM_CAPTAIN');
-
-        // Ensure team is synchronized in public.teams
-        try {
-          const existingTeam = await this.getCaptainTeam(data.userId);
-          if (!existingTeam) {
-            await this.createTeam({
-              captainId: data.userId,
-              name: data.teamName,
-              sport: data.sports[0] || 'cricket',
-              skillLevel: data.skillLevel || 'intermediate',
-              area: data.primaryLocation,
-            });
-          } else if (existingTeam.name !== data.teamName) {
-            await this.updateTeam(existingTeam.id, data.userId, {
-              name: data.teamName,
-              sport: data.sports[0] || existingTeam.sport,
-              skillLevel: data.skillLevel || existingTeam.skillLevel,
-              area: data.primaryLocation || existingTeam.area,
-            });
-          }
-        } catch (syncErr: any) {
-          console.warn('[SupabaseRepo] Captain team sync warning:', syncErr?.message);
-        }
-
-        return upserted as CaptainProfileRecord;
-      } catch (err: any) {
-        memoryCaptainProfiles.set(data.userId, record);
-        await this.addRole(data.userId, 'TEAM_CAPTAIN');
-
-        try {
-          const existingTeam = await this.getCaptainTeam(data.userId);
-          if (!existingTeam) {
-            await this.createTeam({
-              captainId: data.userId,
-              name: data.teamName,
-              sport: data.sports[0] || 'cricket',
-              skillLevel: data.skillLevel || 'intermediate',
-              area: data.primaryLocation,
-            });
-          } else if (existingTeam.name !== data.teamName) {
-            await this.updateTeam(existingTeam.id, data.userId, {
-              name: data.teamName,
-              sport: data.sports[0] || existingTeam.sport,
-              skillLevel: data.skillLevel || existingTeam.skillLevel,
-              area: data.primaryLocation || existingTeam.area,
-            });
-          }
-        } catch (syncErr: any) {
-          console.warn('[SupabaseRepo] Captain team sync warning:', syncErr?.message);
-        }
-
-        return record;
-      }
+      const { created_at, ...payload } = record;
+      const { data: upserted, error } = await supabaseAdmin
+        .from('captain_profiles')
+        .upsert(payload, { onConflict: 'user_id', defaultToNull: false })
+        .select()
+        .single();
+      if (error || !upserted) throw new Error(error?.message || 'Failed to save captain profile.');
+      saved = upserted as CaptainProfileRecord;
     }
-
-    memoryCaptainProfiles.set(data.userId, record);
     await this.addRole(data.userId, 'TEAM_CAPTAIN');
-
-    try {
-      const existingTeam = await this.getCaptainTeam(data.userId);
-      if (!existingTeam) {
-        await this.createTeam({
-          captainId: data.userId,
-          name: data.teamName,
-          sport: data.sports[0] || 'cricket',
-          skillLevel: data.skillLevel || 'intermediate',
-          area: data.primaryLocation,
-        });
-      } else if (existingTeam.name !== data.teamName) {
-        await this.updateTeam(existingTeam.id, data.userId, {
-          name: data.teamName,
-          sport: data.sports[0] || existingTeam.sport,
-          skillLevel: data.skillLevel || existingTeam.skillLevel,
-          area: data.primaryLocation || existingTeam.area,
-        });
-      }
-    } catch (syncErr: any) {
-      console.warn('[SupabaseRepo] Captain team sync warning:', syncErr?.message);
+    const existingTeam = await this.getCaptainTeam(data.userId);
+    const teamFields = {
+      name: data.teamName.trim(),
+      sport: data.sports[0] || 'cricket' as Sport,
+      skillLevel: data.skillLevel,
+      area: data.primaryLocation.trim(),
+    };
+    if (existingTeam) {
+      await this.updateTeam(existingTeam.id, data.userId, teamFields);
+    } else {
+      await this.createTeam({ captainId: data.userId, ...teamFields });
     }
-
-    return record;
+    return saved;
   },
 
   // =========================================================================
@@ -1109,15 +1027,15 @@ export const SupabaseRepo = {
         if (data) {
           return data as HubOwnerProfileRecord;
         }
-        return memoryHubOwnerProfiles.get(userId) || null;
+        return isTestMode ? memoryHubOwnerProfiles.get(userId) || null : null;
       } catch (err: any) {
         if (!isValidUuid(userId)) {
-          return memoryHubOwnerProfiles.get(userId) || null;
+          return isTestMode ? memoryHubOwnerProfiles.get(userId) || null : null;
         }
         throw err;
       }
     }
-    return memoryHubOwnerProfiles.get(userId) || null;
+    return isTestMode ? memoryHubOwnerProfiles.get(userId) || null : null;
   },
 
   async upsertHubOwnerProfile(data: {
@@ -1129,76 +1047,37 @@ export const SupabaseRepo = {
     courtCount: number;
   }): Promise<HubOwnerProfileRecord> {
     const now = new Date().toISOString();
-    const isTestMode = isInMemoryTestMode();
-    if (!isTestMode && isValidUuid(data.userId)) {
-      if (!isServerSupabaseConfigured) {
-        throw new Error('Supabase live configuration is required in non-test mode.');
-      }
-      try {
-        const existing = await this.getHubOwnerProfile(data.userId);
-        const isVerified = existing ? existing.is_verified : false;
-
-        const record: HubOwnerProfileRecord = {
-          user_id: data.userId,
-          hub_name: data.hubName.trim(),
-          contact_number: data.contactNumber ? data.contactNumber.trim() : undefined,
-          sports: data.sports || [],
-          location: data.location.trim(),
-          court_count: data.courtCount,
-          is_verified: isVerified,
-          created_at: now,
-          updated_at: now,
-        };
-
-        const { data: upserted, error } = await supabaseAdmin
-          .from('hub_owner_profiles')
-          .upsert(record, { onConflict: 'user_id' })
-          .select()
-          .single();
-
-        if (error || !upserted) {
-          throw new Error(error?.message || 'Failed to save hub owner profile in Supabase.');
-        }
-        await this.addRole(data.userId, 'HUB_OWNER');
-        return upserted as HubOwnerProfileRecord;
-      } catch (err: any) {
-        const existing = memoryHubOwnerProfiles.get(data.userId);
-        const isVerified = existing ? existing.is_verified : false;
-        const record: HubOwnerProfileRecord = {
-          user_id: data.userId,
-          hub_name: data.hubName.trim(),
-          contact_number: data.contactNumber ? data.contactNumber.trim() : undefined,
-          sports: data.sports || [],
-          location: data.location.trim(),
-          court_count: data.courtCount,
-          is_verified: isVerified,
-          created_at: now,
-          updated_at: now,
-        };
-        memoryHubOwnerProfiles.set(data.userId, record);
-        await this.addRole(data.userId, 'HUB_OWNER');
-        return record;
-      }
-    }
-
     const existing = memoryHubOwnerProfiles.get(data.userId);
-    const isVerified = existing ? existing.is_verified : false;
-
     const record: HubOwnerProfileRecord = {
       user_id: data.userId,
       hub_name: data.hubName.trim(),
-      contact_number: data.contactNumber ? data.contactNumber.trim() : undefined,
+      contact_number: data.contactNumber?.trim(),
       sports: data.sports || [],
       location: data.location.trim(),
       court_count: data.courtCount,
-      is_verified: isVerified,
-      created_at: now,
+      is_verified: existing?.is_verified ?? false,
+      created_at: existing?.created_at ?? now,
       updated_at: now,
     };
-
-    memoryHubOwnerProfiles.set(data.userId, record);
+    let saved = record;
+    if (isInMemoryTestMode()) {
+      memoryHubOwnerProfiles.set(data.userId, record);
+    } else {
+      if (!isServerSupabaseConfigured || !isValidUuid(data.userId)) {
+        throw new Error('A valid user ID and Supabase configuration are required.');
+      }
+      // Verification belongs to administrators; onboarding must never overwrite it.
+      const { created_at, is_verified, ...payload } = record;
+      const { data: upserted, error } = await supabaseAdmin
+        .from('hub_owner_profiles')
+        .upsert(payload, { onConflict: 'user_id', defaultToNull: false })
+        .select()
+        .single();
+      if (error || !upserted) throw new Error(error?.message || 'Failed to save hub owner profile.');
+      saved = upserted as HubOwnerProfileRecord;
+    }
     await this.addRole(data.userId, 'HUB_OWNER');
-    return record;
+    return saved;
   },
 
   async updateHubOwnerProfile(
@@ -1230,9 +1109,7 @@ export const SupabaseRepo = {
       }
       if (updates.sports !== undefined) updatePayload.sports = updates.sports;
       if (updates.location !== undefined) updatePayload.location = updates.location.trim();
-      // Strictly preserve is_verified and court_count
-      updatePayload.is_verified = existing.is_verified;
-      updatePayload.court_count = existing.court_count;
+      // Omitted administrator-owned fields retain their current database values.
 
       const { data, error } = await supabaseAdmin
         .from('hub_owner_profiles')
@@ -1270,6 +1147,7 @@ export const SupabaseRepo = {
     area?: string;
     verifiedOnly?: boolean;
   }): Promise<HubOwnerProfileRecord[]> {
+    const suspended = await this.suspendedIds();
     if (!isProduction() && (isTest() || !isServerSupabaseConfigured)) {
       await this.seedInitialHubsIfEmpty();
     }
@@ -1296,7 +1174,7 @@ export const SupabaseRepo = {
       if (error) {
         throw new Error(error.message || 'Failed to retrieve hubs from Supabase database.');
       }
-      return (data || []) as HubOwnerProfileRecord[];
+      return ((data || []) as HubOwnerProfileRecord[]).filter(h => !suspended.has(h.user_id));
     }
 
     const isTestMode = isTest() || !isServerSupabaseConfigured;
@@ -1324,7 +1202,7 @@ export const SupabaseRepo = {
       if (error) {
         throw new Error(error.message || 'Failed to retrieve hubs from Supabase database.');
       }
-      return (data || []) as HubOwnerProfileRecord[];
+      return ((data || []) as HubOwnerProfileRecord[]).filter(h => !suspended.has(h.user_id));
     }
 
     let records = Array.from(memoryHubOwnerProfiles.values());
@@ -1339,7 +1217,7 @@ export const SupabaseRepo = {
       records = records.filter((h) => h.sports.includes(filters.sport!));
     }
 
-    return records;
+    return records.filter(h => !suspended.has(h.user_id));
   },
 
   async seedInitialHubsIfEmpty(): Promise<void> {
@@ -1479,6 +1357,7 @@ export const SupabaseRepo = {
     area?: string;
     skillLevel?: SkillLevel;
   }): Promise<MatchOutput[]> {
+    const suspended = await this.suspendedIds();
     const isTestMode = isInMemoryTestMode();
     if (!isTestMode && !isServerSupabaseConfigured) {
       throw new Error('Supabase live configuration is required in non-test mode.');
@@ -1508,12 +1387,13 @@ export const SupabaseRepo = {
         throw new Error(error.message || 'Failed to retrieve matches from Supabase database.');
       }
       if (data) {
-        return Promise.all(data.map((m: MatchDbRecord) => enrichMatch(m)));
+        return Promise.all(data.filter((m: MatchDbRecord) => isUpcomingMatch(m.date, m.start_time) && !suspended.has(m.captain_id)).map((m: MatchDbRecord) => enrichMatch(m)));
       }
       return [];
     }
 
-    let records = Array.from(memoryMatches.values());
+    let records = Array.from(memoryMatches.values()).filter((m) =>
+      ['OPEN', 'UPCOMING', 'FULL'].includes(m.status) && isUpcomingMatch(m.date, m.start_time) && !suspended.has(m.captain_id));
     if (filters?.sport) {
       records = records.filter((m) => m.sport === filters.sport);
     }
@@ -1753,51 +1633,18 @@ export const SupabaseRepo = {
 
   // Helper for seed admin
   async seedAdminIfMissing(): Promise<void> {
-    if (isProduction()) {
-      return;
-    }
-
-    if (isTest()) {
-      const adminId = '00000000-0000-0000-0000-000000000001';
-      const existing = await this.getProfile(adminId);
-      if (!existing) {
-        await this.createProfile({
-          id: adminId,
-          name: 'Platform Administrator',
-          email: 'admin@maidaan.pk',
-          role: 'ADMIN',
-        });
-        await this.setOnboardingCompleted(adminId, true);
-      }
-    } else if (isServerSupabaseConfigured) {
-      try {
-        const { data: usersData } = await (supabaseAdmin.auth as any).admin.listUsers();
-        let adminUser = usersData?.users?.find((u: any) => u.email === 'admin@maidaan.pk');
-        if (!adminUser) {
-          const { data: created, error } = await (supabaseAdmin.auth as any).admin.createUser({
-            email: 'admin@maidaan.pk',
-            password: 'AdminPassword123!',
-            email_confirm: true,
-          });
-          if (!error && created?.user) {
-            adminUser = created.user;
-          }
-        }
-        if (adminUser) {
-          const existingProfile = await this.getProfile(adminUser.id);
-          if (!existingProfile) {
-            await this.createProfile({
-              id: adminUser.id,
-              name: 'Platform Administrator',
-              email: 'admin@maidaan.pk',
-              role: 'ADMIN',
-            });
-            await this.setOnboardingCompleted(adminUser.id, true);
-          }
-        }
-      } catch (err) {
-        console.warn('[seedAdminIfMissing] Could not seed admin in live Supabase:', err);
-      }
+    // Never create an administrator with a shared password in a live database.
+    if (!isTest()) return;
+    const adminId = '00000000-0000-0000-0000-000000000001';
+    const existing = await this.getProfile(adminId);
+    if (!existing) {
+      await this.createProfile({
+        id: adminId,
+        name: 'Platform Administrator',
+        email: 'admin@maidaan.pk',
+        role: 'ADMIN',
+      });
+      await this.setOnboardingCompleted(adminId, true);
     }
   },
 
@@ -1907,41 +1754,27 @@ export const SupabaseRepo = {
     if (!isTestMode && !isServerSupabaseConfigured) {
       throw new Error('Supabase live configuration is required in non-test mode.');
     }
-    const useMemoryStore = isTestMode || !isValidUuid(input.matchId) || !isValidUuid(input.playerId);
-
-    if (!useMemoryStore) {
-      try {
-        const { data, error } = await supabaseAdmin
-          .from('join_requests')
-          .insert([dbRecord])
-          .select()
-          .single();
-
-        if (error || !data) {
-          throw new Error(error?.message || 'Failed to persist join request to database.');
-        }
-        return {
-          id: data.id,
-          matchId: data.match_id,
-          playerId: data.player_id,
-          status: data.status,
-          message: data.message,
-          createdAt: data.created_at,
-          updatedAt: data.updated_at,
-        };
-      } catch (err: any) {
-        // Fall back to memoryStore if foreign key constraint (e.g. demo player or un-synced profile) fails in Supabase
-        memoryJoinRequests.set(id, dbRecord);
-        return {
-          id: dbRecord.id,
-          matchId: dbRecord.match_id,
-          playerId: dbRecord.player_id,
-          status: dbRecord.status,
-          message: dbRecord.message,
-          createdAt: dbRecord.created_at,
-          updatedAt: dbRecord.updated_at,
-        };
+    if (!isTestMode && (!isValidUuid(input.matchId) || !isValidUuid(input.playerId))) {
+      throw new Error('Valid match and player IDs are required.');
+    }
+    if (!isTestMode) {
+      const { data, error } = await supabaseAdmin
+        .from('join_requests')
+        .insert([dbRecord])
+        .select()
+        .single();
+      if (error || !data) {
+        throw new Error(error?.message || 'Failed to persist join request to database.');
       }
+      return {
+        id: data.id,
+        matchId: data.match_id,
+        playerId: data.player_id,
+        status: data.status,
+        message: data.message,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
+      };
     }
 
     memoryJoinRequests.set(id, dbRecord);
@@ -4034,20 +3867,12 @@ export const SupabaseRepo = {
           return formatTeamOutput(data as TeamDbRecord, count ?? 1);
         }
         return null;
-      } catch (err: any) {
-        for (const t of memoryTeams.values()) {
-          if (t.captain_id === captainId) {
-            let memberCount = 0;
-            for (const m of memoryTeamMembers.values()) {
-              if (m.team_id === t.id && m.status === 'ACTIVE') memberCount++;
-            }
-            return formatTeamOutput(t, memberCount || 1);
-          }
-        }
-        return null;
+      } catch (err) {
+        throw err;
       }
     }
 
+    if (!isTestMode) return null;
     for (const t of memoryTeams.values()) {
       if (t.captain_id === captainId) {
         let memberCount = 0;
@@ -4085,19 +3910,12 @@ export const SupabaseRepo = {
           return formatTeamOutput(data as TeamDbRecord, count ?? 1);
         }
         return null;
-      } catch (err: any) {
-        const mem = memoryTeams.get(teamId);
-        if (mem) {
-          let memberCount = 0;
-          for (const m of memoryTeamMembers.values()) {
-            if (m.team_id === mem.id && m.status === 'ACTIVE') memberCount++;
-          }
-          return formatTeamOutput(mem, memberCount || 1);
-        }
-        return null;
+      } catch (err) {
+        throw err;
       }
     }
 
+    if (!isTestMode) return null;
     const mem = memoryTeams.get(teamId);
     if (!mem) return null;
     let memberCount = 0;
@@ -4114,6 +3932,9 @@ export const SupabaseRepo = {
     skillLevel: SkillLevel;
     area: string;
   }): Promise<TeamOutput> {
+    if (!isInMemoryTestMode() && (!isServerSupabaseConfigured || !isValidUuid(data.captainId))) {
+      throw new Error('A valid captain ID and Supabase configuration are required.');
+    }
     const existing = await this.getCaptainTeam(data.captainId);
     if (existing) {
       throw new Error('Captain already has a registered team.');
@@ -4156,7 +3977,13 @@ export const SupabaseRepo = {
         status: 'ACTIVE',
         joined_at: now,
       };
-      await supabaseAdmin.from('team_members').insert([memberRecord]);
+      const { error: memberError } = await supabaseAdmin.from('team_members').insert([memberRecord]);
+      if (memberError) {
+        // Roll back only the team created by this operation.
+        const { error: rollbackError } = await supabaseAdmin.from('teams').delete().eq('id', inserted.id);
+        if (rollbackError) throw new Error('Team membership failed and team cleanup failed.');
+        throw new Error(memberError.message || 'Failed to save captain team membership.');
+      }
 
       return formatTeamOutput(inserted as TeamDbRecord, 1);
     }

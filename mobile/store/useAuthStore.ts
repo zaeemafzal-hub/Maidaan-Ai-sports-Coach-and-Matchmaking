@@ -140,12 +140,8 @@ const authStoreCreator: StateCreator<AuthState> = (set, get) => ({
       const meData = await authService.me();
 
       // Extract server-authoritative capabilities
-      const roles: Role[] =
-        meData.roles && meData.roles.length > 0
-          ? meData.roles
-          : meData.user?.roles && meData.user.roles.length > 0
-          ? meData.user.roles
-          : [meData.user?.role || 'PLAYER'];
+      const roles: Role[] = meData.roles ?? meData.user.roles ?? [];
+      if (roles.length === 0) throw new Error('Your account has no active permissions. Please contact support.');
 
       const onboarding: OnboardingStatus = meData.onboarding || {
         player: Boolean(meData.playerProfile),
@@ -202,45 +198,6 @@ const authStoreCreator: StateCreator<AuthState> = (set, get) => ({
 
       return true;
     } catch (err: any) {
-      if (err?.status === 404) {
-        // Authenticated session exists, but public.profiles row has not been initialized yet (e.g. Google OAuth)
-        try {
-          const { data } = await supabase.auth.getUser();
-          const sbUser = data?.user;
-          if (sbUser) {
-            const fullName =
-              sbUser.user_metadata?.full_name ||
-              sbUser.user_metadata?.name ||
-              sbUser.email?.split('@')[0] ||
-              'Athlete';
-            await authService.initProfile({ name: fullName, role: 'PLAYER' });
-            return await get().loadProfile();
-          }
-        } catch (bootstrapErr) {
-          // Fall through to incomplete profile state if bootstrap failed
-        }
-
-        set({
-          currentUser: null,
-          roles: ['PLAYER'],
-          activeMode: 'PLAYER',
-          selectedRole: 'PLAYER',
-          playerProfile: null,
-          captainProfile: null,
-          hubOwnerProfile: null,
-          onboarding: { player: false, captain: false, hubOwner: false },
-          onboardingCompleted: false,
-          isAuthenticated: true,
-          isLoadingProfile: false,
-          isLoading: false,
-          isInitialized: true,
-          isAuthInitialized: true,
-          authStatus: 'ONBOARDING_REQUIRED',
-          errorMessage: null,
-        });
-        return false;
-      }
-
       if (err?.status === 401) {
         // Stale or invalid session
         try {
@@ -275,8 +232,11 @@ const authStoreCreator: StateCreator<AuthState> = (set, get) => ({
         return false;
       }
 
-      // Network or unexpected failure
+      // Network or unexpected failure must not expose a partially loaded account.
       set({
+        currentUser: null,
+        isAuthenticated: false,
+        roles: [],
         isLoadingProfile: false,
         isLoading: false,
         isInitialized: true,
@@ -298,37 +258,43 @@ const authStoreCreator: StateCreator<AuthState> = (set, get) => ({
       if (!authSubscriptionInitialized) {
         authSubscriptionInitialized = true;
         try {
-          supabase.auth.onAuthStateChange(async (event, session) => {
-            if (event === 'SIGNED_OUT' || !session) {
-              socketService.disconnect();
-              await AuthStorage.removeToken();
-              try {
-                await AsyncStorage.removeItem(ACTIVE_MODE_KEY);
-              } catch {
-                // ignore
-              }
-              set({
-                authStatus: 'SIGNED_OUT',
-                currentUser: null,
-                roles: ['PLAYER'],
-                activeMode: 'PLAYER',
-                selectedRole: 'PLAYER',
-                playerProfile: null,
-                captainProfile: null,
-                hubOwnerProfile: null,
-                onboarding: { player: false, captain: false, hubOwner: false },
-                onboardingCompleted: false,
-                isAuthenticated: false,
-                isLoading: false,
-                isLoadingProfile: false,
-                isInitialized: true,
-                isAuthInitialized: true,
-              });
-            } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-              if (get().authStatus === 'SIGNED_OUT' || get().authStatus === 'AUTHENTICATING') {
-                await get().loadProfile();
-              }
-            }
+          supabase.auth.onAuthStateChange((event, session) => {
+            // Do not await Supabase calls inside its auth lock.
+            setTimeout(() => {
+              void (async () => {
+                if (event === 'SIGNED_OUT' || !session) {
+                  socketService.disconnect();
+                  await AuthStorage.removeToken();
+                  try {
+                    await AsyncStorage.removeItem(ACTIVE_MODE_KEY);
+                  } catch {
+                    // ignore
+                  }
+                  set({
+                    authStatus: 'SIGNED_OUT',
+                    currentUser: null,
+                    roles: ['PLAYER'],
+                    activeMode: 'PLAYER',
+                    selectedRole: 'PLAYER',
+                    playerProfile: null,
+                    captainProfile: null,
+                    hubOwnerProfile: null,
+                    onboarding: { player: false, captain: false, hubOwner: false },
+                    onboardingCompleted: false,
+                    isAuthenticated: false,
+                    isLoading: false,
+                    isLoadingProfile: false,
+                    isInitialized: true,
+                    isAuthInitialized: true,
+                  });
+                } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+                  await AuthStorage.setToken(session.access_token);
+                  if (event === 'SIGNED_IN' && get().authStatus !== 'BOOTING') {
+                    await get().loadProfile();
+                  }
+                }
+              })().catch(() => set({ authStatus: 'ERROR', errorMessage: 'Unable to restore your session.' }));
+            }, 0);
           });
         } catch {
           // Safe fallback
@@ -339,11 +305,8 @@ const authStoreCreator: StateCreator<AuthState> = (set, get) => ({
       let token: string | null = null;
       if (isSupabaseConfigured) {
         try {
-          const sessionPromise = supabase.auth.getSession();
-          const timeoutPromise = new Promise<{ data: { session: null } }>((resolve) =>
-            setTimeout(() => resolve({ data: { session: null } }), 3000)
-          );
-          const { data } = await Promise.race([sessionPromise, timeoutPromise]);
+          const { data, error } = await supabase.auth.getSession();
+          if (error) throw error;
           if (data?.session?.access_token) {
             token = data.session.access_token;
           }

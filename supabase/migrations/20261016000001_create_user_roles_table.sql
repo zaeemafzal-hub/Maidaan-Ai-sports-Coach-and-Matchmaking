@@ -20,6 +20,7 @@ create index if not exists idx_user_roles_status on public.user_roles(status);
 alter table public.user_roles enable row level security;
 
 -- 4. RLS Policies
+drop policy if exists "Users can view own roles" on public.user_roles;
 create policy "Users can view own roles"
   on public.user_roles
   for select

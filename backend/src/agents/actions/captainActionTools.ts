@@ -6,6 +6,7 @@ import {
   AcceptJoinRequestDraftPayload,
   RejectJoinRequestDraftPayload,
   ActionStatus,
+  CaptainActionExecutionResponse,
   CaptainExecutionResult,
   CreateMatchExecutionResult,
   AcceptJoinRequestExecutionResult,
@@ -275,7 +276,11 @@ export async function prepareRejectJoinRequestAction(
  * enforces idempotency, re-checks live capacity/concurrency,
  * and calls the underlying trusted service.
  */
-export async function executeCaptainAction(
+export function executeCaptainAction(actionId: string, executingUserId: string): Promise<CaptainActionExecutionResponse> {
+  return actionStore.runExecution(actionId, executingUserId, () => executeCaptainActionOnce(actionId, executingUserId));
+}
+
+async function executeCaptainActionOnce(
   actionId: string,
   executingUserId: string
 ): Promise<{

@@ -1,3 +1,4 @@
+import { isUpcomingMatch } from '../utils/matchTime.js';
 import { Request, Response } from 'express';
 import { SupabaseRepo } from '../models/supabaseRepo.js';
 
@@ -26,6 +27,15 @@ export const JoinRequestController = {
       const match = await SupabaseRepo.getMatchById(matchId);
       if (!match) {
         res.status(404).json({ error: 'Match fixture not found.' });
+        return;
+      }
+
+      if (!['OPEN', 'UPCOMING'].includes(match.status) || !isUpcomingMatch(match.date, match.startTime)) {
+        res.status(409).json({ error: 'This match is no longer accepting join requests.' });
+        return;
+      }
+      if ((await SupabaseRepo.getProfile(match.captainId))?.account_status === 'SUSPENDED') {
+        res.status(404).json({ error: 'Match fixture is unavailable.' });
         return;
       }
 

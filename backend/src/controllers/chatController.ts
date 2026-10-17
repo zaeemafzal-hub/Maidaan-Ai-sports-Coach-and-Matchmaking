@@ -50,7 +50,7 @@ export const ChatController = {
 
       // Verify target participant exists
       const targetUser = await SupabaseRepo.getProfile(participantId);
-      if (!targetUser) {
+      if (!targetUser || targetUser.account_status === 'SUSPENDED') {
         res.status(404).json({ error: 'Target chat participant profile not found.' });
         return;
       }

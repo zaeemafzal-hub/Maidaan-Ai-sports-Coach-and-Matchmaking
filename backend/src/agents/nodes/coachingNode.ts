@@ -22,6 +22,8 @@ export async function coachingNode(state: AgentState): Promise<AgentUpdate> {
         tool: 'coachingProvider',
         sport: coachResponse.sport,
         provider: coachResponse.provider,
+        usedBackup: coachResponse.usedBackup ?? false,
+        isFallback: false,
         requestId: coachResponse.requestId,
       },
     };
@@ -37,10 +39,11 @@ export async function coachingNode(state: AgentState): Promise<AgentUpdate> {
     const drill = fallbackDrills[resolvedSport] || fallbackDrills.cricket;
 
     return {
-      response: `[Maidaan Tactical Coach - ${resolvedSport.toUpperCase()}]\n${drill}\n\n*Tip: Stop immediately and consult a doctor if you feel sharp pain or injury.*`,
+      response: `[Offline coaching guidance - ${resolvedSport.toUpperCase()}]\nLive AI is currently unavailable.\n\n${drill}\n\n*Tip: Stop immediately and consult a doctor if you feel sharp pain or injury.*`,
       toolResult: {
         tool: 'coachingProvider',
         sport: resolvedSport,
+        provider: 'offline',
         isFallback: true,
       },
     };

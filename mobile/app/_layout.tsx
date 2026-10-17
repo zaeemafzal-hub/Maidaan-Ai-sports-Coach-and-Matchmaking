@@ -1,5 +1,6 @@
 import "../global.css";
 import React, { useEffect } from "react";
+import { AppState, Platform } from "react-native";
 import { Stack, router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -7,12 +8,27 @@ import { enableScreens } from "react-native-screens";
 import * as Linking from "expo-linking";
 import { useAuthStore } from "../store/useAuthStore";
 import { authService } from "../services/authService";
+import { supabase } from "../lib/supabase";
 
 // Disable experimental native screen transitions in Expo Go to avoid makeMutable crash
 enableScreens(false);
 
 export default function RootLayout() {
-  const { initializeAuth, loadProfile } = useAuthStore();
+  const { initializeAuth } = useAuthStore();
+
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+    const updateRefresh = (state: string) => {
+      if (state === 'active') void supabase.auth.startAutoRefresh();
+      else void supabase.auth.stopAutoRefresh();
+    };
+    updateRefresh(AppState.currentState);
+    const subscription = AppState.addEventListener('change', updateRefresh);
+    return () => {
+      subscription.remove();
+      void supabase.auth.stopAutoRefresh();
+    };
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -23,16 +39,16 @@ export default function RootLayout() {
     };
     init();
 
-    // Deep link callback handler for Google OAuth & Password Recovery
+    // OAuth callbacks have their own route; handle password recovery links here.
     const handleUrl = async (event: { url: string }) => {
-      if (!event.url) return;
-      const callbackResult = await authService.handleAuthCallbackUrl(event.url);
-      if (callbackResult) {
-        if (callbackResult.type === "recovery" || event.url.includes("reset-password")) {
-          router.push("/(auth)/reset-password");
-        } else {
-          await loadProfile();
-        }
+      if (!event.url || !event.url.includes('reset-password')) return;
+      try {
+        const result = await authService.handleAuthCallbackUrl(event.url);
+        if (result && isMounted) router.push('/(auth)/reset-password');
+      } catch {
+        if (!isMounted) return;
+        useAuthStore.getState().setErrorMessage('The password reset link is invalid or expired.');
+        router.push('/(auth)/forgot-password');
       }
     };
 
@@ -48,7 +64,7 @@ export default function RootLayout() {
       isMounted = false;
       sub.remove();
     };
-  }, [initializeAuth, loadProfile]);
+  }, [initializeAuth]);
 
   return (
     <SafeAreaProvider>

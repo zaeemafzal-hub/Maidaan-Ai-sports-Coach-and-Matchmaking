@@ -5,7 +5,7 @@ import { authenticateSupabaseUser } from '../middleware/auth.js';
 
 const router = Router();
 
-// Public user registration with instant email confirmation
+// Public user registration honoring Supabase email confirmation
 router.post('/register', AuthController.register);
 
 // Authenticated session check endpoint (delegates to getMyProfile)

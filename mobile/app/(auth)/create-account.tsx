@@ -11,8 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuthStore } from '../../store/useAuthStore';
-import { User } from '../../types';
+import { completeSignIn } from '../../services/completeSignIn';
 import { authService } from '../../services/authService';
 import { FormInput } from '../../components/ui/FormInput';
 import { PrimaryButton } from '../../components/ui/PrimaryButton';
@@ -20,7 +19,6 @@ import { ArenaHeader } from '../../components/ui/ArenaHeader';
 import { IMAGES } from '../../constants/images';
 
 export default function CreateAccountScreen() {
-  const { setCurrentUser, setAuthStatus, setOnboardingCompleted, loadProfile } = useAuthStore();
 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -72,7 +70,7 @@ export default function CreateAccountScreen() {
   };
 
   const handleCreateAccount = async () => {
-    if (!validate()) {
+    if (isSubmitting || !validate()) {
       return;
     }
 
@@ -92,20 +90,29 @@ export default function CreateAccountScreen() {
         return;
       }
 
-      setCurrentUser(result.user);
-      setAuthStatus('ONBOARDING_REQUIRED');
-      setOnboardingCompleted(false);
-
-      try {
-        await loadProfile();
-      } catch {
-        // Safe fallback: new player setup screen handles profile completion
-      }
-      router.replace('/onboarding/player-setup');
+      router.replace(await completeSignIn());
     } catch (err: any) {
       setErrors({
         general: err?.message || 'Failed to create account. Please try again.',
       });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleGoogleSignup = async () => {
+    if (isSubmitting) return;
+    if (!acceptedTerms) {
+      setErrors({ terms: 'Please accept the community terms to continue.' });
+      return;
+    }
+    setIsSubmitting(true);
+    setErrors({});
+    try {
+      const result = await authService.signInWithGoogle();
+      if (result.success) router.replace(await completeSignIn());
+    } catch (err) {
+      setErrors({ general: err instanceof Error ? err.message : 'Google sign-in failed.' });
     } finally {
       setIsSubmitting(false);
     }
@@ -314,6 +321,16 @@ export default function CreateAccountScreen() {
                 size="lg"
                 testID="create-account-button"
               />
+
+              <View className="mt-3">
+                <PrimaryButton
+                  title="Continue with Google"
+                  onPress={handleGoogleSignup}
+                  disabled={isSubmitting}
+                  variant="secondary"
+                  testID="signup-google-button"
+                />
+              </View>
 
               <Pressable
                 onPress={handleLogin}

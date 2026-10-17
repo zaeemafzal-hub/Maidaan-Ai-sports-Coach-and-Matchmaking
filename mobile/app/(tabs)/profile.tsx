@@ -10,6 +10,7 @@ import { router } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/useAuthStore';
 import { ArenaBadge } from '../../components/ui/ArenaBadge';
+import { PrimaryButton } from '../../components/ui/PrimaryButton';
 import { AmbientGlowOverlay } from '../../components/ui/AmbientCanvas';
 import { Sport, SkillLevel, Role, AppMode } from '../../types';
 
@@ -83,6 +84,15 @@ export default function ProfileScreen() {
       .substring(0, 2)
       .toUpperCase() || 'P';
 
+  const bookingEntry = <View style={{ margin: 16 }}><PrimaryButton title="My venue bookings" variant="secondary" onPress={()=>router.push('/bookings' as any)}/></View>;
+  const adminEntry = roles.includes('ADMIN') ? (
+    <View style={{ margin: 16 }}>
+      <PrimaryButton
+        title="Open super-user dashboard"
+        onPress={() => router.push('/admin/dashboard')}
+      />
+    </View>
+  ) : null;
   // 1. Missing Profile State
   if (!playerProfile) {
     return (
@@ -98,6 +108,8 @@ export default function ProfileScreen() {
           contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 20 }}
           showsVerticalScrollIndicator={false}
         >
+          {bookingEntry}
+          {adminEntry}
           <View className="bg-[#141518] rounded-2xl p-5 border border-white/[0.08] shadow-md mb-6">
             <View className="flex-row items-center">
               <View className="w-16 h-16 rounded-full bg-[#1B1D22] items-center justify-center border-2 border-[#E85D26]/50">
@@ -667,6 +679,8 @@ export default function ProfileScreen() {
             </Text>
           </Pressable>
         </View>
+        {bookingEntry}
+          {adminEntry}
       </ScrollView>
     </SafeAreaView>
   );

@@ -1,4 +1,4 @@
-import { CaptainActionDraft, CaptainExecutionResult } from './types.js';
+import { CaptainActionDraft, CaptainExecutionResult, CaptainActionExecutionResponse } from './types.js';
 
 export const ACTION_TTL_MS = 10 * 60 * 1000; // 10 minutes
 
@@ -9,6 +9,18 @@ export const ACTION_TTL_MS = 10 * 60 * 1000; // 10 minutes
  */
 class ActionStore {
   private actions = new Map<string, CaptainActionDraft>();
+  private executions = new Map<string, Promise<CaptainActionExecutionResponse>>();
+
+  runExecution(actionId: string, userId: string, execute: () => Promise<CaptainActionExecutionResponse>): Promise<CaptainActionExecutionResponse> {
+    const key = `${userId}:${actionId}`;
+    const existing = this.executions.get(key);
+    if (existing) return existing;
+
+    // Reserve before any await. Repeated confirmations share the same operation.
+    const pending = Promise.resolve().then(execute).finally(() => this.executions.delete(key));
+    this.executions.set(key, pending);
+    return pending;
+  }
 
   saveAction(draft: CaptainActionDraft): void {
     this.actions.set(draft.actionId, draft);
@@ -48,6 +60,7 @@ class ActionStore {
   }
 
   cancelAction(actionId: string, userId: string): boolean {
+    if (this.executions.has(`${userId}:${actionId}`)) return false;
     const action = this.actions.get(actionId);
     if (!action || action.userId !== userId) return false;
     if (action.status !== 'AWAITING_CONFIRMATION') return false;
@@ -68,6 +81,7 @@ class ActionStore {
 
   clearStore(): void {
     this.actions.clear();
+    this.executions.clear();
   }
 }
 
