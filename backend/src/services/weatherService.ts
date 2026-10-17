@@ -3,6 +3,7 @@ import {
   WeatherMetrics,
   WeatherSuitabilityStatus,
 } from './weatherSuitability.js';
+import { isProduction } from '../config/runtime.js';
 
 export interface WeatherQueryOptions {
   area?: string;
@@ -51,13 +52,11 @@ const DEFAULT_COORDS = { lat: 31.5204, lon: 74.3587, label: 'Lahore, Punjab' };
  */
 function resolveLocation(area?: string, lat?: number, lon?: number): { lat: number; lon: number; label: string } {
   if (typeof lat === 'number' && typeof lon === 'number') {
-    if (lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180) {
-      return {
-        lat,
-        lon,
-        label: area?.trim() || `${lat.toFixed(2)}°, ${lon.toFixed(2)}°`,
-      };
-    }
+    return {
+      lat,
+      lon,
+      label: area?.trim() || `${lat.toFixed(2)}°, ${lon.toFixed(2)}°`,
+    };
   }
 
   if (area) {
@@ -266,8 +265,22 @@ export class WeatherService {
 
       return weatherResult;
     } catch (err: any) {
-      console.warn('[WeatherService] External provider request failed, serving fallback:', err?.message || err);
-      // Fallback response guarantees application continuity
+      console.warn('[WeatherService] External provider request failed:', err?.message || err);
+      if (isProduction()) {
+        // In production mode, do not fabricate weather numbers; return clean unavailable state
+        return {
+          location: location.label,
+          temperatureC: 0,
+          condition: 'Weather Unavailable',
+          rainProbability: 0,
+          windSpeedKmh: 0,
+          recommendation: 'CAUTION',
+          reason: 'Live weather service unreachable. Please verify local ground conditions.',
+          timestamp: new Date().toISOString(),
+          isFallback: true,
+        };
+      }
+      // Fallback response guarantees application continuity in test/dev
       return generateFallbackWeather(location.label, options.sport);
     }
   }

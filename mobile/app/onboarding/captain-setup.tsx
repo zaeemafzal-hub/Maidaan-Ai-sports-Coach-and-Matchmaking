@@ -74,14 +74,13 @@ const PRESET_AREAS = [
 export default function CaptainSetupScreen() {
   const {
     currentUser,
-    selectedRole,
     setCaptainProfile,
     setOnboardingCompleted,
     isInitialized,
     isLoading,
+    loadProfile,
+    setActiveMode,
   } = useAuthStore();
-
-  const currentRole = currentUser?.role || selectedRole;
 
   useEffect(() => {
     if (!isInitialized || isLoading) return;
@@ -90,17 +89,7 @@ export default function CaptainSetupScreen() {
       router.replace('/(auth)/login');
       return;
     }
-
-    if (currentRole && currentRole !== 'TEAM_CAPTAIN') {
-      if (currentRole === 'PLAYER') {
-        router.replace('/onboarding/player-setup');
-      } else if (currentRole === 'HUB_OWNER') {
-        router.replace('/onboarding/hub-setup');
-      } else {
-        router.replace('/(auth)/role-selection');
-      }
-    }
-  }, [isInitialized, isLoading, currentUser, currentRole]);
+  }, [isInitialized, isLoading, currentUser]);
 
   // Approved Form Fields
   const [teamName, setTeamName] = useState('');
@@ -155,8 +144,10 @@ export default function CaptainSetupScreen() {
 
       setCaptainProfile(result.profile);
       setOnboardingCompleted(true);
+      await loadProfile();
+      await setActiveMode('TEAM_CAPTAIN');
 
-      router.replace('/(tabs)/discover');
+      router.replace('/captain/dashboard');
     } catch (err: any) {
       setGeneralError(err?.message || 'Failed to complete captain setup. Please try again.');
     } finally {
@@ -171,7 +162,7 @@ export default function CaptainSetupScreen() {
 
   if (!isInitialized || isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-[#171A1D] items-center justify-center">
+      <SafeAreaView className="flex-1 bg-[#0C0D0E] items-center justify-center">
         <ActivityIndicator size="large" color="#E85D26" />
         <Text className="text-[#A0A5AD] text-xs font-semibold tracking-wider mt-3">
           Loading session...
@@ -181,13 +172,13 @@ export default function CaptainSetupScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-[#171A1D]" edges={['top', 'bottom']}>
+    <SafeAreaView className="flex-1 bg-[#0C0D0E]" edges={['top', 'bottom']}>
       {/* Modern Header */}
       <ArenaHeader
         title="Captain Setup"
         subtitle="Establish your squad identity"
         showBack
-        fallbackRoute="/(auth)/role-selection"
+        fallbackRoute="/(tabs)/profile"
       />
 
       <KeyboardAvoidingView
@@ -201,15 +192,15 @@ export default function CaptainSetupScreen() {
           className="flex-1"
         >
           {/* Sports Photography Hero Section */}
-          <View className="relative w-full h-44 bg-[#1F2327] overflow-hidden border-b border-white/5">
+          <View className="relative w-full h-44 bg-[#141518] overflow-hidden border-b border-white/[0.08]">
             <Image
               source={IMAGES.arenaTeam}
               className="w-full h-full"
               resizeMode="cover"
             />
             {/* Atmospheric Stadium Lighting Overlay */}
-            <View className="absolute inset-0 bg-[#171A1D]/65" />
-            <View className="absolute inset-0 bg-gradient-to-t from-[#171A1D] via-[#171A1D]/40 to-transparent" />
+            <View className="absolute inset-0 bg-[#0C0D0E]/65" />
+            <View className="absolute inset-0 bg-gradient-to-t from-[#0C0D0E] via-[#0C0D0E]/40 to-transparent" />
 
             {/* Hero Content Overlay */}
             <View className="absolute bottom-3 left-5 right-5 z-10">
@@ -217,14 +208,14 @@ export default function CaptainSetupScreen() {
                 <Text className="text-[#E85D26] text-[10px] font-black uppercase tracking-widest">
                   TEAM CAPTAIN SETUP
                 </Text>
-                <Text className="text-[#7F8993] text-[10px] font-bold mx-1.5">
+                <Text className="text-[#5C616A] text-[10px] font-bold mx-1.5">
                   ·
                 </Text>
                 <Text className="text-[#A0A5AD] text-[10px] font-bold uppercase tracking-wider">
                   SQUAD MANAGEMENT
                 </Text>
               </View>
-              <Text className="text-[#F4F6F7] text-xl font-black uppercase tracking-tight">
+              <Text className="text-[#FFFFFF] text-xl font-black uppercase tracking-tight">
                 Set Up Your Squad
               </Text>
               <Text className="text-[#A0A5AD] text-[11px] font-medium mt-0.5 tracking-tight">
@@ -237,7 +228,7 @@ export default function CaptainSetupScreen() {
           <View className="px-5 py-4">
             {/* Edit Notice Toast if triggered */}
             {editNotice && (
-              <View className="mb-4 p-3 rounded-xl bg-[#1F2327] border border-[#E85D26]/30 flex-row items-center shadow-xs">
+              <View className="mb-4 p-3 rounded-xl bg-[#141518] border border-[#E85D26]/30 flex-row items-center shadow-xs">
                 <Ionicons name="information-circle-sharp" size={18} color="#E85D26" />
                 <Text className="text-[#E85D26] text-xs font-semibold ml-2 flex-1">
                   {editNotice}
@@ -246,14 +237,14 @@ export default function CaptainSetupScreen() {
             )}
 
             {/* Section 1: Captain Credential Card */}
-            <View className="bg-[#1F2327] border border-white/10 rounded-2xl p-3.5 mb-5 shadow-sm">
+            <View className="bg-[#141518] border border-white/[0.08] rounded-2xl p-3.5 mb-5 shadow-sm">
               <View className="flex-row items-center justify-between">
                 <View className="flex-row items-center flex-1 mr-3">
                   {/* Captain Shield Badge */}
-                  <View className="w-12 h-12 rounded-xl bg-[#272C31] border border-white/10 items-center justify-center mr-3 relative">
+                  <View className="w-12 h-12 rounded-xl bg-[#1B1D22] border border-white/[0.08] items-center justify-center mr-3 relative">
                     <MaterialCommunityIcons name="shield-star" size={24} color="#E85D26" />
                     <View className="absolute -bottom-1 -right-1 px-1 py-0.2 bg-[#E85D26] rounded-xs">
-                      <Text className="text-[#171A1D] text-[8px] font-black tracking-tighter">
+                      <Text className="text-[#0C0D0E] text-[8px] font-black tracking-tighter">
                         CPT
                       </Text>
                     </View>
@@ -263,7 +254,7 @@ export default function CaptainSetupScreen() {
                   <View className="flex-1">
                     <Text
                       numberOfLines={1}
-                      className="text-[#F4F6F7] text-sm font-bold uppercase tracking-tight"
+                      className="text-[#FFFFFF] text-sm font-bold uppercase tracking-tight"
                     >
                       {teamName.trim() || currentUser?.name || 'Squad Captain'}
                     </Text>
@@ -271,7 +262,7 @@ export default function CaptainSetupScreen() {
                       <Text className="text-[#E85D26] text-[11px] font-bold uppercase tracking-wide">
                         TEAM CAPTAIN
                       </Text>
-                      <Text className="text-[#7F8993] text-[10px] font-bold mx-1.5">
+                      <Text className="text-[#5C616A] text-[10px] font-bold mx-1.5">
                         ·
                       </Text>
                       <Text className="text-[#A0A5AD] text-[10px] font-medium tracking-tight">
@@ -286,7 +277,7 @@ export default function CaptainSetupScreen() {
                   onPress={handleEditPress}
                   accessibilityRole="button"
                   accessibilityLabel="Edit captain credential"
-                  className="py-1.5 px-3 rounded-lg bg-[#272C31] border border-white/10 active:scale-95"
+                  className="py-1.5 px-3 rounded-lg bg-[#1B1D22] border border-white/[0.08] active:scale-95"
                 >
                   <Text className="text-[#A0A5AD] text-[10px] font-bold tracking-wider uppercase">
                     INFO
@@ -315,10 +306,10 @@ export default function CaptainSetupScreen() {
             {/* Section 3: Primary Sport (Single Select) */}
             <View className="mb-5">
               <View className="flex-row items-center justify-between mb-2">
-                <Text className="text-[#F4F6F7] text-xs font-bold tracking-wider uppercase">
+                <Text className="text-[#FFFFFF] text-xs font-bold tracking-wider uppercase">
                   PRIMARY SPORT
                 </Text>
-                <Text className="text-[#7F8993] text-[10px] font-bold uppercase tracking-wide">
+                <Text className="text-[#5C616A] text-[10px] font-bold uppercase tracking-wide">
                   SELECT ONE
                 </Text>
               </View>
@@ -348,10 +339,10 @@ export default function CaptainSetupScreen() {
             {/* Section 4: Default Skill Range */}
             <View className="mb-5">
               <View className="flex-row items-center justify-between mb-1">
-                <Text className="text-[#F4F6F7] text-xs font-bold tracking-wider uppercase">
+                <Text className="text-[#FFFFFF] text-xs font-bold tracking-wider uppercase">
                   DEFAULT SKILL TIER
                 </Text>
-                <Text className="text-[#7F8993] text-[10px] font-bold uppercase tracking-wide">
+                <Text className="text-[#5C616A] text-[10px] font-bold uppercase tracking-wide">
                   COMPETITIVE LEVEL
                 </Text>
               </View>
@@ -371,10 +362,10 @@ export default function CaptainSetupScreen() {
                       accessibilityRole="radio"
                       accessibilityState={{ selected: isSelected }}
                       accessibilityLabel={`${tier.label} competitive tier`}
-                      className={`w-full p-3.5 rounded-xl border flex-row items-center justify-between my-1 transition-all active:scale-[0.99] ${
+                      className={`w-full p-3.5 rounded-xl border flex-row items-center justify-between my-1 active:scale-[0.99] ${
                         isSelected
-                          ? 'bg-[#272C31] border-[#E85D26] shadow-sm'
-                          : 'bg-[#1F2327] border-white/5'
+                          ? 'bg-[#1B1D22] border-[#E85D26] shadow-sm'
+                          : 'bg-[#141518] border-white/[0.08]'
                       }`}
                     >
                       <View className="flex-row items-center flex-1 mr-3">
@@ -383,12 +374,12 @@ export default function CaptainSetupScreen() {
                           className={`w-10 h-10 rounded-lg items-center justify-center mr-3 border ${
                             isSelected
                               ? 'bg-[#E85D26]/15 border-[#E85D26]/40'
-                              : 'bg-[#272C31] border-white/10'
+                              : 'bg-[#1B1D22] border-white/[0.08]'
                           }`}
                         >
                           <Text
                             className={`text-[10px] font-black uppercase ${
-                              isSelected ? 'text-[#E85D26]' : 'text-[#7F8993]'
+                              isSelected ? 'text-[#E85D26]' : 'text-[#5C616A]'
                             }`}
                           >
                             {tier.badge}
@@ -399,12 +390,12 @@ export default function CaptainSetupScreen() {
                         <View className="flex-1">
                           <Text
                             className={`text-sm font-bold uppercase tracking-tight ${
-                              isSelected ? 'text-[#F4F6F7]' : 'text-[#A0A5AD]'
+                              isSelected ? 'text-[#FFFFFF]' : 'text-[#A0A5AD]'
                             }`}
                           >
                             {tier.label}
                           </Text>
-                          <Text className="text-[#7F8993] text-[11px] font-medium mt-0.5">
+                          <Text className="text-[#5C616A] text-[11px] font-medium mt-0.5">
                             {tier.tagline}
                           </Text>
                         </View>
@@ -415,11 +406,11 @@ export default function CaptainSetupScreen() {
                         className={`w-5 h-5 rounded-full border items-center justify-center ${
                           isSelected
                             ? 'border-[#E85D26] bg-[#E85D26]'
-                            : 'border-white/20 bg-[#272C31]'
+                            : 'border-white/20 bg-[#1B1D22]'
                         }`}
                       >
                         {isSelected && (
-                          <View className="w-2 h-2 rounded-full bg-[#171A1D]" />
+                          <View className="w-2 h-2 rounded-full bg-[#0C0D0E]" />
                         )}
                       </View>
                     </Pressable>
@@ -431,22 +422,22 @@ export default function CaptainSetupScreen() {
             {/* Section 5: Home Ground / Area */}
             <View className="mb-6">
               <View className="flex-row items-center justify-between mb-1.5">
-                <Text className="text-[#F4F6F7] text-xs font-bold tracking-wider uppercase">
+                <Text className="text-[#FFFFFF] text-xs font-bold tracking-wider uppercase">
                   HOME AREA & NEIGHBORHOOD
                 </Text>
-                <Text className="text-[#7F8993] text-[10px] font-bold uppercase tracking-wide">
+                <Text className="text-[#5C616A] text-[10px] font-bold uppercase tracking-wide">
                   FIXTURE BASE
                 </Text>
               </View>
 
-              <View className="bg-[#1F2327] border border-white/10 rounded-xl p-3.5 flex-row items-center justify-between shadow-xs">
+              <View className="bg-[#141518] border border-white/[0.08] rounded-xl p-3.5 flex-row items-center justify-between shadow-xs">
                 <View className="flex-row items-center flex-1 mr-3">
                   <View className="w-10 h-10 rounded-lg bg-[#E85D26]/10 border border-[#E85D26]/25 items-center justify-center mr-3">
                     <Ionicons name="location-sharp" size={20} color="#E85D26" />
                   </View>
 
                   <View className="flex-1">
-                    <Text className="text-[#F4F6F7] text-sm font-bold uppercase tracking-tight">
+                    <Text className="text-[#FFFFFF] text-sm font-bold uppercase tracking-tight">
                       {area}
                     </Text>
                     <Text className="text-[#A0A5AD] text-[11px] font-medium mt-0.5">
@@ -459,7 +450,7 @@ export default function CaptainSetupScreen() {
                   onPress={() => setIsAreaModalVisible(true)}
                   accessibilityRole="button"
                   accessibilityLabel="Change home area"
-                  className="py-1.5 px-3 rounded-lg bg-[#272C31] border border-white/10 active:scale-95"
+                  className="py-1.5 px-3 rounded-lg bg-[#1B1D22] border border-white/[0.08] active:scale-95"
                 >
                   <Text className="text-[#E85D26] text-[10px] font-bold tracking-wider uppercase">
                     CHANGE
@@ -490,7 +481,7 @@ export default function CaptainSetupScreen() {
 
               <View className="flex-row items-center justify-center mt-3">
                 <Ionicons name="shield-checkmark-sharp" size={13} color="#E85D26" />
-                <Text className="text-[#7F8993] text-[10px] font-semibold tracking-wider ml-1.5">
+                <Text className="text-[#5C616A] text-[10px] font-semibold tracking-wider ml-1.5">
                   Verified match hosting · Real-time squad recruitment
                 </Text>
               </View>
@@ -512,24 +503,24 @@ export default function CaptainSetupScreen() {
         >
           <Pressable
             onPress={(e) => e.stopPropagation()}
-            className="w-full max-w-sm rounded-2xl bg-[#1F2327] border border-white/10 p-5 shadow-2xl"
+            className="w-full max-w-sm rounded-2xl bg-[#141518] border border-white/[0.08] p-5 shadow-2xl"
           >
             {/* Modal Header */}
-            <View className="flex-row items-center justify-between mb-4 pb-3 border-b border-white/10">
+            <View className="flex-row items-center justify-between mb-4 pb-3 border-b border-white/[0.08]">
               <View>
                 <Text className="text-[#E85D26] text-[10px] font-black uppercase tracking-widest">
                   LOCATION
                 </Text>
-                <Text className="text-[#F4F6F7] text-base font-bold uppercase tracking-tight mt-0.5">
+                <Text className="text-[#FFFFFF] text-base font-bold uppercase tracking-tight mt-0.5">
                   Select Team Home Area
                 </Text>
               </View>
               <Pressable
                 onPress={() => setIsAreaModalVisible(false)}
-                className="w-8 h-8 rounded-lg bg-[#272C31] items-center justify-center border border-white/10 active:scale-95"
+                className="w-8 h-8 rounded-lg bg-[#1B1D22] items-center justify-center border border-white/[0.08] active:scale-95"
                 accessibilityLabel="Close area modal"
               >
-                <Ionicons name="close" size={18} color="#F4F6F7" />
+                <Ionicons name="close" size={18} color="#FFFFFF" />
               </Pressable>
             </View>
 
@@ -544,21 +535,21 @@ export default function CaptainSetupScreen() {
                       setArea(item);
                       setIsAreaModalVisible(false);
                     }}
-                    className={`w-full p-3 rounded-xl border flex-row items-center justify-between my-1 transition-all active:scale-[0.99] ${
+                    className={`w-full p-3 rounded-xl border flex-row items-center justify-between my-1 active:scale-[0.99] ${
                       isSelected
-                        ? 'bg-[#272C31] border-[#E85D26]'
-                        : 'bg-[#171A1D] border-white/5'
+                        ? 'bg-[#1B1D22] border-[#E85D26]'
+                        : 'bg-[#0C0D0E] border-white/[0.08]'
                     }`}
                   >
                     <View className="flex-row items-center flex-1">
                       <Ionicons
                         name="location-sharp"
                         size={16}
-                        color={isSelected ? '#E85D26' : '#7F8993'}
+                        color={isSelected ? '#E85D26' : '#5C616A'}
                       />
                       <Text
                         className={`text-xs font-bold uppercase tracking-tight ml-2.5 ${
-                          isSelected ? 'text-[#E85D26]' : 'text-[#F4F6F7]'
+                          isSelected ? 'text-[#E85D26]' : 'text-[#FFFFFF]'
                         }`}
                       >
                         {item}
@@ -566,7 +557,7 @@ export default function CaptainSetupScreen() {
                     </View>
                     {isSelected && (
                       <View className="w-5 h-5 rounded-full bg-[#E85D26] items-center justify-center">
-                        <Ionicons name="checkmark" size={13} color="#171A1D" />
+                        <Ionicons name="checkmark" size={13} color="#0C0D0E" />
                       </View>
                     )}
                   </Pressable>

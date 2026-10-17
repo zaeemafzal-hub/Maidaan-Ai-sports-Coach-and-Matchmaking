@@ -18,18 +18,16 @@ import { FormInput } from '../../components/ui/FormInput';
 import { PrimaryButton } from '../../components/ui/PrimaryButton';
 import { ArenaHeader } from '../../components/ui/ArenaHeader';
 import { IMAGES } from '../../constants/images';
+import { isSupabaseConfigured } from '../../lib/supabase';
 
 export default function LoginScreen() {
   const {
-    selectedRole,
     currentUser,
-    onboardingCompleted,
+    loadProfile,
+    activeMode,
+    authStatus,
     setCurrentUser,
-    setSelectedRole,
     setOnboardingCompleted,
-    setPlayerProfile,
-    setCaptainProfile,
-    setHubOwnerProfile,
   } = useAuthStore();
 
   const [email, setEmail] = useState('');
@@ -73,34 +71,23 @@ export default function LoginScreen() {
     setErrors({});
 
     try {
-      const result = await authService.login({
+      const loginRes = await authService.login({
         email: email.trim().toLowerCase(),
         password,
       });
 
-      setCurrentUser(result.user);
-      setSelectedRole(result.user.role);
-      const isComplete = (result.user as any).onboardingCompleted ?? false;
-      setOnboardingCompleted(isComplete);
+      setCurrentUser(loginRes.user);
 
-      if (result.profile) {
-        if (result.user.role === 'PLAYER') {
-          setPlayerProfile(result.profile);
-        } else if (result.user.role === 'TEAM_CAPTAIN') {
-          setCaptainProfile(result.profile);
-        } else if (result.user.role === 'HUB_OWNER') {
-          setHubOwnerProfile(result.profile);
-        }
-      }
-
-      if (isComplete) {
-        if (result.user.role === 'ADMIN') {
+      const isReady = await loadProfile();
+      const currentMode = activeMode;
+      if (isReady) {
+        if (currentMode === 'ADMIN') {
           router.replace('/admin/dashboard');
         } else {
           router.replace('/(tabs)/discover');
         }
       } else {
-        switch (result.user.role) {
+        switch (currentMode) {
           case 'PLAYER':
             router.replace('/onboarding/player-setup');
             break;
@@ -125,30 +112,36 @@ export default function LoginScreen() {
     }
   };
 
-  const handleSocialMockLogin = async (provider: 'Google' | 'Apple') => {
+  const handleGoogleLogin = async () => {
+    if (isSubmitting) return;
     setIsSubmitting(true);
     setErrors({});
     try {
-      const role = currentUser?.role || selectedRole || 'PLAYER';
-      const result = await authService.socialLogin(provider, role);
-      setCurrentUser(result.user);
-      setSelectedRole(result.user.role);
-      setOnboardingCompleted(false);
-
-      if (role === 'PLAYER') {
-        router.replace('/onboarding/player-setup');
-      } else if (role === 'TEAM_CAPTAIN') {
-        router.replace('/onboarding/captain-setup');
-      } else if (role === 'HUB_OWNER') {
-        router.replace('/onboarding/hub-setup');
+      if (isSupabaseConfigured) {
+        await authService.signInWithGoogle();
       } else {
-        router.replace('/(tabs)/discover');
+        const result = await authService.socialLogin('Google', 'PLAYER');
+        setCurrentUser(result.user);
+        setOnboardingCompleted(false);
+        router.replace('/onboarding/player-setup');
       }
     } catch (err: any) {
-      setErrors({ general: err?.message || 'Social sign in failed.' });
+      setErrors({ general: err?.message || 'Google sign in failed.' });
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleAppleLogin = () => {
+    if (Platform.OS !== 'ios') {
+      setErrors({
+        general: 'Apple Sign-In is only available on iOS devices.',
+      });
+      return;
+    }
+    setErrors({
+      general: 'Apple Sign-In requires an Apple Developer membership and configuration.',
+    });
   };
 
   const handleForgotPassword = () => {
@@ -156,7 +149,7 @@ export default function LoginScreen() {
   };
 
   const handleRegister = () => {
-    router.push('/(auth)/role-selection');
+    router.push('/(auth)/create-account');
   };
 
   return (
@@ -297,9 +290,10 @@ export default function LoginScreen() {
             {/* Social Logins */}
             <View className="space-y-3">
               <Pressable
-                onPress={() => handleSocialMockLogin('Google')}
+                onPress={handleGoogleLogin}
                 accessibilityRole="button"
                 accessibilityLabel="Continue with Google"
+                disabled={isSubmitting}
                 className="w-full min-h-[50px] py-3.5 px-4 rounded-[16px] border border-[rgba(255,255,255,0.08)] bg-[#141518] flex-row items-center justify-center active:bg-[#1B1D22]"
               >
                 <Ionicons name="logo-google" size={18} color="#FFFFFF" />
@@ -309,10 +303,11 @@ export default function LoginScreen() {
               </Pressable>
 
               <Pressable
-                onPress={() => handleSocialMockLogin('Apple')}
+                onPress={handleAppleLogin}
                 accessibilityRole="button"
                 accessibilityLabel="Continue with Apple"
-                className="w-full min-h-[50px] py-3.5 px-4 rounded-[16px] border border-[rgba(255,255,255,0.08)] bg-[#141518] flex-row items-center justify-center active:bg-[#1B1D22] mt-2.5"
+                disabled={isSubmitting}
+                className="w-full min-h-[50px] py-3.5 px-4 rounded-[16px] border border-[rgba(255,255,255,0.08)] bg-[#141518] flex-row items-center justify-center active:bg-[#1B1D22] mt-2.5 opacity-80"
               >
                 <Ionicons name="logo-apple" size={18} color="#FFFFFF" />
                 <Text className="text-white text-sm font-semibold ml-2.5">

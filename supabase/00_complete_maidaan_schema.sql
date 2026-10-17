@@ -754,3 +754,158 @@ revoke execute on function public.review_hub_verification(uuid, uuid, text, text
 revoke execute on function public.review_hub_verification(uuid, uuid, text, text) from anon;
 revoke execute on function public.review_hub_verification(uuid, uuid, text, text) from authenticated;
 grant execute on function public.review_hub_verification(uuid, uuid, text, text) to service_role;
+
+
+-- =============================================================================
+-- 10. MULTI-ROLE CAPABILITIES (Phase A)
+-- =============================================================================
+
+create table if not exists public.user_roles (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  role text not null check (role in ('PLAYER', 'TEAM_CAPTAIN', 'HUB_OWNER', 'ADMIN')),
+  status text not null default 'ACTIVE' check (status in ('ACTIVE', 'REVOKED')),
+  created_at timestamptz not null default now(),
+  constraint user_roles_user_role_unique unique (user_id, role)
+);
+
+create index if not exists idx_user_roles_user_id on public.user_roles(user_id);
+create index if not exists idx_user_roles_role on public.user_roles(role);
+create index if not exists idx_user_roles_status on public.user_roles(status);
+
+alter table public.user_roles enable row level security;
+
+drop policy if exists "Users can view own roles" on public.user_roles;
+create policy "Users can view own roles"
+  on public.user_roles
+  for select
+  to authenticated
+  using (auth.uid() = user_id);
+
+-- Backfill existing profiles
+insert into public.user_roles (user_id, role, status)
+select id, 'PLAYER', 'ACTIVE'
+from public.profiles
+where role in ('PLAYER', 'TEAM_CAPTAIN', 'HUB_OWNER')
+on conflict (user_id, role) do nothing;
+
+insert into public.user_roles (user_id, role, status)
+select id, 'TEAM_CAPTAIN', 'ACTIVE'
+from public.profiles
+where role = 'TEAM_CAPTAIN'
+on conflict (user_id, role) do nothing;
+
+insert into public.user_roles (user_id, role, status)
+select id, 'HUB_OWNER', 'ACTIVE'
+from public.profiles
+where role = 'HUB_OWNER'
+on conflict (user_id, role) do nothing;
+
+insert into public.user_roles (user_id, role, status)
+select id, 'ADMIN', 'ACTIVE'
+from public.profiles
+where role = 'ADMIN'
+on conflict (user_id, role) do nothing;
+
+-- =============================================================================
+-- 11. TEAMS & TEAM MEMBERS (Phase B)
+-- =============================================================================
+
+create table if not exists public.teams (
+  id uuid primary key default gen_random_uuid(),
+  captain_id uuid not null references public.profiles(id) on delete cascade,
+  name text not null,
+  sport text not null check (sport in ('cricket', 'badminton', 'padel', 'football')),
+  skill_level text not null check (skill_level in ('beginner', 'intermediate', 'advanced')),
+  area text not null,
+  created_at timestamptz not null default timezone('utc'::text, now()),
+  updated_at timestamptz not null default timezone('utc'::text, now())
+);
+
+create index if not exists idx_teams_captain_id on public.teams(captain_id);
+create index if not exists idx_teams_sport on public.teams(sport);
+
+create table if not exists public.team_members (
+  id uuid primary key default gen_random_uuid(),
+  team_id uuid not null references public.teams(id) on delete cascade,
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  member_role text not null default 'PLAYER' check (member_role in ('CAPTAIN', 'PLAYER')),
+  status text not null default 'ACTIVE' check (status in ('ACTIVE', 'INVITED', 'LEFT', 'REMOVED')),
+  joined_at timestamptz not null default timezone('utc'::text, now()),
+  constraint uq_team_members_team_user unique (team_id, user_id)
+);
+
+create index if not exists idx_team_members_team_id on public.team_members(team_id);
+create index if not exists idx_team_members_user_id on public.team_members(user_id);
+create index if not exists idx_team_members_status on public.team_members(status);
+
+alter table public.matches
+  add column if not exists team_id uuid null references public.teams(id) on delete set null;
+
+create index if not exists idx_matches_team_id on public.matches(team_id);
+
+drop trigger if exists set_teams_updated_at on public.teams;
+create trigger set_teams_updated_at
+  before update on public.teams
+  for each row execute function public.set_updated_at();
+
+alter table public.teams enable row level security;
+alter table public.team_members enable row level security;
+
+drop policy if exists "Authenticated users can view teams" on public.teams;
+create policy "Authenticated users can view teams"
+  on public.teams
+  for select
+  to authenticated
+  using (true);
+
+drop policy if exists "Captains can insert own teams" on public.teams;
+create policy "Captains can insert own teams"
+  on public.teams
+  for insert
+  to authenticated
+  with check (captain_id = auth.uid());
+
+drop policy if exists "Captains can update own teams" on public.teams;
+create policy "Captains can update own teams"
+  on public.teams
+  for update
+  to authenticated
+  using (captain_id = auth.uid())
+  with check (captain_id = auth.uid());
+
+drop policy if exists "Captains can delete own teams" on public.teams;
+create policy "Captains can delete own teams"
+  on public.teams
+  for delete
+  to authenticated
+  using (captain_id = auth.uid());
+
+drop policy if exists "Authenticated users can view team members" on public.team_members;
+create policy "Authenticated users can view team members"
+  on public.team_members
+  for select
+  to authenticated
+  using (true);
+
+drop policy if exists "Captains can manage team members" on public.team_members;
+create policy "Captains can manage team members"
+  on public.team_members
+  for all
+  to authenticated
+  using (
+    exists (
+      select 1 from public.teams
+      where teams.id = public.team_members.team_id
+        and teams.captain_id = auth.uid()
+    )
+  )
+  with check (
+    exists (
+      select 1 from public.teams
+      where teams.id = public.team_members.team_id
+        and teams.captain_id = auth.uid()
+    )
+  );
+
+

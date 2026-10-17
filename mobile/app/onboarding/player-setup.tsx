@@ -73,14 +73,12 @@ export default function PlayerSetupScreen() {
   const insets = useSafeAreaInsets();
   const {
     currentUser,
-    selectedRole,
     setPlayerProfile,
     setOnboardingCompleted,
     isInitialized,
     isLoading,
+    loadProfile,
   } = useAuthStore();
-
-  const currentRole = currentUser?.role || selectedRole;
 
   useEffect(() => {
     if (!isInitialized || isLoading) return;
@@ -89,17 +87,7 @@ export default function PlayerSetupScreen() {
       router.replace('/(auth)/login');
       return;
     }
-
-    if (currentRole && currentRole !== 'PLAYER') {
-      if (currentRole === 'TEAM_CAPTAIN') {
-        router.replace('/onboarding/captain-setup');
-      } else if (currentRole === 'HUB_OWNER') {
-        router.replace('/onboarding/hub-setup');
-      } else {
-        router.replace('/(auth)/role-selection');
-      }
-    }
-  }, [isInitialized, isLoading, currentUser, currentRole]);
+  }, [isInitialized, isLoading, currentUser]);
 
   const [selectedSports, setSelectedSports] = useState<Sport[]>(['cricket']);
   const [skillLevel, setSkillLevel] = useState<SkillLevel>('intermediate');
@@ -137,6 +125,7 @@ export default function PlayerSetupScreen() {
 
       setPlayerProfile(result.profile);
       setOnboardingCompleted(true);
+      await loadProfile();
 
       router.replace('/(tabs)/discover');
     } catch (err: any) {
@@ -183,7 +172,7 @@ export default function PlayerSetupScreen() {
         title="Player Setup"
         subtitle="Step 1 of 1"
         showBack
-        fallbackRoute="/(auth)/role-selection"
+        fallbackRoute="/(tabs)/profile"
         transparent
       />
 
@@ -283,7 +272,7 @@ export default function PlayerSetupScreen() {
                     accessibilityRole="radio"
                     accessibilityState={{ selected: isSelected }}
                     accessibilityLabel={`${tier.label} skill level`}
-                    className={`w-full p-4 rounded-2xl border flex-row items-center justify-between transition-all active:scale-[0.99] ${
+                    className={`w-full p-4 rounded-2xl border flex-row items-center justify-between active:scale-[0.99] ${
                       isSelected
                         ? 'bg-[#1B1D22] border-2 border-[#E85D26] shadow-sm shadow-[#E85D26]/20'
                         : 'bg-[#141518] border border-white/[0.08]'
@@ -479,7 +468,7 @@ export default function PlayerSetupScreen() {
                       setArea(item);
                       setIsAreaModalVisible(false);
                     }}
-                    className={`w-full p-3.5 rounded-xl border flex-row items-center justify-between transition-all active:scale-[0.99] ${
+                    className={`w-full p-3.5 rounded-xl border flex-row items-center justify-between active:scale-[0.99] ${
                       isSelected
                         ? 'bg-[#1B1D22] border-[#E85D26]'
                         : 'bg-[#141518] border-white/[0.08]'

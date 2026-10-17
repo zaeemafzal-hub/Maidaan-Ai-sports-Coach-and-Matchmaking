@@ -32,9 +32,12 @@ const SPORT_META: Record<
 };
 
 export default function HubVerificationScreen() {
-  const { currentUser } = useAuthStore();
+  const { currentUser, roles = [] } = useAuthStore();
 
-  const isAdmin = currentUser?.role === 'ADMIN';
+  const isAdmin =
+    roles.includes('ADMIN') ||
+    currentUser?.roles?.includes('ADMIN') ||
+    currentUser?.role === 'ADMIN';
 
   // Live state
   const [submissions, setSubmissions] = useState<HubVerificationRequest[]>([]);
@@ -85,21 +88,21 @@ export default function HubVerificationScreen() {
   // =========================================================================
   if (!isAdmin) {
     return (
-      <SafeAreaView className="flex-1 bg-[#171A1D]" edges={['top']}>
+      <SafeAreaView className="flex-1 bg-[#0C0D0E]" edges={['top']}>
         <ArenaHeader
           title="Hub Verification"
           subtitle="Access Restriction"
           showBack
           onBack={() => router.replace('/(tabs)/discover')}
         />
-        <View className="flex-1 items-center justify-center p-6 bg-[#171A1D]">
+        <View className="flex-1 items-center justify-center p-6 bg-[#0C0D0E]">
           <View className="w-16 h-16 rounded-full bg-[#F4A261]/10 items-center justify-center border border-[#F4A261]/30 mb-5">
             <Ionicons name="shield-outline" size={28} color="#F4A261" />
           </View>
 
           <ArenaBadge label="ADMIN REQUIRED" variant="rust" size="md" />
 
-          <Text className="text-[#F4F6F7] text-lg font-black uppercase tracking-tight text-center mt-3">
+          <Text className="text-[#FFFFFF] text-lg font-black uppercase tracking-tight text-center mt-3">
             Admin Access Required
           </Text>
 
@@ -195,7 +198,7 @@ export default function HubVerificationScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#171A1D]" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-[#0C0D0E]" edges={['top']}>
       {/* Modern Athletic Header */}
       <ArenaHeader
         title="Hub Verification"
@@ -210,20 +213,20 @@ export default function HubVerificationScreen() {
       >
         {/* Banner */}
         <View className="px-4 pt-3">
-          <View className="h-18 w-full rounded-2xl overflow-hidden border border-white/10 relative bg-[#1F2327]">
+          <View className="h-18 w-full rounded-2xl overflow-hidden border border-white/[0.08] relative bg-[#141518]">
             <Image
               source={IMAGES.arenaGround}
               className="w-full h-full opacity-35"
               resizeMode="cover"
             />
-            <View className="absolute inset-0 px-4 py-3 flex-row items-center justify-between bg-gradient-to-r from-[#171A1D]/80 to-transparent">
+            <View className="absolute inset-0 px-4 py-3 flex-row items-center justify-between bg-gradient-to-r from-[#0C0D0E]/80 to-transparent">
               <View className="flex-1 pr-2">
-                <Text className="text-[#7F8993] text-[10px] font-mono uppercase tracking-widest font-bold">
+                <Text className="text-[#5C616A] text-[10px] font-mono uppercase tracking-widest font-bold">
                   Facility Approval Desk
                 </Text>
                 <Text
                   numberOfLines={1}
-                  className="text-[#F4F6F7] text-base font-black uppercase tracking-tight"
+                  className="text-[#FFFFFF] text-base font-black uppercase tracking-tight"
                 >
                   Hub Submissions Audit
                 </Text>
@@ -239,7 +242,7 @@ export default function HubVerificationScreen() {
 
         {/* Page Title & Context */}
         <View className="px-4 pt-3 pb-1">
-          <Text className="text-[#F4F6F7] text-xl font-black uppercase tracking-tight">
+          <Text className="text-[#FFFFFF] text-xl font-black uppercase tracking-tight">
             Facility Submissions
           </Text>
           <Text className="text-[#A0A5AD] text-xs leading-4 mt-0.5">
@@ -249,7 +252,7 @@ export default function HubVerificationScreen() {
 
         {/* LOADING INDICATOR */}
         {loading && (
-          <View className="mx-4 mt-3 p-4 bg-[#1F2327] rounded-2xl border border-white/10 flex-row items-center justify-center">
+          <View className="mx-4 mt-3 p-4 bg-[#141518] rounded-2xl border border-white/[0.08] flex-row items-center justify-center">
             <ActivityIndicator size="small" color="#E85D26" />
             <Text className="text-[#A0A5AD] text-xs font-mono ml-3">
               Retrieving facility submissions...
@@ -286,10 +289,10 @@ export default function HubVerificationScreen() {
               className={`flex-1 rounded-2xl p-3.5 border ${
                 activeFilter === 'PENDING'
                   ? 'bg-[#F4A261]/15 border-[#F4A261]'
-                  : 'bg-[#1F2327] border-white/10'
+                  : 'bg-[#141518] border-white/[0.08]'
               }`}
             >
-              <Text className="text-[#7F8993] text-[10px] font-mono uppercase tracking-wider font-bold">
+              <Text className="text-[#5C616A] text-[10px] font-mono uppercase tracking-wider font-bold">
                 PENDING
               </Text>
               <Text className="text-[#F4A261] text-2xl font-black tracking-tight mt-0.5">
@@ -306,10 +309,10 @@ export default function HubVerificationScreen() {
               className={`flex-1 rounded-2xl p-3.5 border ${
                 activeFilter === 'APPROVED'
                   ? 'bg-[#E85D26]/15 border-[#E85D26]'
-                  : 'bg-[#1F2327] border-white/10'
+                  : 'bg-[#141518] border-white/[0.08]'
               }`}
             >
-              <Text className="text-[#7F8993] text-[10px] font-mono uppercase tracking-wider font-bold">
+              <Text className="text-[#5C616A] text-[10px] font-mono uppercase tracking-wider font-bold">
                 APPROVED
               </Text>
               <Text className="text-[#E85D26] text-2xl font-black tracking-tight mt-0.5">
@@ -325,17 +328,17 @@ export default function HubVerificationScreen() {
               onPress={() => setActiveFilter('REJECTED')}
               className={`flex-1 rounded-2xl p-3.5 border ${
                 activeFilter === 'REJECTED'
-                  ? 'bg-[#272C31] border-white/30'
-                  : 'bg-[#1F2327] border-white/10'
+                  ? 'bg-[#1B1D22] border-white/30'
+                  : 'bg-[#141518] border-white/[0.08]'
               }`}
             >
-              <Text className="text-[#7F8993] text-[10px] font-mono uppercase tracking-wider font-bold">
+              <Text className="text-[#5C616A] text-[10px] font-mono uppercase tracking-wider font-bold">
                 DECLINED
               </Text>
               <Text className="text-[#A0A5AD] text-2xl font-black tracking-tight mt-0.5">
                 {declinedCount}
               </Text>
-              <Text className="text-[#7F8993] text-[10px] font-medium">
+              <Text className="text-[#5C616A] text-[10px] font-medium">
                 Rejected
               </Text>
             </Pressable>
@@ -344,7 +347,7 @@ export default function HubVerificationScreen() {
 
         {/* FILTER CHIPS */}
         <View className="px-4 mt-4">
-          <View className="flex-row space-x-1.5 bg-[#1F2327] p-1 rounded-xl border border-white/10">
+          <View className="flex-row space-x-1.5 bg-[#141518] p-1 rounded-xl border border-white/[0.08]">
             {(
               [
                 { id: 'PENDING', label: `Pending (${pendingCount})` },
@@ -367,7 +370,7 @@ export default function HubVerificationScreen() {
                   <Text
                     numberOfLines={1}
                     className={`text-[10px] uppercase font-bold ${
-                      isSelected ? 'text-[#171A1D]' : 'text-[#A0A5AD]'
+                      isSelected ? 'text-[#0C0D0E]' : 'text-[#A0A5AD]'
                     }`}
                   >
                     {tab.label}
@@ -384,19 +387,19 @@ export default function HubVerificationScreen() {
             <Text className="text-[#A0A5AD] text-xs font-mono uppercase tracking-wider font-bold">
               Verification Submissions
             </Text>
-            <Text className="text-[#7F8993] text-[10px] font-mono">
+            <Text className="text-[#5C616A] text-[10px] font-mono">
               {displayedSubmissions.length} Listed
             </Text>
           </View>
 
           {/* EMPTY STATE */}
           {displayedSubmissions.length === 0 && !loading ? (
-            <View className="bg-[#1F2327] rounded-2xl p-6 border border-white/10 items-center my-2">
-              <View className="w-12 h-12 rounded-full bg-[#272C31] border border-white/10 items-center justify-center mb-3">
+            <View className="bg-[#141518] rounded-2xl p-6 border border-white/[0.08] items-center my-2">
+              <View className="w-12 h-12 rounded-full bg-[#1B1D22] border border-white/[0.08] items-center justify-center mb-3">
                 <Ionicons name="business-outline" size={24} color="#A0A5AD" />
               </View>
 
-              <Text className="text-[#F4F6F7] text-sm font-black uppercase tracking-tight text-center">
+              <Text className="text-[#FFFFFF] text-sm font-black uppercase tracking-tight text-center">
                 {activeFilter === 'PENDING'
                   ? 'No Hubs Waiting for Review'
                   : 'No Hub Submissions'}
@@ -425,18 +428,18 @@ export default function HubVerificationScreen() {
               return (
                 <View
                   key={sub.id}
-                  className="bg-[#1F2327] rounded-2xl p-4 border border-white/10 mb-3 shadow-sm"
+                  className="bg-[#141518] rounded-2xl p-4 border border-white/[0.08] mb-3 shadow-sm"
                 >
                   {/* Top Bar: Hub Name & Status Badge */}
                   <View className="flex-row items-center justify-between mb-1.5">
                     <View className="flex-1 pr-2">
                       <Text
                         numberOfLines={1}
-                        className="text-[#F4F6F7] text-base font-black uppercase tracking-tight"
+                        className="text-[#FFFFFF] text-base font-black uppercase tracking-tight"
                       >
                         {sub.hubName}
                       </Text>
-                      <Text className="text-[#7F8993] text-xs font-mono">
+                      <Text className="text-[#5C616A] text-xs font-mono">
                         Owner ID: {sub.hubOwnerId.substring(0, 8)}...
                       </Text>
                     </View>
@@ -454,7 +457,7 @@ export default function HubVerificationScreen() {
                     <Text className="text-[#A0A5AD] text-xs font-medium ml-1 flex-1" numberOfLines={1}>
                       {sub.location}
                     </Text>
-                    <View className="flex-row items-center ml-2 bg-[#272C31] px-2.5 py-0.5 rounded-lg border border-white/10">
+                    <View className="flex-row items-center ml-2 bg-[#1B1D22] px-2.5 py-0.5 rounded-lg border border-white/[0.08]">
                       <Ionicons name="grid-outline" size={11} color="#E85D26" />
                       <Text className="text-[#E85D26] text-[10px] font-mono font-bold ml-1">
                         {sub.courtCount} Courts
@@ -469,14 +472,14 @@ export default function HubVerificationScreen() {
                       return (
                         <View
                           key={sport}
-                          className="flex-row items-center bg-[#272C31] px-2.5 py-1 rounded-lg border border-white/10"
+                          className="flex-row items-center bg-[#1B1D22] px-2.5 py-1 rounded-lg border border-white/[0.08]"
                         >
                           <MaterialCommunityIcons
                             name={meta?.icon || 'tennis'}
                             size={11}
                             color="#E85D26"
                           />
-                          <Text className="text-[#F4F6F7] text-[10px] font-bold ml-1">
+                          <Text className="text-[#FFFFFF] text-[10px] font-bold ml-1">
                             {meta?.label || sport}
                           </Text>
                         </View>
@@ -496,35 +499,35 @@ export default function HubVerificationScreen() {
 
                   {/* Persisted Admin Note if present */}
                   {sub.adminNote ? (
-                    <View className="bg-[#272C31] p-2.5 rounded-xl border border-white/5 mb-2.5">
-                      <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold">
+                    <View className="bg-[#1B1D22] p-2.5 rounded-xl border border-white/[0.08] mb-2.5">
+                      <Text className="text-[#5C616A] text-[10px] font-mono uppercase font-bold">
                         Admin Note
                       </Text>
-                      <Text className="text-[#F4F6F7] text-xs leading-4 mt-0.5">
+                      <Text className="text-[#FFFFFF] text-xs leading-4 mt-0.5">
                         {sub.adminNote}
                       </Text>
                     </View>
                   ) : null}
 
                   {/* Timestamp & Metadata Footer */}
-                  <View className="flex-row items-center justify-between pt-2 border-t border-white/5">
-                    <Text className="text-[#7F8993] text-[10px] font-mono">
+                  <View className="flex-row items-center justify-between pt-2 border-t border-white/[0.08]">
+                    <Text className="text-[#5C616A] text-[10px] font-mono">
                       REF: {sub.id.substring(0, 8).toUpperCase()}
                     </Text>
-                    <Text className="text-[#7F8993] text-[10px] font-mono">
+                    <Text className="text-[#5C616A] text-[10px] font-mono">
                       SUBMITTED: {sub.submittedAt ? new Date(sub.submittedAt).toLocaleDateString() : 'RECENT'}
                     </Text>
                   </View>
 
                   {/* ACTION CONTROLS */}
                   {isPending ? (
-                    <View className="flex-row gap-2 mt-3 pt-2.5 border-t border-white/5">
+                    <View className="flex-row gap-2 mt-3 pt-2.5 border-t border-white/[0.08]">
                       <Pressable
                         onPress={() => setInspectSubmission(sub)}
                         disabled={isBusy}
-                        className="py-2.5 px-3.5 rounded-xl bg-[#272C31] border border-white/10 items-center justify-center active:bg-white/5"
+                        className="py-2.5 px-3.5 rounded-xl bg-[#1B1D22] border border-white/[0.08] items-center justify-center active:bg-white/5"
                       >
-                        <Ionicons name="eye-outline" size={16} color="#F4F6F7" />
+                        <Ionicons name="eye-outline" size={16} color="#FFFFFF" />
                       </Pressable>
 
                       <Pressable
@@ -547,16 +550,16 @@ export default function HubVerificationScreen() {
                         }`}
                       >
                         {isBusy ? (
-                          <ActivityIndicator size="small" color="#171A1D" />
+                          <ActivityIndicator size="small" color="#0C0D0E" />
                         ) : (
-                          <Text className="text-[#171A1D] text-xs font-black uppercase tracking-wider">
+                          <Text className="text-[#0C0D0E] text-xs font-black uppercase tracking-wider">
                             Approve
                           </Text>
                         )}
                       </Pressable>
                     </View>
                   ) : (
-                    <View className="flex-row items-center justify-between mt-3 pt-2 border-t border-white/5">
+                    <View className="flex-row items-center justify-between mt-3 pt-2 border-t border-white/[0.08]">
                       <View className="flex-row items-center">
                         <Ionicons
                           name={isApproved ? 'shield-checkmark-outline' : 'close-circle-outline'}
@@ -574,9 +577,9 @@ export default function HubVerificationScreen() {
 
                       <Pressable
                         onPress={() => setInspectSubmission(sub)}
-                        className="py-1 px-3 rounded-lg bg-[#272C31] border border-white/10"
+                        className="py-1 px-3 rounded-lg bg-[#1B1D22] border border-white/[0.08]"
                       >
-                        <Text className="text-[#F4F6F7] text-xs font-bold">
+                        <Text className="text-[#FFFFFF] text-xs font-bold">
                           View Details
                         </Text>
                       </Pressable>
@@ -601,8 +604,8 @@ export default function HubVerificationScreen() {
           }
         }}
       >
-        <View className="flex-1 bg-[#171A1D]/85 items-center justify-center p-5">
-          <View className="w-full max-w-[340px] bg-[#1F2327] rounded-2xl p-6 border border-white/10 shadow-2xl">
+        <View className="flex-1 bg-[#0C0D0E]/85 items-center justify-center p-5">
+          <View className="w-full max-w-[340px] bg-[#141518] rounded-2xl p-6 border border-white/[0.08] shadow-2xl">
             {confirmModal ? (
               <>
                 <View
@@ -619,7 +622,7 @@ export default function HubVerificationScreen() {
                         : 'close-outline'
                     }
                     size={24}
-                    color={confirmModal.type === 'approve' ? '#171A1D' : '#F4A261'}
+                    color={confirmModal.type === 'approve' ? '#0C0D0E' : '#F4A261'}
                   />
                 </View>
 
@@ -633,7 +636,7 @@ export default function HubVerificationScreen() {
                   size="sm"
                 />
 
-                <Text className="text-[#F4F6F7] text-lg font-black uppercase tracking-tight mt-2">
+                <Text className="text-[#FFFFFF] text-lg font-black uppercase tracking-tight mt-2">
                   {confirmModal.type === 'approve'
                     ? `Approve ${confirmModal.submission.hubName}?`
                     : `Decline Submission?`}
@@ -646,8 +649,8 @@ export default function HubVerificationScreen() {
                 </Text>
 
                 {/* Submissions summary snapshot */}
-                <View className="my-3 p-3 bg-[#272C31] rounded-xl border border-white/10">
-                  <Text className="text-[#F4F6F7] text-xs font-black uppercase" numberOfLines={1}>
+                <View className="my-3 p-3 bg-[#1B1D22] rounded-xl border border-white/[0.08]">
+                  <Text className="text-[#FFFFFF] text-xs font-black uppercase" numberOfLines={1}>
                     {confirmModal.submission.hubName}
                   </Text>
                   <Text className="text-[#A0A5AD] text-xs font-mono mt-0.5">
@@ -658,7 +661,7 @@ export default function HubVerificationScreen() {
                 {/* Optional Admin Note input if declining */}
                 {confirmModal.type === 'decline' ? (
                   <View className="mb-3">
-                    <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold mb-1.5">
+                    <Text className="text-[#5C616A] text-[10px] font-mono uppercase font-bold mb-1.5">
                       Admin Note (Optional)
                     </Text>
                     <TextInput
@@ -667,10 +670,10 @@ export default function HubVerificationScreen() {
                       maxLength={300}
                       editable={!processingId}
                       placeholder="e.g. Venue details need clarification..."
-                      placeholderTextColor="#7F8993"
-                      className="bg-[#272C31] border border-white/10 p-2.5 rounded-xl text-[#F4F6F7] text-xs min-h-[42px]"
+                      placeholderTextColor="#5C616A"
+                      className="bg-[#1B1D22] border border-white/[0.08] p-2.5 rounded-xl text-[#FFFFFF] text-xs min-h-[42px]"
                     />
-                    <Text className="text-[#7F8993] text-[9px] font-mono text-right mt-1">
+                    <Text className="text-[#5C616A] text-[9px] font-mono text-right mt-1">
                       {adminNoteInput.length}/300
                     </Text>
                   </View>
@@ -718,43 +721,43 @@ export default function HubVerificationScreen() {
         animationType="slide"
         onRequestClose={() => setInspectSubmission(null)}
       >
-        <View className="flex-1 bg-[#171A1D]/85 justify-end">
-          <View className="bg-[#1F2327] rounded-t-3xl p-6 border-t border-white/10 max-h-[85%]">
+        <View className="flex-1 bg-[#0C0D0E]/85 justify-end">
+          <View className="bg-[#141518] rounded-t-3xl p-6 border-t border-white/[0.08] max-h-[85%]">
             {inspectSubmission ? (
               <ScrollView showsVerticalScrollIndicator={false}>
-                <View className="flex-row items-center justify-between pb-3 border-b border-white/5">
+                <View className="flex-row items-center justify-between pb-3 border-b border-white/[0.08]">
                   <View className="flex-1 pr-2">
-                    <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold">
+                    <Text className="text-[#5C616A] text-[10px] font-mono uppercase font-bold">
                       Submission Audit Sheet
                     </Text>
-                    <Text className="text-[#F4F6F7] text-lg font-black uppercase tracking-tight mt-0.5">
+                    <Text className="text-[#FFFFFF] text-lg font-black uppercase tracking-tight mt-0.5">
                       {inspectSubmission.hubName}
                     </Text>
                   </View>
                   <Pressable
                     onPress={() => setInspectSubmission(null)}
-                    className="w-9 h-9 rounded-xl bg-[#272C31] items-center justify-center border border-white/10"
+                    className="w-9 h-9 rounded-xl bg-[#1B1D22] items-center justify-center border border-white/[0.08]"
                   >
-                    <Ionicons name="close" size={20} color="#F4F6F7" />
+                    <Ionicons name="close" size={20} color="#FFFFFF" />
                   </Pressable>
                 </View>
 
                 {/* Fields Table */}
-                <View className="mt-4 bg-[#272C31] rounded-2xl border border-white/10 p-4 space-y-3">
+                <View className="mt-4 bg-[#1B1D22] rounded-2xl border border-white/[0.08] p-4 space-y-3">
                   <View>
-                    <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold">
+                    <Text className="text-[#5C616A] text-[10px] font-mono uppercase font-bold">
                       Hub Identifier
                     </Text>
-                    <Text className="text-[#F4F6F7] text-xs font-mono font-bold mt-0.5">
+                    <Text className="text-[#FFFFFF] text-xs font-mono font-bold mt-0.5">
                       {inspectSubmission.id}
                     </Text>
                   </View>
 
-                  <View className="pt-2 border-t border-white/5">
-                    <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold">
+                  <View className="pt-2 border-t border-white/[0.08]">
+                    <Text className="text-[#5C616A] text-[10px] font-mono uppercase font-bold">
                       Venue Operator ID
                     </Text>
-                    <Text className="text-[#F4F6F7] text-xs font-mono mt-0.5">
+                    <Text className="text-[#FFFFFF] text-xs font-mono mt-0.5">
                       {inspectSubmission.hubOwnerId}
                     </Text>
                     {inspectSubmission.contactNumber ? (
@@ -764,40 +767,40 @@ export default function HubVerificationScreen() {
                     ) : null}
                   </View>
 
-                  <View className="pt-2 border-t border-white/5">
-                    <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold">
+                  <View className="pt-2 border-t border-white/[0.08]">
+                    <Text className="text-[#5C616A] text-[10px] font-mono uppercase font-bold">
                       Ground Locality
                     </Text>
-                    <Text className="text-[#F4F6F7] text-xs font-bold mt-0.5">
+                    <Text className="text-[#FFFFFF] text-xs font-bold mt-0.5">
                       {inspectSubmission.location}
                     </Text>
                   </View>
 
-                  <View className="pt-2 border-t border-white/5">
-                    <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold">
+                  <View className="pt-2 border-t border-white/[0.08]">
+                    <Text className="text-[#5C616A] text-[10px] font-mono uppercase font-bold">
                       Declared Playing Spaces
                     </Text>
-                    <Text className="text-[#F4F6F7] text-xs font-bold mt-0.5">
+                    <Text className="text-[#FFFFFF] text-xs font-bold mt-0.5">
                       {inspectSubmission.courtCount} Playing Courts / Pitches
                     </Text>
                   </View>
 
-                  <View className="pt-2 border-t border-white/5">
-                    <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold mb-1.5">
+                  <View className="pt-2 border-t border-white/[0.08]">
+                    <Text className="text-[#5C616A] text-[10px] font-mono uppercase font-bold mb-1.5">
                       Supported Sports
                     </Text>
                     <View className="flex-row flex-wrap gap-1.5">
                       {inspectSubmission.sports.map((sp) => (
                         <View
                           key={sp}
-                          className="flex-row items-center bg-[#1F2327] px-2.5 py-1 rounded-lg border border-white/10"
+                          className="flex-row items-center bg-[#141518] px-2.5 py-1 rounded-lg border border-white/[0.08]"
                         >
                           <MaterialCommunityIcons
                             name={SPORT_META[sp]?.icon || 'tennis'}
                             size={12}
                             color="#E85D26"
                           />
-                          <Text className="text-[#F4F6F7] text-[10px] font-bold ml-1">
+                          <Text className="text-[#FFFFFF] text-[10px] font-bold ml-1">
                             {SPORT_META[sp]?.label || sp}
                           </Text>
                         </View>
@@ -806,11 +809,11 @@ export default function HubVerificationScreen() {
                   </View>
 
                   {inspectSubmission.adminNote ? (
-                    <View className="pt-2 border-t border-white/5">
-                      <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold">
+                    <View className="pt-2 border-t border-white/[0.08]">
+                      <Text className="text-[#5C616A] text-[10px] font-mono uppercase font-bold">
                         Recorded Audit Note
                       </Text>
-                      <Text className="text-[#F4F6F7] text-xs mt-0.5">
+                      <Text className="text-[#FFFFFF] text-xs mt-0.5">
                         {inspectSubmission.adminNote}
                       </Text>
                     </View>
@@ -818,8 +821,8 @@ export default function HubVerificationScreen() {
                 </View>
 
                 {/* Audit Context notice */}
-                <View className="mt-3 p-3.5 bg-[#272C31] rounded-xl border border-white/5">
-                  <Text className="text-[#7F8993] text-xs leading-4">
+                <View className="mt-3 p-3.5 bg-[#1B1D22] rounded-xl border border-white/[0.08]">
+                  <Text className="text-[#5C616A] text-xs leading-4">
                     Maidaan Hub verification clears the Hub profile submission for platform discovery and matchmaking.
                   </Text>
                 </View>
@@ -831,9 +834,9 @@ export default function HubVerificationScreen() {
                       onPress={() => {
                         handleOpenConfirm('decline', inspectSubmission);
                       }}
-                      className="flex-1 py-3 rounded-xl bg-[#272C31] border border-white/10 items-center justify-center active:bg-white/5"
+                      className="flex-1 py-3 rounded-xl bg-[#1B1D22] border border-white/[0.08] items-center justify-center active:bg-white/5"
                     >
-                      <Text className="text-[#F4F6F7] text-xs font-bold uppercase tracking-wide">
+                      <Text className="text-[#FFFFFF] text-xs font-bold uppercase tracking-wide">
                         Decline
                       </Text>
                     </Pressable>
@@ -844,7 +847,7 @@ export default function HubVerificationScreen() {
                       }}
                       className="flex-1 py-3 rounded-xl bg-[#E85D26] border border-[#E85D26] items-center justify-center active:opacity-90"
                     >
-                      <Text className="text-[#171A1D] text-xs font-black uppercase tracking-wider">
+                      <Text className="text-[#0C0D0E] text-xs font-black uppercase tracking-wider">
                         Approve
                       </Text>
                     </Pressable>

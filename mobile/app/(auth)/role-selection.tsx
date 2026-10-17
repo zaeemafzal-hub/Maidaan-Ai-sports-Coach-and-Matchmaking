@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -9,6 +9,8 @@ import { RoleCard } from '../../components/ui/RoleCard';
 import { PrimaryButton } from '../../components/ui/PrimaryButton';
 import { ArenaHeader } from '../../components/ui/ArenaHeader';
 import { AmbientGlowOverlay } from '../../components/ui';
+import { authService } from '../../services/authService';
+import { supabase, isSupabaseConfigured } from '../../lib/supabase';
 
 interface RoleOption {
   role: Role;
@@ -44,7 +46,9 @@ const ROLE_OPTIONS: RoleOption[] = [
 ];
 
 export default function RoleSelectionScreen() {
-  const { selectedRole, setSelectedRole } = useAuthStore();
+  const { selectedRole, setSelectedRole, loadProfile } = useAuthStore();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!selectedRole) {
@@ -54,7 +58,54 @@ export default function RoleSelectionScreen() {
 
   const currentRole = selectedRole || 'PLAYER';
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
+    if (isSubmitting) return;
+    setError(null);
+
+    // Check if user already has an active Supabase session (e.g. from Google OAuth)
+    if (isSupabaseConfigured) {
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (data?.session?.access_token) {
+          setIsSubmitting(true);
+          const meta = data.session.user?.user_metadata || {};
+          const displayName =
+            meta.full_name ||
+            meta.name ||
+            data.session.user?.email?.split('@')[0] ||
+            'Athlete';
+
+          await authService.initProfile({
+            name: displayName,
+            role: currentRole,
+          });
+
+          await loadProfile();
+
+          switch (currentRole) {
+            case 'PLAYER':
+              router.replace('/onboarding/player-setup');
+              break;
+            case 'TEAM_CAPTAIN':
+              router.replace('/onboarding/captain-setup');
+              break;
+            case 'HUB_OWNER':
+              router.replace('/onboarding/hub-setup');
+              break;
+            default:
+              router.replace('/onboarding/player-setup');
+              break;
+          }
+          return;
+        }
+      } catch (err: any) {
+        setError(err?.message || 'Failed to initialize account identity.');
+        setIsSubmitting(false);
+        return;
+      }
+    }
+
+    // New unauthenticated registration flow
     router.push('/(auth)/create-account');
   };
 
@@ -90,6 +141,14 @@ export default function RoleSelectionScreen() {
           </Text>
         </View>
 
+        {error && (
+          <View className="mb-4 p-3.5 rounded-xl bg-[#EF4444]/15 border border-[#EF4444]/30">
+            <Text className="text-[#EF4444] text-xs font-medium text-center">
+              {error}
+            </Text>
+          </View>
+        )}
+
         {/* Identity Cards */}
         <View className="space-y-3.5 flex-1">
           {ROLE_OPTIONS.map((option) => (
@@ -109,8 +168,9 @@ export default function RoleSelectionScreen() {
         {/* Bottom CTA */}
         <View className="pt-6 pb-6">
           <PrimaryButton
-            title="Continue to Registration"
+            title="Continue"
             onPress={handleContinue}
+            loading={isSubmitting}
             variant="primary"
             size="lg"
           />

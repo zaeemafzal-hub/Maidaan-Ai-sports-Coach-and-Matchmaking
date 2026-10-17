@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { FormInput } from '../../components/ui/FormInput';
 import { PrimaryButton } from '../../components/ui/PrimaryButton';
 import { ArenaHeader } from '../../components/ui/ArenaHeader';
+import { authService } from '../../services/authService';
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState('');
@@ -47,10 +48,10 @@ export default function ForgotPasswordScreen() {
     setError(undefined);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 400));
+      await authService.resetPasswordForEmail(email.trim().toLowerCase());
       setIsSubmitted(true);
-    } catch {
-      setError('Unable to process recovery request. Please try again.');
+    } catch (err: any) {
+      setError(err?.message || 'Unable to process recovery request. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

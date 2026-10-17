@@ -98,9 +98,12 @@ function formatTimeAgo(dateString: string): string {
 }
 
 export default function ReportReviewScreen() {
-  const { currentUser } = useAuthStore();
+  const { currentUser, roles = [] } = useAuthStore();
 
-  const isAdmin = currentUser?.role === 'ADMIN';
+  const isAdmin =
+    roles.includes('ADMIN') ||
+    currentUser?.roles?.includes('ADMIN') ||
+    currentUser?.role === 'ADMIN';
 
   // Live state
   const [reports, setReports] = useState<AdminReport[]>([]);
@@ -152,21 +155,21 @@ export default function ReportReviewScreen() {
   // =========================================================================
   if (!isAdmin) {
     return (
-      <SafeAreaView className="flex-1 bg-[#171A1D]" edges={['top']}>
+      <SafeAreaView className="flex-1 bg-[#0C0D0E]" edges={['top']}>
         <ArenaHeader
           title="Report Review"
           subtitle="Access Restriction"
           showBack
           onBack={() => router.replace('/(tabs)/discover')}
         />
-        <View className="flex-1 items-center justify-center p-6 bg-[#171A1D]">
+        <View className="flex-1 items-center justify-center p-6 bg-[#0C0D0E]">
           <View className="w-16 h-16 rounded-full bg-[#F4A261]/10 items-center justify-center border border-[#F4A261]/30 mb-5">
             <Ionicons name="shield-outline" size={28} color="#F4A261" />
           </View>
 
           <ArenaBadge label="ADMIN REQUIRED" variant="rust" size="md" />
 
-          <Text className="text-[#F4F6F7] text-lg font-black uppercase tracking-tight text-center mt-3">
+          <Text className="text-[#FFFFFF] text-lg font-black uppercase tracking-tight text-center mt-3">
             Admin Access Required
           </Text>
 
@@ -269,7 +272,7 @@ export default function ReportReviewScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#171A1D]" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-[#0C0D0E]" edges={['top']}>
       {/* Modern Athletic Header */}
       <ArenaHeader
         title="Report Review"
@@ -284,20 +287,20 @@ export default function ReportReviewScreen() {
       >
         {/* Banner */}
         <View className="px-4 pt-3">
-          <View className="h-18 w-full rounded-2xl overflow-hidden border border-white/10 relative bg-[#1F2327]">
+          <View className="h-18 w-full rounded-2xl overflow-hidden border border-white/[0.08] relative bg-[#141518]">
             <Image
               source={IMAGES.arenaGround}
               className="w-full h-full opacity-35"
               resizeMode="cover"
             />
-            <View className="absolute inset-0 px-4 py-3 flex-row items-center justify-between bg-gradient-to-r from-[#171A1D]/80 to-transparent">
+            <View className="absolute inset-0 px-4 py-3 flex-row items-center justify-between bg-gradient-to-r from-[#0C0D0E]/80 to-transparent">
               <View className="flex-1 pr-2">
-                <Text className="text-[#7F8993] text-[10px] font-mono uppercase tracking-widest font-bold">
+                <Text className="text-[#5C616A] text-[10px] font-mono uppercase tracking-widest font-bold">
                   Fair Play Governance
                 </Text>
                 <Text
                   numberOfLines={1}
-                  className="text-[#F4F6F7] text-base font-black uppercase tracking-tight"
+                  className="text-[#FFFFFF] text-base font-black uppercase tracking-tight"
                 >
                   Conduct & Safety Audit
                 </Text>
@@ -313,7 +316,7 @@ export default function ReportReviewScreen() {
 
         {/* Page Title & Context */}
         <View className="px-4 pt-3 pb-1">
-          <Text className="text-[#F4F6F7] text-xl font-black uppercase tracking-tight">
+          <Text className="text-[#FFFFFF] text-xl font-black uppercase tracking-tight">
             User Conduct Reports
           </Text>
           <Text className="text-[#A0A5AD] text-xs leading-4 mt-0.5">
@@ -330,10 +333,10 @@ export default function ReportReviewScreen() {
               className={`flex-1 rounded-2xl p-3.5 border ${
                 activeFilter === 'OPEN'
                   ? 'bg-[#F4A261]/15 border-[#F4A261]'
-                  : 'bg-[#1F2327] border-white/10'
+                  : 'bg-[#141518] border-white/[0.08]'
               }`}
             >
-              <Text className="text-[#7F8993] text-[10px] font-mono uppercase tracking-wider font-bold">
+              <Text className="text-[#5C616A] text-[10px] font-mono uppercase tracking-wider font-bold">
                 OPEN
               </Text>
               <Text className="text-[#F4A261] text-2xl font-black tracking-tight mt-0.5">
@@ -349,14 +352,14 @@ export default function ReportReviewScreen() {
               onPress={() => setActiveFilter('FOLLOW_UP')}
               className={`flex-1 rounded-2xl p-3.5 border ${
                 activeFilter === 'FOLLOW_UP'
-                  ? 'bg-[#272C31] border-white/30'
-                  : 'bg-[#1F2327] border-white/10'
+                  ? 'bg-[#1B1D22] border-white/30'
+                  : 'bg-[#141518] border-white/[0.08]'
               }`}
             >
-              <Text className="text-[#7F8993] text-[10px] font-mono uppercase tracking-wider font-bold">
+              <Text className="text-[#5C616A] text-[10px] font-mono uppercase tracking-wider font-bold">
                 FOLLOW-UP
               </Text>
-              <Text className="text-[#F4F6F7] text-2xl font-black tracking-tight mt-0.5">
+              <Text className="text-[#FFFFFF] text-2xl font-black tracking-tight mt-0.5">
                 {followUpCount}
               </Text>
               <Text className="text-[#A0A5AD] text-[10px] font-medium mt-0.5">
@@ -370,10 +373,10 @@ export default function ReportReviewScreen() {
               className={`flex-1 rounded-2xl p-3.5 border ${
                 activeFilter === 'RESOLVED'
                   ? 'bg-[#E85D26]/15 border-[#E85D26]'
-                  : 'bg-[#1F2327] border-white/10'
+                  : 'bg-[#141518] border-white/[0.08]'
               }`}
             >
-              <Text className="text-[#7F8993] text-[10px] font-mono uppercase tracking-wider font-bold">
+              <Text className="text-[#5C616A] text-[10px] font-mono uppercase tracking-wider font-bold">
                 RESOLVED
               </Text>
               <Text className="text-[#E85D26] text-2xl font-black tracking-tight mt-0.5">
@@ -389,7 +392,7 @@ export default function ReportReviewScreen() {
         {/* FILTER CHIPS */}
         <View className="px-4 mt-4">
           <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
-            <View className="flex-row space-x-1.5 bg-[#1F2327] p-1 rounded-xl border border-white/10">
+            <View className="flex-row space-x-1.5 bg-[#141518] p-1 rounded-xl border border-white/[0.08]">
               {(
                 [
                   { id: 'OPEN', label: `Open (${openCount})` },
@@ -413,7 +416,7 @@ export default function ReportReviewScreen() {
                     <Text
                       numberOfLines={1}
                       className={`text-xs uppercase font-bold ${
-                        isSelected ? 'text-[#171A1D]' : 'text-[#A0A5AD]'
+                        isSelected ? 'text-[#0C0D0E]' : 'text-[#A0A5AD]'
                       }`}
                     >
                       {tab.label}
@@ -434,23 +437,23 @@ export default function ReportReviewScreen() {
             >
               Conduct Reports
             </Text>
-            <Text className="text-[#7F8993] text-[10px] font-mono">
+            <Text className="text-[#5C616A] text-[10px] font-mono">
               {displayedReports.length} Listed
             </Text>
           </View>
 
           {/* LOADING STATE */}
           {loading ? (
-            <View className="bg-[#1F2327] rounded-2xl p-8 border border-white/10 items-center my-2">
+            <View className="bg-[#141518] rounded-2xl p-8 border border-white/[0.08] items-center my-2">
               <ActivityIndicator size="small" color="#E85D26" />
               <Text className="text-[#A0A5AD] text-xs font-mono mt-3 uppercase tracking-wider">
                 Loading Conduct Reports...
               </Text>
             </View>
           ) : error ? (
-            <View className="bg-[#1F2327] rounded-2xl p-6 border border-[#F4A261]/30 items-center my-2">
+            <View className="bg-[#141518] rounded-2xl p-6 border border-[#F4A261]/30 items-center my-2">
               <Ionicons name="alert-circle-outline" size={28} color="#F4A261" />
-              <Text className="text-[#F4F6F7] text-sm font-black uppercase tracking-tight text-center mt-2">
+              <Text className="text-[#FFFFFF] text-sm font-black uppercase tracking-tight text-center mt-2">
                 Failed to Load Reports
               </Text>
               <Text className="text-[#A0A5AD] text-xs text-center mt-1 leading-4">
@@ -465,12 +468,12 @@ export default function ReportReviewScreen() {
               </View>
             </View>
           ) : displayedReports.length === 0 ? (
-            <View className="bg-[#1F2327] rounded-2xl p-6 border border-white/10 items-center my-2">
-              <View className="w-12 h-12 rounded-full bg-[#272C31] border border-white/10 items-center justify-center mb-3">
+            <View className="bg-[#141518] rounded-2xl p-6 border border-white/[0.08] items-center my-2">
+              <View className="w-12 h-12 rounded-full bg-[#1B1D22] border border-white/[0.08] items-center justify-center mb-3">
                 <Ionicons name="shield-checkmark-outline" size={24} color="#A0A5AD" />
               </View>
 
-              <Text className="text-[#F4F6F7] text-sm font-black uppercase tracking-tight text-center">
+              <Text className="text-[#FFFFFF] text-sm font-black uppercase tracking-tight text-center">
                 {activeFilter === 'OPEN'
                   ? 'No Reports Waiting'
                   : 'No Reports in this Status'}
@@ -505,12 +508,12 @@ export default function ReportReviewScreen() {
               return (
                 <View
                   key={item.id}
-                  className="bg-[#1F2327] rounded-2xl border border-white/10 p-4 mb-3 shadow-sm"
+                  className="bg-[#141518] rounded-2xl border border-white/[0.08] p-4 mb-3 shadow-sm"
                 >
                   {/* Top Bar: Category & Status Badges */}
                   <View className="flex-row items-center justify-between">
                     <View className="flex-row items-center">
-                      <View className="bg-[#272C31] px-2.5 py-0.5 rounded-lg border border-white/10 mr-2">
+                      <View className="bg-[#1B1D22] px-2.5 py-0.5 rounded-lg border border-white/[0.08] mr-2">
                         <Text className="text-[#A0A5AD] text-[10px] font-mono font-bold uppercase">
                           {item.id.slice(0, 8).toUpperCase()}
                         </Text>
@@ -530,26 +533,26 @@ export default function ReportReviewScreen() {
                   </View>
 
                   {/* Parties Strip: Reporter & Reported Account */}
-                  <View className="mt-3 pt-2.5 border-t border-white/5 flex-row items-center justify-between">
+                  <View className="mt-3 pt-2.5 border-t border-white/[0.08] flex-row items-center justify-between">
                     <View className="flex-1 pr-2">
-                      <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold">
+                      <Text className="text-[#5C616A] text-[10px] font-mono uppercase font-bold">
                         Reporter
                       </Text>
                       <Text
                         numberOfLines={1}
-                        className="text-[#F4F6F7] text-xs font-bold uppercase mt-0.5"
+                        className="text-[#FFFFFF] text-xs font-bold uppercase mt-0.5"
                       >
                         {reporterDisplay}
                       </Text>
                     </View>
 
                     <View className="flex-1 pl-2 items-end">
-                      <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold">
+                      <Text className="text-[#5C616A] text-[10px] font-mono uppercase font-bold">
                         Reported Account
                       </Text>
                       <Text
                         numberOfLines={1}
-                        className="text-[#F4F6F7] text-xs font-bold uppercase mt-0.5 text-right"
+                        className="text-[#FFFFFF] text-xs font-bold uppercase mt-0.5 text-right"
                       >
                         {reportedDisplay}
                       </Text>
@@ -557,23 +560,23 @@ export default function ReportReviewScreen() {
                   </View>
 
                   {/* Incident Summary */}
-                  <View className="mt-2.5 p-3 bg-[#272C31] rounded-xl border border-white/5">
-                    <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold mb-1">
+                  <View className="mt-2.5 p-3 bg-[#1B1D22] rounded-xl border border-white/[0.08]">
+                    <Text className="text-[#5C616A] text-[10px] font-mono uppercase font-bold mb-1">
                       Incident Summary
                     </Text>
-                    <Text className="text-[#F4F6F7] text-xs leading-4 font-medium">
+                    <Text className="text-[#FFFFFF] text-xs leading-4 font-medium">
                       {item.description}
                     </Text>
-                    <Text className="text-[#7F8993] text-[10px] font-mono mt-2">
+                    <Text className="text-[#5C616A] text-[10px] font-mono mt-2">
                       Submitted {formatTimeAgo(item.createdAt)}
                     </Text>
                   </View>
 
                   {/* Match Context Box */}
                   {item.matchId ? (
-                    <View className="mt-2.5 p-3 bg-[#272C31] rounded-xl border border-white/10">
+                    <View className="mt-2.5 p-3 bg-[#1B1D22] rounded-xl border border-white/[0.08]">
                       <View className="flex-row items-center justify-between mb-1">
-                        <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold">
+                        <Text className="text-[#5C616A] text-[10px] font-mono uppercase font-bold">
                           Associated Match
                         </Text>
                         <Text className="text-[#E85D26] text-[10px] font-mono">
@@ -582,13 +585,13 @@ export default function ReportReviewScreen() {
                       </View>
 
                       <Text
-                        className="text-[#F4F6F7] text-xs font-black uppercase tracking-tight"
+                        className="text-[#FFFFFF] text-xs font-black uppercase tracking-tight"
                         numberOfLines={1}
                       >
                         {item.matchTitle || 'Unnamed Match'}
                       </Text>
 
-                      <View className="flex-row items-center justify-between mt-1.5 pt-1.5 border-t border-white/5">
+                      <View className="flex-row items-center justify-between mt-1.5 pt-1.5 border-t border-white/[0.08]">
                         <Text className="text-[#A0A5AD] text-[10px] font-mono" numberOfLines={1}>
                           {(item.matchSport || 'SPORTS').toUpperCase()} • Match Ref
                         </Text>
@@ -610,18 +613,18 @@ export default function ReportReviewScreen() {
 
                   {/* Admin Note if already added */}
                   {item.adminNote ? (
-                    <View className="mt-2.5 p-2.5 bg-[#272C31] rounded-xl border border-white/5">
-                      <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold">
+                    <View className="mt-2.5 p-2.5 bg-[#1B1D22] rounded-xl border border-white/[0.08]">
+                      <Text className="text-[#5C616A] text-[10px] font-mono uppercase font-bold">
                         Admin Note:
                       </Text>
-                      <Text className="text-[#F4F6F7] text-xs leading-4 mt-0.5">
+                      <Text className="text-[#FFFFFF] text-xs leading-4 mt-0.5">
                         {item.adminNote}
                       </Text>
                     </View>
                   ) : null}
 
                   {/* Review Actions */}
-                  <View className="mt-3 pt-2.5 border-t border-white/5">
+                  <View className="mt-3 pt-2.5 border-t border-white/[0.08]">
                     {isOpen ? (
                       <View>
                         <View className="flex-row gap-2">
@@ -632,7 +635,7 @@ export default function ReportReviewScreen() {
                             accessibilityLabel={`Resolve report ${item.id}`}
                             className="flex-1 py-3 rounded-xl bg-[#E85D26] border border-[#E85D26] items-center justify-center active:opacity-90"
                           >
-                            <Text className="text-[#171A1D] text-xs font-black uppercase tracking-wider">
+                            <Text className="text-[#0C0D0E] text-xs font-black uppercase tracking-wider">
                               Resolve Report
                             </Text>
                           </Pressable>
@@ -642,9 +645,9 @@ export default function ReportReviewScreen() {
                             onPress={() => handleOpenConfirm('DISMISS', item)}
                             accessibilityRole="button"
                             accessibilityLabel={`Dismiss report ${item.id}`}
-                            className="flex-1 py-3 rounded-xl bg-[#272C31] border border-white/10 items-center justify-center active:bg-white/5"
+                            className="flex-1 py-3 rounded-xl bg-[#1B1D22] border border-white/[0.08] items-center justify-center active:bg-white/5"
                           >
-                            <Text className="text-[#F4F6F7] text-xs font-bold uppercase tracking-wide">
+                            <Text className="text-[#FFFFFF] text-xs font-bold uppercase tracking-wide">
                               Dismiss
                             </Text>
                           </Pressable>
@@ -655,7 +658,7 @@ export default function ReportReviewScreen() {
                           onPress={() => handleOpenConfirm('FOLLOW_UP', item)}
                           accessibilityRole="button"
                           accessibilityLabel={`Mark report ${item.id} as needing follow up`}
-                          className="mt-2 py-2.5 rounded-xl bg-[#272C31] border border-white/10 items-center justify-center active:bg-white/5"
+                          className="mt-2 py-2.5 rounded-xl bg-[#1B1D22] border border-white/[0.08] items-center justify-center active:bg-white/5"
                         >
                           <Text className="text-[#A0A5AD] text-xs font-bold uppercase">
                             Needs Follow-Up
@@ -686,7 +689,7 @@ export default function ReportReviewScreen() {
                             accessibilityLabel={`Resolve report ${item.id}`}
                             className="flex-1 py-3 rounded-xl bg-[#E85D26] border border-[#E85D26] items-center justify-center active:opacity-90"
                           >
-                            <Text className="text-[#171A1D] text-xs font-black uppercase tracking-wider">
+                            <Text className="text-[#0C0D0E] text-xs font-black uppercase tracking-wider">
                               Resolve
                             </Text>
                           </Pressable>
@@ -694,9 +697,9 @@ export default function ReportReviewScreen() {
                             onPress={() => handleOpenConfirm('DISMISS', item)}
                             accessibilityRole="button"
                             accessibilityLabel={`Dismiss report ${item.id}`}
-                            className="flex-1 py-3 rounded-xl bg-[#272C31] border border-white/10 items-center justify-center active:bg-white/5"
+                            className="flex-1 py-3 rounded-xl bg-[#1B1D22] border border-white/[0.08] items-center justify-center active:bg-white/5"
                           >
-                            <Text className="text-[#F4F6F7] text-xs font-bold uppercase tracking-wide">
+                            <Text className="text-[#FFFFFF] text-xs font-bold uppercase tracking-wide">
                               Dismiss
                             </Text>
                           </Pressable>
@@ -718,14 +721,14 @@ export default function ReportReviewScreen() {
                         <ArenaBadge label="RESOLVED" variant="olive" size="sm" />
                       </View>
                     ) : (
-                      <View className="p-3 bg-[#272C31] rounded-xl border border-white/10 flex-row items-center justify-between">
+                      <View className="p-3 bg-[#1B1D22] rounded-xl border border-white/[0.08] flex-row items-center justify-between">
                         <View className="flex-row items-center">
                           <Ionicons name="close-circle-outline" size={18} color="#A0A5AD" />
                           <View className="ml-2">
-                            <Text className="text-[#F4F6F7] text-xs font-bold uppercase tracking-tight">
+                            <Text className="text-[#FFFFFF] text-xs font-bold uppercase tracking-tight">
                               Dismissed
                             </Text>
-                            <Text className="text-[#7F8993] text-[10px] font-mono">
+                            <Text className="text-[#5C616A] text-[10px] font-mono">
                               No further review required
                             </Text>
                           </View>
@@ -739,9 +742,9 @@ export default function ReportReviewScreen() {
                       onPress={() => setInspectReport(item)}
                       accessibilityRole="button"
                       accessibilityLabel={`View full report sheet for ${item.id}`}
-                      className="mt-2.5 pt-2 border-t border-white/5 flex-row items-center justify-between"
+                      className="mt-2.5 pt-2 border-t border-white/[0.08] flex-row items-center justify-between"
                     >
-                      <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold">
+                      <Text className="text-[#5C616A] text-[10px] font-mono uppercase font-bold">
                         View Case Details Sheet
                       </Text>
                       <View className="flex-row items-center">
@@ -766,8 +769,8 @@ export default function ReportReviewScreen() {
         animationType="fade"
         onRequestClose={() => !isSubmitting && setConfirmModal(null)}
       >
-        <View className="flex-1 bg-[#171A1D]/85 items-center justify-center p-5">
-          <View className="w-full max-w-sm bg-[#1F2327] rounded-2xl p-6 border border-white/10 shadow-2xl">
+        <View className="flex-1 bg-[#0C0D0E]/85 items-center justify-center p-5">
+          <View className="w-full max-w-sm bg-[#141518] rounded-2xl p-6 border border-white/[0.08] shadow-2xl">
             {confirmModal ? (
               <>
                 <View
@@ -775,7 +778,7 @@ export default function ReportReviewScreen() {
                     confirmModal.action === 'RESOLVE'
                       ? 'bg-[#E85D26]'
                       : confirmModal.action === 'DISMISS'
-                      ? 'bg-[#272C31] border border-white/10'
+                      ? 'bg-[#1B1D22] border border-white/[0.08]'
                       : 'bg-[#F4A261]/20 border border-[#F4A261]/40'
                   }`}
                 >
@@ -788,7 +791,7 @@ export default function ReportReviewScreen() {
                         : 'alert-circle-outline'
                     }
                     size={24}
-                    color={confirmModal.action === 'RESOLVE' ? '#171A1D' : '#F4F6F7'}
+                    color={confirmModal.action === 'RESOLVE' ? '#0C0D0E' : '#FFFFFF'}
                   />
                 </View>
 
@@ -810,7 +813,7 @@ export default function ReportReviewScreen() {
                   size="sm"
                 />
 
-                <Text className="text-[#F4F6F7] text-lg font-black uppercase tracking-tight mt-2">
+                <Text className="text-[#FFFFFF] text-lg font-black uppercase tracking-tight mt-2">
                   {confirmModal.action === 'RESOLVE'
                     ? 'Resolve Report?'
                     : confirmModal.action === 'DISMISS'
@@ -827,8 +830,8 @@ export default function ReportReviewScreen() {
                 </Text>
 
                 {/* Case snapshot */}
-                <View className="my-3 p-3 bg-[#272C31] rounded-xl border border-white/10">
-                  <Text className="text-[#F4F6F7] text-xs font-black uppercase" numberOfLines={1}>
+                <View className="my-3 p-3 bg-[#1B1D22] rounded-xl border border-white/[0.08]">
+                  <Text className="text-[#FFFFFF] text-xs font-black uppercase" numberOfLines={1}>
                     {confirmModal.report.id.slice(0, 8).toUpperCase()} • {CATEGORY_META[confirmModal.report.category]?.label || 'REPORT'}
                   </Text>
                   <Text className="text-[#A0A5AD] text-xs mt-0.5" numberOfLines={2}>
@@ -838,7 +841,7 @@ export default function ReportReviewScreen() {
 
                 {/* Optional local admin note input */}
                 <View className="mb-3">
-                  <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold mb-1.5">
+                  <Text className="text-[#5C616A] text-[10px] font-mono uppercase font-bold mb-1.5">
                     Admin Note (Optional)
                   </Text>
                   <TextInput
@@ -847,10 +850,10 @@ export default function ReportReviewScreen() {
                     maxLength={300}
                     editable={!isSubmitting}
                     placeholder="e.g. Verified with match coordinator..."
-                    placeholderTextColor="#7F8993"
-                    className="bg-[#272C31] border border-white/10 p-2.5 rounded-xl text-[#F4F6F7] text-xs min-h-[42px]"
+                    placeholderTextColor="#5C616A"
+                    className="bg-[#1B1D22] border border-white/[0.08] p-2.5 rounded-xl text-[#FFFFFF] text-xs min-h-[42px]"
                   />
-                  <Text className="text-[#7F8993] text-[9px] font-mono text-right mt-1">
+                  <Text className="text-[#5C616A] text-[9px] font-mono text-right mt-1">
                     {adminNoteInput.length}/300
                   </Text>
                 </View>
@@ -898,82 +901,82 @@ export default function ReportReviewScreen() {
         animationType="slide"
         onRequestClose={() => setInspectReport(null)}
       >
-        <View className="flex-1 bg-[#171A1D]/85 justify-end">
-          <View className="bg-[#1F2327] rounded-t-3xl p-6 border-t border-white/10 max-h-[85%]">
+        <View className="flex-1 bg-[#0C0D0E]/85 justify-end">
+          <View className="bg-[#141518] rounded-t-3xl p-6 border-t border-white/[0.08] max-h-[85%]">
             {inspectReport ? (
               <ScrollView showsVerticalScrollIndicator={false}>
-                <View className="flex-row items-center justify-between pb-3 border-b border-white/5">
+                <View className="flex-row items-center justify-between pb-3 border-b border-white/[0.08]">
                   <View className="flex-1 pr-2">
-                    <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold">
+                    <Text className="text-[#5C616A] text-[10px] font-mono uppercase font-bold">
                       Case Details Audit Sheet
                     </Text>
-                    <Text className="text-[#F4F6F7] text-lg font-black uppercase tracking-tight mt-0.5">
+                    <Text className="text-[#FFFFFF] text-lg font-black uppercase tracking-tight mt-0.5">
                       Report #{inspectReport.id.slice(0, 8).toUpperCase()}
                     </Text>
                   </View>
                   <Pressable
                     onPress={() => setInspectReport(null)}
-                    className="w-9 h-9 rounded-xl bg-[#272C31] items-center justify-center border border-white/10"
+                    className="w-9 h-9 rounded-xl bg-[#1B1D22] items-center justify-center border border-white/[0.08]"
                   >
-                    <Ionicons name="close" size={20} color="#F4F6F7" />
+                    <Ionicons name="close" size={20} color="#FFFFFF" />
                   </Pressable>
                 </View>
 
                 {/* Table Breakdown */}
-                <View className="mt-4 bg-[#272C31] rounded-2xl border border-white/10 p-4 space-y-3">
+                <View className="mt-4 bg-[#1B1D22] rounded-2xl border border-white/[0.08] p-4 space-y-3">
                   <View>
-                    <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold">
+                    <Text className="text-[#5C616A] text-[10px] font-mono uppercase font-bold">
                       Incident Category
                     </Text>
-                    <Text className="text-[#F4F6F7] text-xs font-bold mt-0.5">
+                    <Text className="text-[#FFFFFF] text-xs font-bold mt-0.5">
                       {(CATEGORY_META[inspectReport.category] || CATEGORY_META.OTHER).label} • {(CATEGORY_META[inspectReport.category] || CATEGORY_META.OTHER).description}
                     </Text>
                   </View>
 
-                  <View className="pt-2 border-t border-white/5">
-                    <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold">
+                  <View className="pt-2 border-t border-white/[0.08]">
+                    <Text className="text-[#5C616A] text-[10px] font-mono uppercase font-bold">
                       Reporting Player
                     </Text>
-                    <Text className="text-[#F4F6F7] text-xs font-bold mt-0.5">
+                    <Text className="text-[#FFFFFF] text-xs font-bold mt-0.5">
                       {inspectReport.reporterName || 'Anonymous'}
                     </Text>
                   </View>
 
-                  <View className="pt-2 border-t border-white/5">
-                    <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold">
+                  <View className="pt-2 border-t border-white/[0.08]">
+                    <Text className="text-[#5C616A] text-[10px] font-mono uppercase font-bold">
                       Reported Account
                     </Text>
-                    <Text className="text-[#F4F6F7] text-xs font-bold mt-0.5">
+                    <Text className="text-[#FFFFFF] text-xs font-bold mt-0.5">
                       {inspectReport.reportedUserName || 'Unknown Account'}
                     </Text>
                   </View>
 
-                  <View className="pt-2 border-t border-white/5">
-                    <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold">
+                  <View className="pt-2 border-t border-white/[0.08]">
+                    <Text className="text-[#5C616A] text-[10px] font-mono uppercase font-bold">
                       Full Incident Statement
                     </Text>
-                    <Text className="text-[#F4F6F7] text-xs leading-4 mt-0.5">
+                    <Text className="text-[#FFFFFF] text-xs leading-4 mt-0.5">
                       {inspectReport.description}
                     </Text>
                   </View>
 
                   {inspectReport.matchId ? (
-                    <View className="pt-2 border-t border-white/5">
-                      <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold">
+                    <View className="pt-2 border-t border-white/[0.08]">
+                      <Text className="text-[#5C616A] text-[10px] font-mono uppercase font-bold">
                         Match Reference
                       </Text>
-                      <Text className="text-[#F4F6F7] text-xs font-mono font-bold mt-0.5">
+                      <Text className="text-[#FFFFFF] text-xs font-mono font-bold mt-0.5">
                         {inspectReport.matchTitle ? `${inspectReport.matchTitle} (${inspectReport.matchId})` : inspectReport.matchId}
                       </Text>
                     </View>
                   ) : null}
 
                   {inspectReport.adminNote ? (
-                    <View className="pt-2 border-t border-white/5">
-                      <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold">
+                    <View className="pt-2 border-t border-white/[0.08]">
+                      <Text className="text-[#5C616A] text-[10px] font-mono uppercase font-bold">
                         Recorded Audit Note
                       </Text>
-                      <Text className="text-[#F4F6F7] text-xs leading-4 mt-0.5">
+                      <Text className="text-[#FFFFFF] text-xs leading-4 mt-0.5">
                         {inspectReport.adminNote}
                       </Text>
                     </View>
@@ -981,8 +984,8 @@ export default function ReportReviewScreen() {
                 </View>
 
                 {/* Regulatory Notice */}
-                <View className="mt-3 p-3.5 bg-[#272C31] rounded-xl border border-white/5">
-                  <Text className="text-[#7F8993] text-xs leading-4">
+                <View className="mt-3 p-3.5 bg-[#1B1D22] rounded-xl border border-white/[0.08]">
+                  <Text className="text-[#5C616A] text-xs leading-4">
                     Moderation decisions are administrative platform actions under Maidaan Fair Play standards.
                   </Text>
                 </View>
@@ -997,7 +1000,7 @@ export default function ReportReviewScreen() {
                         }}
                         className="flex-1 py-3 rounded-xl bg-[#E85D26] border border-[#E85D26] items-center justify-center active:opacity-90"
                       >
-                        <Text className="text-[#171A1D] text-xs font-black uppercase tracking-wider">
+                        <Text className="text-[#0C0D0E] text-xs font-black uppercase tracking-wider">
                           Resolve
                         </Text>
                       </Pressable>
@@ -1006,9 +1009,9 @@ export default function ReportReviewScreen() {
                         onPress={() => {
                           handleOpenConfirm('DISMISS', inspectReport);
                         }}
-                        className="flex-1 py-3 rounded-xl bg-[#272C31] border border-white/10 items-center justify-center active:bg-white/5"
+                        className="flex-1 py-3 rounded-xl bg-[#1B1D22] border border-white/[0.08] items-center justify-center active:bg-white/5"
                       >
-                        <Text className="text-[#F4F6F7] text-xs font-bold uppercase tracking-wide">
+                        <Text className="text-[#FFFFFF] text-xs font-bold uppercase tracking-wide">
                           Dismiss
                         </Text>
                       </Pressable>
@@ -1018,7 +1021,7 @@ export default function ReportReviewScreen() {
                       onPress={() => {
                         handleOpenConfirm('FOLLOW_UP', inspectReport);
                       }}
-                      className="py-2.5 rounded-xl bg-[#272C31] border border-white/10 items-center justify-center active:bg-white/5"
+                      className="py-2.5 rounded-xl bg-[#1B1D22] border border-white/[0.08] items-center justify-center active:bg-white/5"
                     >
                       <Text className="text-[#A0A5AD] text-xs font-bold uppercase">
                         Needs Follow-Up
@@ -1033,7 +1036,7 @@ export default function ReportReviewScreen() {
                       }}
                       className="flex-1 py-3 rounded-xl bg-[#E85D26] border border-[#E85D26] items-center justify-center active:opacity-90"
                     >
-                      <Text className="text-[#171A1D] text-xs font-black uppercase tracking-wider">
+                      <Text className="text-[#0C0D0E] text-xs font-black uppercase tracking-wider">
                         Resolve
                       </Text>
                     </Pressable>
@@ -1042,9 +1045,9 @@ export default function ReportReviewScreen() {
                       onPress={() => {
                         handleOpenConfirm('DISMISS', inspectReport);
                       }}
-                      className="flex-1 py-3 rounded-xl bg-[#272C31] border border-white/10 items-center justify-center active:bg-white/5"
+                      className="flex-1 py-3 rounded-xl bg-[#1B1D22] border border-white/[0.08] items-center justify-center active:bg-white/5"
                     >
-                      <Text className="text-[#F4F6F7] text-xs font-bold uppercase tracking-wide">
+                      <Text className="text-[#FFFFFF] text-xs font-bold uppercase tracking-wide">
                         Dismiss
                       </Text>
                     </Pressable>

@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { supabaseAdmin, isServerSupabaseConfigured } from '../lib/supabase.js';
+import { isProduction, isTest, allowsMemoryStores } from '../config/runtime.js';
 
 export type Role = 'PLAYER' | 'TEAM_CAPTAIN' | 'HUB_OWNER' | 'ADMIN';
 export type Sport = 'cricket' | 'badminton' | 'padel' | 'football';
@@ -110,6 +111,62 @@ export interface AdminHubVerificationOutput {
   updatedAt: string;
 }
 
+export interface HubDashboardSummaryOutput {
+  hub: {
+    id: string;
+    name: string;
+    location: string;
+    contactNumber: string | null;
+    sports: Sport[];
+    courtCount: number;
+    isVerified: boolean;
+  };
+  verification: {
+    status: HubVerificationStatus | 'NOT_SUBMITTED';
+    adminNote: string | null;
+    submittedAt: string | null;
+    reviewedAt: string | null;
+  };
+  courts: {
+    total: number;
+    available: number;
+    limited: number;
+    unavailable: number;
+  };
+}
+
+export interface AdminDashboardSummaryOutput {
+  users: {
+    total: number;
+  };
+  matches: {
+    total: number;
+    open: number;
+  };
+  hubs: {
+    total: number;
+    verified: number;
+    pendingVerification: number;
+  };
+  reports: {
+    open: number;
+  };
+}
+
+export interface AdminHubListItem {
+  id: string;
+  userId: string;
+  hubName: string;
+  ownerName: string;
+  location: string;
+  contactNumber: string | null;
+  sports: Sport[];
+  courtCount: number;
+  isVerified: boolean;
+  verificationStatus: HubVerificationStatus | 'NOT_SUBMITTED';
+  createdAt: string;
+}
+
 export type ReportCategory = 'CONDUCT' | 'HARASSMENT' | 'UNSAFE_BEHAVIOR' | 'SPAM' | 'OTHER';
 export type ReportStatus = 'OPEN' | 'RESOLVED' | 'DISMISSED' | 'FOLLOW_UP';
 
@@ -161,9 +218,58 @@ export interface AdminReportOutput {
   resolvedAt: string | null;
 }
 
+export type TeamMemberRole = 'CAPTAIN' | 'PLAYER' | 'VICE_CAPTAIN';
+export type TeamMemberStatus = 'ACTIVE' | 'INACTIVE';
+
+export interface TeamDbRecord {
+  id: string;
+  captain_id: string;
+  name: string;
+  sport: Sport;
+  skill_level: SkillLevel;
+  area: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TeamOutput {
+  id: string;
+  captainId: string;
+  name: string;
+  sport: Sport;
+  skillLevel: SkillLevel;
+  area: string;
+  createdAt: string;
+  updatedAt: string;
+  memberCount?: number;
+}
+
+export interface TeamMemberDbRecord {
+  id: string;
+  team_id: string;
+  user_id: string;
+  member_role: TeamMemberRole;
+  status: TeamMemberStatus;
+  joined_at: string;
+}
+
+export interface TeamMemberOutput {
+  id: string;
+  teamId: string;
+  userId: string;
+  userName: string;
+  userEmail?: string;
+  memberRole: TeamMemberRole;
+  status: TeamMemberStatus;
+  joinedAt: string;
+  skillLevel?: SkillLevel;
+  preferredSports?: Sport[];
+}
+
 export interface MatchDbRecord {
   id: string;
   captain_id: string;
+  team_id?: string | null;
   sport: Sport;
   title: string;
   format?: string | null;
@@ -187,6 +293,7 @@ export interface MatchOutput {
   id: string;
   captainId: string;
   captainName: string;
+  teamId?: string;
   teamName: string;
   sport: Sport;
   title: string;
@@ -208,6 +315,7 @@ export interface MatchOutput {
 
 export interface CreateMatchInput {
   captainId: string;
+  teamId?: string | null;
   sport: Sport;
   title: string;
   format?: string;
@@ -354,6 +462,7 @@ export interface ChatMessageOutput {
 
 // In-Memory store fallback for local testing & when placeholder Supabase URL is active
 const memoryProfiles = new Map<string, ProfileRecord>();
+const memoryUserRoles = new Map<string, Set<Role>>();
 const memoryPlayerProfiles = new Map<string, PlayerProfileRecord>();
 const memoryCaptainProfiles = new Map<string, CaptainProfileRecord>();
 const memoryHubOwnerProfiles = new Map<string, HubOwnerProfileRecord>();
@@ -367,6 +476,39 @@ const memoryChatMessages = new Map<string, ChatMessageDbRecord>();
 const memoryHubCourts = new Map<string, HubCourtDbRecord>();
 const memoryHubVerificationRequests = new Map<string, HubVerificationRequestDbRecord>();
 const memoryReports = new Map<string, ReportDbRecord>();
+const memoryTeams = new Map<string, TeamDbRecord>();
+const memoryTeamMembers = new Map<string, TeamMemberDbRecord>();
+
+function formatTeamOutput(record: TeamDbRecord, memberCount?: number): TeamOutput {
+  return {
+    id: record.id,
+    captainId: record.captain_id,
+    name: record.name,
+    sport: record.sport,
+    skillLevel: record.skill_level,
+    area: record.area,
+    createdAt: record.created_at,
+    updatedAt: record.updated_at,
+    memberCount,
+  };
+}
+
+async function formatTeamMemberOutput(record: TeamMemberDbRecord): Promise<TeamMemberOutput> {
+  const profile = await SupabaseRepo.getProfile(record.user_id);
+  const playerProfile = await SupabaseRepo.getPlayerProfile(record.user_id);
+  return {
+    id: record.id,
+    teamId: record.team_id,
+    userId: record.user_id,
+    userName: profile ? profile.name : 'Team Player',
+    userEmail: profile?.email,
+    memberRole: record.member_role,
+    status: record.status,
+    joinedAt: record.joined_at,
+    skillLevel: playerProfile?.skill_level,
+    preferredSports: playerProfile?.preferred_sports,
+  };
+}
 
 function formatHubCourtOutput(record: HubCourtDbRecord): HubCourtOutput {
   return {
@@ -467,13 +609,24 @@ async function enrichMatch(record: MatchDbRecord): Promise<MatchOutput> {
   const profile = await SupabaseRepo.getProfile(record.captain_id);
   const captainProfile = await SupabaseRepo.getCaptainProfile(record.captain_id);
 
+  let teamName = 'Squad';
+  if (record.team_id) {
+    const team = await SupabaseRepo.getTeamById(record.team_id);
+    if (team) {
+      teamName = team.name;
+    }
+  }
+  if (teamName === 'Squad') {
+    teamName = captainProfile ? captainProfile.team_name : (profile ? `${profile.name}'s Squad` : 'Squad');
+  }
+
   const captainName = profile ? profile.name : 'Match Host';
-  const teamName = captainProfile ? captainProfile.team_name : (profile ? `${profile.name}'s Squad` : 'Squad');
 
   return {
     id: record.id,
     captainId: record.captain_id,
     captainName,
+    teamId: record.team_id || undefined,
     teamName,
     sport: record.sport,
     title: record.title,
@@ -500,12 +653,17 @@ async function enrichMatch(record: MatchDbRecord): Promise<MatchOutput> {
 const isValidUuid = (val: string): boolean =>
   typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
 
+const isInMemoryTestMode = (): boolean => {
+  if (isProduction()) return false;
+  return isTest() || !isServerSupabaseConfigured;
+};
+
 export const SupabaseRepo = {
   // =========================================================================
   // 1. PUBLIC.PROFILES
   // =========================================================================
   async getProfile(userId: string): Promise<ProfileRecord | null> {
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
+    const isTestMode = isInMemoryTestMode();
     if (!isTestMode && isValidUuid(userId)) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -522,7 +680,13 @@ export const SupabaseRepo = {
       if (data) {
         return data as ProfileRecord;
       }
+      if (isProduction()) {
+        return null;
+      }
       return memoryProfiles.get(userId) || null;
+    }
+    if (isProduction()) {
+      return null;
     }
     return memoryProfiles.get(userId) || null;
   },
@@ -544,7 +708,7 @@ export const SupabaseRepo = {
       updated_at: now,
     };
 
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
+    const isTestMode = isInMemoryTestMode();
     if (!isTestMode && isValidUuid(data.id)) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -557,7 +721,13 @@ export const SupabaseRepo = {
           .single();
 
         if (!error && inserted) {
-          return inserted as ProfileRecord;
+          const prof = inserted as ProfileRecord;
+          memoryProfiles.set(data.id, prof);
+          await this.addRole(data.id, data.role || 'PLAYER');
+          if (data.role && data.role !== 'ADMIN' && data.role !== 'PLAYER') {
+            await this.addRole(data.id, 'PLAYER');
+          }
+          return prof;
         }
       } catch {
         // Fallback to memory
@@ -565,12 +735,103 @@ export const SupabaseRepo = {
     }
 
     memoryProfiles.set(data.id, newRecord);
+    await this.addRole(data.id, data.role || 'PLAYER');
+    if (data.role && data.role !== 'ADMIN' && data.role !== 'PLAYER') {
+      await this.addRole(data.id, 'PLAYER');
+    }
     return newRecord;
+  },
+
+  // =========================================================================
+  // 1B. PUBLIC.USER_ROLES (Multi-Role Capabilities)
+  // =========================================================================
+  async getUserRoles(userId: string): Promise<Role[]> {
+    const isTestMode = isInMemoryTestMode();
+    if (!isTestMode && isValidUuid(userId)) {
+      if (!isServerSupabaseConfigured) {
+        throw new Error('Supabase live configuration is required in non-test mode.');
+      }
+      try {
+        const { data, error } = await supabaseAdmin
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', userId)
+          .eq('status', 'ACTIVE');
+
+        if (!error && data && data.length > 0) {
+          return data.map((r: any) => r.role as Role);
+        }
+      } catch (err) {
+        console.warn('[SupabaseRepo.getUserRoles] Error querying user_roles:', err);
+      }
+    }
+
+    if (!isProduction()) {
+      // Check memory store
+      const memRoles = memoryUserRoles.get(userId);
+      if (memRoles && memRoles.size > 0) {
+        return Array.from(memRoles);
+      }
+    }
+
+    // Backward compatibility fallback: check legacy profile.role
+    const profile = await this.getProfile(userId);
+    if (profile?.role) {
+      if (profile.role === 'ADMIN') {
+        return ['ADMIN'];
+      }
+      // Existing TEAM_CAPTAIN and HUB_OWNER also receive PLAYER capability
+      if (profile.role === 'TEAM_CAPTAIN') {
+        return ['PLAYER', 'TEAM_CAPTAIN'];
+      }
+      if (profile.role === 'HUB_OWNER') {
+        return ['PLAYER', 'HUB_OWNER'];
+      }
+      return [profile.role];
+    }
+
+    return [];
+  },
+
+  async hasRole(userId: string, role: Role): Promise<boolean> {
+    const roles = await this.getUserRoles(userId);
+    return roles.includes(role);
+  },
+
+  async addRole(userId: string, role: Role): Promise<void> {
+    const now = new Date().toISOString();
+    const isTestMode = isInMemoryTestMode();
+    if (!isTestMode && isValidUuid(userId)) {
+      try {
+        await supabaseAdmin
+          .from('user_roles')
+          .upsert(
+            [
+              {
+                user_id: userId,
+                role,
+                status: 'ACTIVE',
+                created_at: now,
+              },
+            ],
+            { onConflict: 'user_id,role' }
+          );
+      } catch (err) {
+        console.warn('[SupabaseRepo.addRole] Database upsert error:', err);
+      }
+    }
+
+    let roles = memoryUserRoles.get(userId);
+    if (!roles) {
+      roles = new Set<Role>();
+      memoryUserRoles.set(userId, roles);
+    }
+    roles.add(role);
   },
 
   async setOnboardingCompleted(userId: string, completed: boolean): Promise<ProfileRecord | null> {
     const now = new Date().toISOString();
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
+    const isTestMode = isInMemoryTestMode();
     if (!isTestMode && isValidUuid(userId)) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -603,7 +864,7 @@ export const SupabaseRepo = {
   // 2. PUBLIC.PLAYER_PROFILES
   // =========================================================================
   async getPlayerProfile(userId: string): Promise<PlayerProfileRecord | null> {
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
+    const isTestMode = isInMemoryTestMode();
     if (!isTestMode && isValidUuid(userId)) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -650,7 +911,7 @@ export const SupabaseRepo = {
       updated_at: now,
     };
 
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
+    const isTestMode = isInMemoryTestMode();
     if (!isTestMode && isValidUuid(data.userId)) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -680,7 +941,7 @@ export const SupabaseRepo = {
   // 3. PUBLIC.CAPTAIN_PROFILES
   // =========================================================================
   async getCaptainProfile(userId: string): Promise<CaptainProfileRecord | null> {
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
+    const isTestMode = isInMemoryTestMode();
     if (!isTestMode && isValidUuid(userId)) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -727,7 +988,7 @@ export const SupabaseRepo = {
       updated_at: now,
     };
 
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
+    const isTestMode = isInMemoryTestMode();
     if (!isTestMode && isValidUuid(data.userId)) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -742,14 +1003,87 @@ export const SupabaseRepo = {
         if (error || !upserted) {
           throw new Error(error?.message || 'Failed to save captain profile in Supabase.');
         }
+        await this.addRole(data.userId, 'TEAM_CAPTAIN');
+
+        // Ensure team is synchronized in public.teams
+        try {
+          const existingTeam = await this.getCaptainTeam(data.userId);
+          if (!existingTeam) {
+            await this.createTeam({
+              captainId: data.userId,
+              name: data.teamName,
+              sport: data.sports[0] || 'cricket',
+              skillLevel: data.skillLevel || 'intermediate',
+              area: data.primaryLocation,
+            });
+          } else if (existingTeam.name !== data.teamName) {
+            await this.updateTeam(existingTeam.id, data.userId, {
+              name: data.teamName,
+              sport: data.sports[0] || existingTeam.sport,
+              skillLevel: data.skillLevel || existingTeam.skillLevel,
+              area: data.primaryLocation || existingTeam.area,
+            });
+          }
+        } catch (syncErr: any) {
+          console.warn('[SupabaseRepo] Captain team sync warning:', syncErr?.message);
+        }
+
         return upserted as CaptainProfileRecord;
       } catch (err: any) {
         memoryCaptainProfiles.set(data.userId, record);
+        await this.addRole(data.userId, 'TEAM_CAPTAIN');
+
+        try {
+          const existingTeam = await this.getCaptainTeam(data.userId);
+          if (!existingTeam) {
+            await this.createTeam({
+              captainId: data.userId,
+              name: data.teamName,
+              sport: data.sports[0] || 'cricket',
+              skillLevel: data.skillLevel || 'intermediate',
+              area: data.primaryLocation,
+            });
+          } else if (existingTeam.name !== data.teamName) {
+            await this.updateTeam(existingTeam.id, data.userId, {
+              name: data.teamName,
+              sport: data.sports[0] || existingTeam.sport,
+              skillLevel: data.skillLevel || existingTeam.skillLevel,
+              area: data.primaryLocation || existingTeam.area,
+            });
+          }
+        } catch (syncErr: any) {
+          console.warn('[SupabaseRepo] Captain team sync warning:', syncErr?.message);
+        }
+
         return record;
       }
     }
 
     memoryCaptainProfiles.set(data.userId, record);
+    await this.addRole(data.userId, 'TEAM_CAPTAIN');
+
+    try {
+      const existingTeam = await this.getCaptainTeam(data.userId);
+      if (!existingTeam) {
+        await this.createTeam({
+          captainId: data.userId,
+          name: data.teamName,
+          sport: data.sports[0] || 'cricket',
+          skillLevel: data.skillLevel || 'intermediate',
+          area: data.primaryLocation,
+        });
+      } else if (existingTeam.name !== data.teamName) {
+        await this.updateTeam(existingTeam.id, data.userId, {
+          name: data.teamName,
+          sport: data.sports[0] || existingTeam.sport,
+          skillLevel: data.skillLevel || existingTeam.skillLevel,
+          area: data.primaryLocation || existingTeam.area,
+        });
+      }
+    } catch (syncErr: any) {
+      console.warn('[SupabaseRepo] Captain team sync warning:', syncErr?.message);
+    }
+
     return record;
   },
 
@@ -757,7 +1091,7 @@ export const SupabaseRepo = {
   // 4. PUBLIC.HUB_OWNER_PROFILES
   // =========================================================================
   async getHubOwnerProfile(userId: string): Promise<HubOwnerProfileRecord | null> {
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
+    const isTestMode = isInMemoryTestMode();
     if (!isTestMode && isValidUuid(userId)) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -795,7 +1129,7 @@ export const SupabaseRepo = {
     courtCount: number;
   }): Promise<HubOwnerProfileRecord> {
     const now = new Date().toISOString();
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
+    const isTestMode = isInMemoryTestMode();
     if (!isTestMode && isValidUuid(data.userId)) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -825,6 +1159,7 @@ export const SupabaseRepo = {
         if (error || !upserted) {
           throw new Error(error?.message || 'Failed to save hub owner profile in Supabase.');
         }
+        await this.addRole(data.userId, 'HUB_OWNER');
         return upserted as HubOwnerProfileRecord;
       } catch (err: any) {
         const existing = memoryHubOwnerProfiles.get(data.userId);
@@ -841,6 +1176,7 @@ export const SupabaseRepo = {
           updated_at: now,
         };
         memoryHubOwnerProfiles.set(data.userId, record);
+        await this.addRole(data.userId, 'HUB_OWNER');
         return record;
       }
     }
@@ -861,7 +1197,210 @@ export const SupabaseRepo = {
     };
 
     memoryHubOwnerProfiles.set(data.userId, record);
+    await this.addRole(data.userId, 'HUB_OWNER');
     return record;
+  },
+
+  async updateHubOwnerProfile(
+    userId: string,
+    updates: {
+      hubName?: string;
+      contactNumber?: string | null;
+      sports?: Sport[];
+      location?: string;
+    }
+  ): Promise<HubOwnerProfileRecord> {
+    const now = new Date().toISOString();
+    const isTestMode = isInMemoryTestMode();
+
+    if (!isTestMode && isValidUuid(userId)) {
+      if (!isServerSupabaseConfigured) {
+        throw new Error('Supabase live configuration is required in non-test mode.');
+      }
+
+      const existing = await this.getHubOwnerProfile(userId);
+      if (!existing) {
+        throw new Error('Hub owner profile not found.');
+      }
+
+      const updatePayload: any = { updated_at: now };
+      if (updates.hubName !== undefined) updatePayload.hub_name = updates.hubName.trim();
+      if (updates.contactNumber !== undefined) {
+        updatePayload.contact_number = updates.contactNumber ? updates.contactNumber.trim() : null;
+      }
+      if (updates.sports !== undefined) updatePayload.sports = updates.sports;
+      if (updates.location !== undefined) updatePayload.location = updates.location.trim();
+      // Strictly preserve is_verified and court_count
+      updatePayload.is_verified = existing.is_verified;
+      updatePayload.court_count = existing.court_count;
+
+      const { data, error } = await supabaseAdmin
+        .from('hub_owner_profiles')
+        .update(updatePayload)
+        .eq('user_id', userId)
+        .select()
+        .single();
+
+      if (error || !data) {
+        throw new Error(error?.message || 'Failed to update hub owner profile.');
+      }
+      return data as HubOwnerProfileRecord;
+    }
+
+    const existing = memoryHubOwnerProfiles.get(userId);
+    if (!existing) {
+      throw new Error('Hub owner profile not found.');
+    }
+
+    if (updates.hubName !== undefined) existing.hub_name = updates.hubName.trim();
+    if (updates.contactNumber !== undefined) {
+      existing.contact_number = updates.contactNumber ? updates.contactNumber.trim() : undefined;
+    }
+    if (updates.sports !== undefined) existing.sports = updates.sports;
+    if (updates.location !== undefined) existing.location = updates.location.trim();
+    // Strictly preserve is_verified and court_count
+    existing.updated_at = now;
+
+    memoryHubOwnerProfiles.set(userId, existing);
+    return existing;
+  },
+
+  async getHubs(filters?: {
+    sport?: Sport;
+    area?: string;
+    verifiedOnly?: boolean;
+  }): Promise<HubOwnerProfileRecord[]> {
+    if (!isProduction() && (isTest() || !isServerSupabaseConfigured)) {
+      await this.seedInitialHubsIfEmpty();
+    }
+
+    if (isProduction()) {
+      if (!isServerSupabaseConfigured) {
+        throw new Error('Supabase live configuration is required in production mode.');
+      }
+      let query = supabaseAdmin
+        .from('hub_owner_profiles')
+        .select('*');
+
+      if (filters?.verifiedOnly) {
+        query = query.eq('is_verified', true);
+      }
+      if (filters?.area) {
+        query = query.ilike('location', `%${filters.area}%`);
+      }
+      if (filters?.sport) {
+        query = query.contains('sports', [filters.sport]);
+      }
+
+      const { data, error } = await query;
+      if (error) {
+        throw new Error(error.message || 'Failed to retrieve hubs from Supabase database.');
+      }
+      return (data || []) as HubOwnerProfileRecord[];
+    }
+
+    const isTestMode = isTest() || !isServerSupabaseConfigured;
+    if (!isTestMode && !isServerSupabaseConfigured) {
+      throw new Error('Supabase live configuration is required in non-test mode.');
+    }
+    const useMemoryStore = isTestMode;
+
+    if (!useMemoryStore) {
+      let query = supabaseAdmin
+        .from('hub_owner_profiles')
+        .select('*');
+
+      if (filters?.verifiedOnly) {
+        query = query.eq('is_verified', true);
+      }
+      if (filters?.area) {
+        query = query.ilike('location', `%${filters.area}%`);
+      }
+      if (filters?.sport) {
+        query = query.contains('sports', [filters.sport]);
+      }
+
+      const { data, error } = await query;
+      if (error) {
+        throw new Error(error.message || 'Failed to retrieve hubs from Supabase database.');
+      }
+      return (data || []) as HubOwnerProfileRecord[];
+    }
+
+    let records = Array.from(memoryHubOwnerProfiles.values());
+    if (filters?.verifiedOnly) {
+      records = records.filter((h) => h.is_verified);
+    }
+    if (filters?.area) {
+      const areaLower = filters.area.toLowerCase();
+      records = records.filter((h) => h.location.toLowerCase().includes(areaLower));
+    }
+    if (filters?.sport) {
+      records = records.filter((h) => h.sports.includes(filters.sport!));
+    }
+
+    return records;
+  },
+
+  async seedInitialHubsIfEmpty(): Promise<void> {
+    if (isProduction()) {
+      return;
+    }
+    if (memoryHubOwnerProfiles.size > 0) return;
+
+    const seedHubs = [
+      {
+        userId: '00000000-0000-0000-0000-000000000010',
+        hubName: 'Gulberg Badminton Arena',
+        contactNumber: '+92 300 1234567',
+        sports: ['badminton'] as Sport[],
+        location: 'Gulberg III, Lahore',
+        courtCount: 4,
+        isVerified: true,
+      },
+      {
+        userId: '00000000-0000-0000-0000-000000000011',
+        hubName: 'Lahore Padel Club',
+        contactNumber: '+92 321 9876543',
+        sports: ['padel'] as Sport[],
+        location: 'DHA Phase 5, Lahore',
+        courtCount: 6,
+        isVerified: true,
+      },
+      {
+        userId: '00000000-0000-0000-0000-000000000012',
+        hubName: 'Model Town Sports Complex',
+        contactNumber: '+92 333 5551234',
+        sports: ['cricket', 'football', 'badminton'] as Sport[],
+        location: 'Model Town, Lahore',
+        courtCount: 8,
+        isVerified: true,
+      },
+      {
+        userId: '00000000-0000-0000-0000-000000000013',
+        hubName: 'Johar Town Futsal Arena',
+        contactNumber: '+92 345 4443322',
+        sports: ['football'] as Sport[],
+        location: 'Johar Town, Lahore',
+        courtCount: 2,
+        isVerified: false,
+      },
+    ];
+
+    const now = new Date().toISOString();
+    for (const hub of seedHubs) {
+      memoryHubOwnerProfiles.set(hub.userId, {
+        user_id: hub.userId,
+        hub_name: hub.hubName,
+        contact_number: hub.contactNumber,
+        sports: hub.sports,
+        location: hub.location,
+        court_count: hub.courtCount,
+        is_verified: hub.isVerified,
+        created_at: now,
+        updated_at: now,
+      });
+    }
   },
 
   // =========================================================================
@@ -872,9 +1411,27 @@ export const SupabaseRepo = {
     const now = new Date().toISOString();
     const status = input.openSlots === 0 ? 'FULL' : 'OPEN';
 
+    let teamId = input.teamId ? input.teamId.trim() : null;
+    if (teamId) {
+      const team = await this.getTeamById(teamId);
+      if (!team || team.captainId !== input.captainId) {
+        throw new Error('Invalid teamId: team does not exist or does not belong to the authenticated captain.');
+      }
+    } else {
+      try {
+        const captainTeam = await this.getCaptainTeam(input.captainId);
+        if (captainTeam) {
+          teamId = captainTeam.id;
+        }
+      } catch {
+        // Fallback: match without assigned team
+      }
+    }
+
     const dbRecord: MatchDbRecord = {
       id,
       captain_id: input.captainId,
+      team_id: teamId,
       sport: input.sport,
       title: input.title.trim(),
       format: input.format ? input.format.trim() : null,
@@ -894,7 +1451,7 @@ export const SupabaseRepo = {
       updated_at: now,
     };
 
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
+    const isTestMode = isInMemoryTestMode();
     if (!isTestMode && !isServerSupabaseConfigured) {
       throw new Error('Supabase live configuration is required in non-test mode.');
     }
@@ -922,7 +1479,7 @@ export const SupabaseRepo = {
     area?: string;
     skillLevel?: SkillLevel;
   }): Promise<MatchOutput[]> {
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
+    const isTestMode = isInMemoryTestMode();
     if (!isTestMode && !isServerSupabaseConfigured) {
       throw new Error('Supabase live configuration is required in non-test mode.');
     }
@@ -972,7 +1529,7 @@ export const SupabaseRepo = {
   },
 
   async getMatchById(id: string): Promise<MatchOutput | null> {
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
+    const isTestMode = isInMemoryTestMode();
     if (!isTestMode && !isServerSupabaseConfigured) {
       throw new Error('Supabase live configuration is required in non-test mode.');
     }
@@ -1000,7 +1557,7 @@ export const SupabaseRepo = {
   },
 
   async getCaptainMatches(captainId: string): Promise<MatchOutput[]> {
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
+    const isTestMode = isInMemoryTestMode();
     if (!isTestMode && !isServerSupabaseConfigured) {
       throw new Error('Supabase live configuration is required in non-test mode.');
     }
@@ -1031,13 +1588,18 @@ export const SupabaseRepo = {
 
   // Helper for seeding initial fixture data once
   async seedInitialMatchesIfEmpty(): Promise<void> {
+    if (isProduction()) {
+      return;
+    }
+
     // 1. Seed admin if missing
     await this.seedAdminIfMissing();
 
+    const isTestMode = isTest();
     // 2. Check if matches already seeded
     if (memoryMatches.size > 0) return;
 
-    if (isServerSupabaseConfigured) {
+    if (!isTestMode && isServerSupabaseConfigured) {
       try {
         const { count, error } = await supabaseAdmin
           .from('matches')
@@ -1173,11 +1735,29 @@ export const SupabaseRepo = {
     for (const fixture of seedFixtures) {
       await this.createMatch(fixture);
     }
+
+    const captainMatches = Array.from(memoryMatches.values()).filter((m) => m.captain_id === defaultCaptainId);
+    if (captainMatches.length > 0 && memoryJoinRequests.size === 0) {
+      const demoReqId = 'seed_req_demo_1';
+      memoryJoinRequests.set(demoReqId, {
+        id: demoReqId,
+        match_id: captainMatches[0].id,
+        player_id: '00000000-0000-0000-0000-000000000001',
+        status: 'PENDING',
+        message: 'Midfielder with great stamina. Looking forward to the match!',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
+    }
   },
 
   // Helper for seed admin
   async seedAdminIfMissing(): Promise<void> {
-    if (process.env.NODE_ENV === 'test') {
+    if (isProduction()) {
+      return;
+    }
+
+    if (isTest()) {
       const adminId = '00000000-0000-0000-0000-000000000001';
       const existing = await this.getProfile(adminId);
       if (!existing) {
@@ -1225,7 +1805,7 @@ export const SupabaseRepo = {
   // 6. PUBLIC.JOIN_REQUESTS & PUBLIC.MATCH_PARTICIPANTS (Phase 3)
   // =========================================================================
   async getJoinRequestById(requestId: string): Promise<JoinRequestDbRecord | null> {
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
+    const isTestMode = isInMemoryTestMode();
     if (!isTestMode && !isServerSupabaseConfigured) {
       throw new Error('Supabase live configuration is required in non-test mode.');
     }
@@ -1248,7 +1828,7 @@ export const SupabaseRepo = {
   },
 
   async isMatchParticipant(matchId: string, playerId: string): Promise<boolean> {
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
+    const isTestMode = isInMemoryTestMode();
     if (!isTestMode && !isServerSupabaseConfigured) {
       throw new Error('Supabase live configuration is required in non-test mode.');
     }
@@ -1277,7 +1857,7 @@ export const SupabaseRepo = {
   },
 
   async getPlayerActiveRequestForMatch(matchId: string, playerId: string): Promise<JoinRequestDbRecord | null> {
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
+    const isTestMode = isInMemoryTestMode();
     if (!isTestMode && !isServerSupabaseConfigured) {
       throw new Error('Supabase live configuration is required in non-test mode.');
     }
@@ -1323,7 +1903,7 @@ export const SupabaseRepo = {
       updated_at: now,
     };
 
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
+    const isTestMode = isInMemoryTestMode();
     if (!isTestMode && !isServerSupabaseConfigured) {
       throw new Error('Supabase live configuration is required in non-test mode.');
     }
@@ -1377,7 +1957,7 @@ export const SupabaseRepo = {
   },
 
   async getPlayerJoinRequests(playerId: string): Promise<JoinRequestOutput[]> {
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
+    const isTestMode = isInMemoryTestMode();
     if (!isTestMode && !isServerSupabaseConfigured) {
       throw new Error('Supabase live configuration is required in non-test mode.');
     }
@@ -1440,7 +2020,7 @@ export const SupabaseRepo = {
   },
 
   async getMatchJoinRequests(matchId: string): Promise<MatchRequestWithPlayerOutput[]> {
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
+    const isTestMode = isInMemoryTestMode();
     if (!isTestMode && !isServerSupabaseConfigured) {
       throw new Error('Supabase live configuration is required in non-test mode.');
     }
@@ -1510,7 +2090,7 @@ export const SupabaseRepo = {
     captainId: string
   ): Promise<{ success: boolean; code?: string; error?: string; request?: JoinRequestOutput }> {
     const now = new Date().toISOString();
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
+    const isTestMode = isInMemoryTestMode();
     if (!isTestMode && !isServerSupabaseConfigured) {
       throw new Error('Supabase live configuration is required in non-test mode.');
     }
@@ -1597,6 +2177,15 @@ export const SupabaseRepo = {
     };
   },
 
+  setMatchOpenSlotsForTest(matchId: string, openSlots: number, status?: 'OPEN' | 'FULL'): void {
+    const mem = memoryMatches.get(matchId);
+    if (mem) {
+      mem.open_slots = openSlots;
+      mem.status = status || (openSlots <= 0 ? 'FULL' : 'OPEN');
+      memoryMatches.set(matchId, mem);
+    }
+  },
+
   async acceptJoinRequest(
     requestId: string,
     captainId: string
@@ -1609,7 +2198,7 @@ export const SupabaseRepo = {
     matchStatus?: 'OPEN' | 'FULL' | 'UPCOMING';
   }> {
     const now = new Date().toISOString();
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
+    const isTestMode = isInMemoryTestMode();
     if (!isTestMode && !isServerSupabaseConfigured) {
       throw new Error('Supabase live configuration is required in non-test mode.');
     }
@@ -1741,7 +2330,7 @@ export const SupabaseRepo = {
       created_at: now,
     };
 
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
+    const isTestMode = isInMemoryTestMode();
     if (!isTestMode && !isServerSupabaseConfigured) {
       throw new Error('Supabase live configuration is required in non-test mode.');
     }
@@ -1788,7 +2377,7 @@ export const SupabaseRepo = {
   },
 
   async getUserNotifications(userId: string): Promise<NotificationOutput[]> {
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
+    const isTestMode = isInMemoryTestMode();
     if (!isTestMode && !isServerSupabaseConfigured) {
       throw new Error('Supabase live configuration is required in non-test mode.');
     }
@@ -1842,7 +2431,7 @@ export const SupabaseRepo = {
     notificationId: string,
     userId: string
   ): Promise<{ success: boolean; code?: string; error?: string; notification?: NotificationOutput }> {
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
+    const isTestMode = isInMemoryTestMode();
     if (!isTestMode && !isServerSupabaseConfigured) {
       throw new Error('Supabase live configuration is required in non-test mode.');
     }
@@ -1920,7 +2509,7 @@ export const SupabaseRepo = {
   },
 
   async markAllNotificationsAsRead(userId: string): Promise<{ success: boolean; updatedCount: number }> {
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
+    const isTestMode = isInMemoryTestMode();
     if (!isTestMode && !isServerSupabaseConfigured) {
       throw new Error('Supabase live configuration is required in non-test mode.');
     }
@@ -2524,7 +3113,7 @@ export const SupabaseRepo = {
   // =========================================================================
 
   async getHubCourtsByOwner(hubOwnerId: string): Promise<HubCourtOutput[]> {
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
+    const isTestMode = isInMemoryTestMode();
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -2548,7 +3137,7 @@ export const SupabaseRepo = {
   },
 
   async getHubCourtById(id: string): Promise<HubCourtOutput | null> {
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
+    const isTestMode = isInMemoryTestMode();
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -2571,7 +3160,7 @@ export const SupabaseRepo = {
 
   async getHubCourtByOwnerAndName(hubOwnerId: string, name: string): Promise<HubCourtOutput | null> {
     const trimmed = name.trim().toLowerCase();
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
+    const isTestMode = isInMemoryTestMode();
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -2613,7 +3202,7 @@ export const SupabaseRepo = {
       updated_at: now,
     };
 
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
+    const isTestMode = isInMemoryTestMode();
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -2670,7 +3259,7 @@ export const SupabaseRepo = {
     }
   ): Promise<HubCourtOutput> {
     const now = new Date().toISOString();
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
+    const isTestMode = isInMemoryTestMode();
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -2710,7 +3299,7 @@ export const SupabaseRepo = {
 
   async deleteHubCourt(id: string, hubOwnerId: string): Promise<boolean> {
     const now = new Date().toISOString();
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
+    const isTestMode = isInMemoryTestMode();
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -2762,7 +3351,7 @@ export const SupabaseRepo = {
   async getPendingHubVerificationRequestByOwner(
     hubOwnerId: string
   ): Promise<HubVerificationRequestDbRecord | null> {
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
+    const isTestMode = isInMemoryTestMode();
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -2803,7 +3392,7 @@ export const SupabaseRepo = {
       updated_at: now,
     };
 
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
+    const isTestMode = isInMemoryTestMode();
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -2824,10 +3413,89 @@ export const SupabaseRepo = {
     return formatHubVerificationOutput(record);
   },
 
+  async getLatestHubVerificationRequestByOwner(
+    hubOwnerId: string
+  ): Promise<HubVerificationOutput | null> {
+    const isTestMode = isInMemoryTestMode();
+    if (!isTestMode) {
+      if (!isServerSupabaseConfigured) {
+        throw new Error('Supabase live configuration is required in non-test mode.');
+      }
+      const { data, error } = await supabaseAdmin
+        .from('hub_verification_requests')
+        .select('*')
+        .eq('hub_owner_id', hubOwnerId)
+        .order('submitted_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) {
+        throw new Error(error.message || 'Failed to query latest verification request.');
+      }
+      return data ? formatHubVerificationOutput(data) : null;
+    }
+
+    const requests = Array.from(memoryHubVerificationRequests.values())
+      .filter((r) => r.hub_owner_id === hubOwnerId)
+      .sort((a, b) => b.submitted_at.localeCompare(a.submitted_at));
+
+    return requests.length > 0 ? formatHubVerificationOutput(requests[0]) : null;
+  },
+
+  async getHubDashboardSummary(hubOwnerId: string): Promise<HubDashboardSummaryOutput> {
+    const hub = await this.getHubOwnerProfile(hubOwnerId);
+    if (!hub) {
+      throw new Error('Hub owner profile not found.');
+    }
+
+    const courts = await this.getHubCourtsByOwner(hubOwnerId);
+    const latestVerification = await this.getLatestHubVerificationRequestByOwner(hubOwnerId);
+
+    const availableCount = courts.filter((c) => c.status === 'AVAILABLE').length;
+    const limitedCount = courts.filter((c) => c.status === 'LIMITED').length;
+    const unavailableCount = courts.filter((c) => c.status === 'UNAVAILABLE').length;
+
+    // Keep court_count on profile aligned with actual court records
+    if (hub.court_count !== courts.length) {
+      hub.court_count = courts.length;
+    }
+
+    return {
+      hub: {
+        id: hub.user_id,
+        name: hub.hub_name,
+        location: hub.location,
+        contactNumber: hub.contact_number || null,
+        sports: hub.sports,
+        courtCount: courts.length,
+        isVerified: hub.is_verified,
+      },
+      verification: latestVerification
+        ? {
+            status: latestVerification.status,
+            adminNote: latestVerification.adminNote,
+            submittedAt: latestVerification.submittedAt,
+            reviewedAt: latestVerification.reviewedAt,
+          }
+        : {
+            status: 'NOT_SUBMITTED',
+            adminNote: null,
+            submittedAt: null,
+            reviewedAt: null,
+          },
+      courts: {
+        total: courts.length,
+        available: availableCount,
+        limited: limitedCount,
+        unavailable: unavailableCount,
+      },
+    };
+  },
+
   async getHubVerificationRequests(filter?: {
     status?: HubVerificationStatus;
   }): Promise<AdminHubVerificationOutput[]> {
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
+    const isTestMode = isInMemoryTestMode();
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -2869,7 +3537,7 @@ export const SupabaseRepo = {
   async getHubVerificationRequestById(
     id: string
   ): Promise<AdminHubVerificationOutput | null> {
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
+    const isTestMode = isInMemoryTestMode();
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -2897,7 +3565,7 @@ export const SupabaseRepo = {
     adminNote?: string | null;
   }): Promise<AdminHubVerificationOutput> {
     const now = new Date().toISOString();
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
+    const isTestMode = isInMemoryTestMode();
 
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
@@ -2983,7 +3651,7 @@ export const SupabaseRepo = {
       resolved_at: null,
     };
 
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
+    const isTestMode = isInMemoryTestMode();
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -3008,7 +3676,7 @@ export const SupabaseRepo = {
     status?: ReportStatus;
     category?: ReportCategory;
   }): Promise<AdminReportOutput[]> {
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
+    const isTestMode = isInMemoryTestMode();
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -3054,7 +3722,7 @@ export const SupabaseRepo = {
   },
 
   async getReportById(id: string): Promise<AdminReportOutput | null> {
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
+    const isTestMode = isInMemoryTestMode();
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -3091,7 +3759,7 @@ export const SupabaseRepo = {
       targetStatus = 'FOLLOW_UP';
     }
 
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured;
+    const isTestMode = isInMemoryTestMode();
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -3161,6 +3829,705 @@ export const SupabaseRepo = {
     memoryReports.set(params.reportId, existing);
 
     return enrichAdminReport(existing);
+  },
+
+  async getAdminDashboardSummary(): Promise<AdminDashboardSummaryOutput> {
+    const isTestMode = isInMemoryTestMode();
+
+    if (!isTestMode) {
+      if (!isServerSupabaseConfigured) {
+        throw new Error('Supabase live configuration is required in non-test mode.');
+      }
+
+      const [usersRes, matchesTotalRes, matchesOpenRes, hubsTotalRes, hubsVerifiedRes, verifPendingRes, reportsOpenRes] =
+        await Promise.all([
+          supabaseAdmin.from('profiles').select('*', { count: 'exact', head: true }),
+          supabaseAdmin.from('matches').select('*', { count: 'exact', head: true }),
+          supabaseAdmin.from('matches').select('*', { count: 'exact', head: true }).eq('status', 'OPEN'),
+          supabaseAdmin.from('hub_owner_profiles').select('*', { count: 'exact', head: true }),
+          supabaseAdmin.from('hub_owner_profiles').select('*', { count: 'exact', head: true }).eq('is_verified', true),
+          supabaseAdmin.from('hub_verification_requests').select('*', { count: 'exact', head: true }).eq('status', 'PENDING'),
+          supabaseAdmin.from('reports').select('*', { count: 'exact', head: true }).eq('status', 'OPEN'),
+        ]);
+
+      return {
+        users: {
+          total: usersRes.count ?? 0,
+        },
+        matches: {
+          total: matchesTotalRes.count ?? 0,
+          open: matchesOpenRes.count ?? 0,
+        },
+        hubs: {
+          total: hubsTotalRes.count ?? 0,
+          verified: hubsVerifiedRes.count ?? 0,
+          pendingVerification: verifPendingRes.count ?? 0,
+        },
+        reports: {
+          open: reportsOpenRes.count ?? 0,
+        },
+      };
+    }
+
+    const totalUsers = memoryProfiles.size;
+    const allMatches = Array.from(memoryMatches.values());
+    const totalMatches = allMatches.length;
+    const openMatches = allMatches.filter((m) => m.status === 'OPEN').length;
+
+    const allHubs = Array.from(memoryHubOwnerProfiles.values());
+    const totalHubs = allHubs.length;
+    const verifiedHubs = allHubs.filter((h) => h.is_verified === true).length;
+    const pendingVerifications = Array.from(memoryHubVerificationRequests.values()).filter(
+      (r) => r.status === 'PENDING'
+    ).length;
+
+    const openReports = Array.from(memoryReports.values()).filter((r) => r.status === 'OPEN').length;
+
+    return {
+      users: {
+        total: totalUsers,
+      },
+      matches: {
+        total: totalMatches,
+        open: openMatches,
+      },
+      hubs: {
+        total: totalHubs,
+        verified: verifiedHubs,
+        pendingVerification: pendingVerifications,
+      },
+      reports: {
+        open: openReports,
+      },
+    };
+  },
+
+  async getAdminHubs(filter?: {
+    status?: string;
+    sport?: Sport;
+  }): Promise<AdminHubListItem[]> {
+    const isTestMode = isInMemoryTestMode();
+
+    if (!isTestMode) {
+      if (!isServerSupabaseConfigured) {
+        throw new Error('Supabase live configuration is required in non-test mode.');
+      }
+
+      let query = supabaseAdmin
+        .from('hub_owner_profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (filter?.sport) {
+        query = query.contains('sports', [filter.sport]);
+      }
+
+      const { data, error } = await query;
+      if (error) {
+        throw new Error(error.message || 'Failed to query hubs for admin.');
+      }
+
+      const results: AdminHubListItem[] = [];
+      for (const hub of data || []) {
+        const owner = await this.getProfile(hub.user_id);
+        const latestVerif = await this.getLatestHubVerificationRequestByOwner(hub.user_id);
+        const resolvedVerificationStatus: HubVerificationStatus | 'NOT_SUBMITTED' =
+          hub.is_verified
+            ? 'APPROVED'
+            : latestVerif?.status || 'NOT_SUBMITTED';
+
+        if (filter?.status) {
+          const upper = filter.status.toUpperCase();
+          if (upper === 'VERIFIED' && !hub.is_verified) continue;
+          if (upper === 'PENDING' && resolvedVerificationStatus !== 'PENDING') continue;
+          if (upper === 'REJECTED' && resolvedVerificationStatus !== 'REJECTED') continue;
+        }
+
+        results.push({
+          id: hub.user_id,
+          userId: hub.user_id,
+          hubName: hub.hub_name,
+          ownerName: owner?.name || 'Unknown Owner',
+          location: hub.location,
+          contactNumber: hub.contact_number || null,
+          sports: hub.sports || [],
+          courtCount: hub.court_count || 0,
+          isVerified: Boolean(hub.is_verified),
+          verificationStatus: resolvedVerificationStatus,
+          createdAt: hub.created_at,
+        });
+      }
+
+      return results;
+    }
+
+    const allHubs = Array.from(memoryHubOwnerProfiles.values());
+    const results: AdminHubListItem[] = [];
+
+    for (const hub of allHubs) {
+      if (filter?.sport && (!hub.sports || !hub.sports.includes(filter.sport))) {
+        continue;
+      }
+
+      const owner = memoryProfiles.get(hub.user_id);
+      const ownerVerifRequests = Array.from(memoryHubVerificationRequests.values())
+        .filter((r) => r.hub_owner_id === hub.user_id)
+        .sort((a, b) => b.submitted_at.localeCompare(a.submitted_at));
+      const latestVerif = ownerVerifRequests.length > 0 ? ownerVerifRequests[0] : null;
+
+      const resolvedVerificationStatus: HubVerificationStatus | 'NOT_SUBMITTED' =
+        hub.is_verified
+          ? 'APPROVED'
+          : latestVerif?.status || 'NOT_SUBMITTED';
+
+      if (filter?.status) {
+        const upper = filter.status.toUpperCase();
+        if (upper === 'VERIFIED' && !hub.is_verified) continue;
+        if (upper === 'PENDING' && resolvedVerificationStatus !== 'PENDING') continue;
+        if (upper === 'REJECTED' && resolvedVerificationStatus !== 'REJECTED') continue;
+      }
+
+      results.push({
+        id: hub.user_id,
+        userId: hub.user_id,
+        hubName: hub.hub_name,
+        ownerName: owner?.name || 'Unknown Owner',
+        location: hub.location,
+        contactNumber: hub.contact_number || null,
+        sports: hub.sports || [],
+        courtCount: hub.court_count || 0,
+        isVerified: Boolean(hub.is_verified),
+        verificationStatus: resolvedVerificationStatus,
+        createdAt: hub.created_at,
+      });
+    }
+
+    results.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    return results;
+  },
+
+  // =========================================================================
+  // 11. PUBLIC.TEAMS & PUBLIC.TEAM_MEMBERS (Phase B)
+  // =========================================================================
+  async getCaptainTeam(captainId: string): Promise<TeamOutput | null> {
+    const isTestMode = isInMemoryTestMode();
+    if (!isTestMode && isValidUuid(captainId)) {
+      if (!isServerSupabaseConfigured) {
+        throw new Error('Supabase live configuration is required in non-test mode.');
+      }
+      try {
+        const { data, error } = await supabaseAdmin
+          .from('teams')
+          .select('*')
+          .eq('captain_id', captainId)
+          .maybeSingle();
+
+        if (error) {
+          throw new Error(error.message || 'Failed to query captain team.');
+        }
+        if (data) {
+          const { count } = await supabaseAdmin
+            .from('team_members')
+            .select('id', { count: 'exact', head: true })
+            .eq('team_id', data.id)
+            .eq('status', 'ACTIVE');
+          return formatTeamOutput(data as TeamDbRecord, count ?? 1);
+        }
+        return null;
+      } catch (err: any) {
+        for (const t of memoryTeams.values()) {
+          if (t.captain_id === captainId) {
+            let memberCount = 0;
+            for (const m of memoryTeamMembers.values()) {
+              if (m.team_id === t.id && m.status === 'ACTIVE') memberCount++;
+            }
+            return formatTeamOutput(t, memberCount || 1);
+          }
+        }
+        return null;
+      }
+    }
+
+    for (const t of memoryTeams.values()) {
+      if (t.captain_id === captainId) {
+        let memberCount = 0;
+        for (const m of memoryTeamMembers.values()) {
+          if (m.team_id === t.id && m.status === 'ACTIVE') memberCount++;
+        }
+        return formatTeamOutput(t, memberCount || 1);
+      }
+    }
+    return null;
+  },
+
+  async getTeamById(teamId: string): Promise<TeamOutput | null> {
+    const isTestMode = isInMemoryTestMode();
+    if (!isTestMode && isValidUuid(teamId)) {
+      if (!isServerSupabaseConfigured) {
+        throw new Error('Supabase live configuration is required in non-test mode.');
+      }
+      try {
+        const { data, error } = await supabaseAdmin
+          .from('teams')
+          .select('*')
+          .eq('id', teamId)
+          .maybeSingle();
+
+        if (error) {
+          throw new Error(error.message || 'Failed to query team by id.');
+        }
+        if (data) {
+          const { count } = await supabaseAdmin
+            .from('team_members')
+            .select('id', { count: 'exact', head: true })
+            .eq('team_id', data.id)
+            .eq('status', 'ACTIVE');
+          return formatTeamOutput(data as TeamDbRecord, count ?? 1);
+        }
+        return null;
+      } catch (err: any) {
+        const mem = memoryTeams.get(teamId);
+        if (mem) {
+          let memberCount = 0;
+          for (const m of memoryTeamMembers.values()) {
+            if (m.team_id === mem.id && m.status === 'ACTIVE') memberCount++;
+          }
+          return formatTeamOutput(mem, memberCount || 1);
+        }
+        return null;
+      }
+    }
+
+    const mem = memoryTeams.get(teamId);
+    if (!mem) return null;
+    let memberCount = 0;
+    for (const m of memoryTeamMembers.values()) {
+      if (m.team_id === mem.id && m.status === 'ACTIVE') memberCount++;
+    }
+    return formatTeamOutput(mem, memberCount || 1);
+  },
+
+  async createTeam(data: {
+    captainId: string;
+    name: string;
+    sport: Sport;
+    skillLevel: SkillLevel;
+    area: string;
+  }): Promise<TeamOutput> {
+    const existing = await this.getCaptainTeam(data.captainId);
+    if (existing) {
+      throw new Error('Captain already has a registered team.');
+    }
+
+    const id = crypto.randomUUID();
+    const now = new Date().toISOString();
+    const dbRecord: TeamDbRecord = {
+      id,
+      captain_id: data.captainId,
+      name: data.name.trim(),
+      sport: data.sport,
+      skill_level: data.skillLevel,
+      area: data.area.trim(),
+      created_at: now,
+      updated_at: now,
+    };
+
+    const isTestMode = isInMemoryTestMode();
+    const useMemoryStore = isTestMode || !isValidUuid(data.captainId);
+
+    if (!useMemoryStore) {
+      const { data: inserted, error } = await supabaseAdmin
+        .from('teams')
+        .insert([dbRecord])
+        .select()
+        .single();
+
+      if (error || !inserted) {
+        throw new Error(error?.message || 'Failed to create team in Supabase.');
+      }
+
+      // Add captain as active team member
+      const memberId = crypto.randomUUID();
+      const memberRecord: TeamMemberDbRecord = {
+        id: memberId,
+        team_id: inserted.id,
+        user_id: data.captainId,
+        member_role: 'CAPTAIN',
+        status: 'ACTIVE',
+        joined_at: now,
+      };
+      await supabaseAdmin.from('team_members').insert([memberRecord]);
+
+      return formatTeamOutput(inserted as TeamDbRecord, 1);
+    }
+
+    memoryTeams.set(id, dbRecord);
+
+    const memberId = crypto.randomUUID();
+    const memberRecord: TeamMemberDbRecord = {
+      id: memberId,
+      team_id: id,
+      user_id: data.captainId,
+      member_role: 'CAPTAIN',
+      status: 'ACTIVE',
+      joined_at: now,
+    };
+    memoryTeamMembers.set(memberId, memberRecord);
+
+    return formatTeamOutput(dbRecord, 1);
+  },
+
+  async updateTeam(
+    teamId: string,
+    captainId: string,
+    data: Partial<{
+      name: string;
+      sport: Sport;
+      skillLevel: SkillLevel;
+      area: string;
+    }>
+  ): Promise<TeamOutput> {
+    const isTestMode = isInMemoryTestMode();
+    const useMemoryStore = isTestMode || !isValidUuid(teamId);
+    const now = new Date().toISOString();
+
+    if (!useMemoryStore) {
+      const { data: team, error: tErr } = await supabaseAdmin
+        .from('teams')
+        .select('*')
+        .eq('id', teamId)
+        .maybeSingle();
+
+      if (tErr || !team) {
+        throw new Error('Team not found.');
+      }
+
+      if (team.captain_id !== captainId) {
+        throw new Error('Only the team captain can update team details.');
+      }
+
+      const updatePayload: any = { updated_at: now };
+      if (data.name !== undefined) updatePayload.name = data.name.trim();
+      if (data.sport !== undefined) updatePayload.sport = data.sport;
+      if (data.skillLevel !== undefined) updatePayload.skill_level = data.skillLevel;
+      if (data.area !== undefined) updatePayload.area = data.area.trim();
+
+      const { data: updated, error: uErr } = await supabaseAdmin
+        .from('teams')
+        .update(updatePayload)
+        .eq('id', teamId)
+        .select()
+        .single();
+
+      if (uErr || !updated) {
+        throw new Error(uErr?.message || 'Failed to update team.');
+      }
+
+      const { count } = await supabaseAdmin
+        .from('team_members')
+        .select('id', { count: 'exact', head: true })
+        .eq('team_id', teamId)
+        .eq('status', 'ACTIVE');
+
+      return formatTeamOutput(updated as TeamDbRecord, count ?? 1);
+    }
+
+    const team = memoryTeams.get(teamId);
+    if (!team) {
+      throw new Error('Team not found.');
+    }
+
+    if (team.captain_id !== captainId) {
+      throw new Error('Only the team captain can update team details.');
+    }
+
+    if (data.name !== undefined) team.name = data.name.trim();
+    if (data.sport !== undefined) team.sport = data.sport;
+    if (data.skillLevel !== undefined) team.skill_level = data.skillLevel;
+    if (data.area !== undefined) team.area = data.area.trim();
+    team.updated_at = now;
+    memoryTeams.set(teamId, team);
+
+    let memberCount = 0;
+    for (const m of memoryTeamMembers.values()) {
+      if (m.team_id === teamId && m.status === 'ACTIVE') memberCount++;
+    }
+
+    return formatTeamOutput(team, memberCount || 1);
+  },
+
+  async getTeamMembers(teamId: string): Promise<TeamMemberOutput[]> {
+    const isTestMode = isInMemoryTestMode();
+    const useMemoryStore = isTestMode || !isValidUuid(teamId);
+
+    if (!useMemoryStore) {
+      const { data, error } = await supabaseAdmin
+        .from('team_members')
+        .select('*')
+        .eq('team_id', teamId)
+        .order('joined_at', { ascending: true });
+
+      if (error) {
+        throw new Error(error.message || 'Failed to fetch team members.');
+      }
+
+      const formatted = await Promise.all((data || []).map((m: TeamMemberDbRecord) => formatTeamMemberOutput(m)));
+      return formatted.sort((a, b) => {
+        if (a.memberRole === 'CAPTAIN') return -1;
+        if (b.memberRole === 'CAPTAIN') return 1;
+        if (a.memberRole === 'VICE_CAPTAIN') return -1;
+        if (b.memberRole === 'VICE_CAPTAIN') return 1;
+        return 0;
+      });
+    }
+
+    const members = Array.from(memoryTeamMembers.values()).filter((m) => m.team_id === teamId);
+    const formatted = await Promise.all(members.map((m) => formatTeamMemberOutput(m)));
+    return formatted.sort((a, b) => {
+      if (a.memberRole === 'CAPTAIN') return -1;
+      if (b.memberRole === 'CAPTAIN') return 1;
+      if (a.memberRole === 'VICE_CAPTAIN') return -1;
+      if (b.memberRole === 'VICE_CAPTAIN') return 1;
+      return 0;
+    });
+  },
+
+  async addTeamMember(
+    teamId: string,
+    captainId: string,
+    data: {
+      userId: string;
+      memberRole?: TeamMemberRole;
+      status?: TeamMemberStatus;
+    }
+  ): Promise<TeamMemberOutput> {
+    const team = await this.getTeamById(teamId);
+    if (!team) {
+      throw new Error('Team not found.');
+    }
+    if (team.captainId !== captainId) {
+      throw new Error('Only the team captain can add members to the roster.');
+    }
+
+    const userProfile = await this.getProfile(data.userId);
+    if (!userProfile) {
+      throw new Error('Target user does not exist.');
+    }
+
+    if (data.userId === captainId) {
+      throw new Error('Captain is already the primary owner of this team.');
+    }
+
+    if (data.memberRole === 'CAPTAIN') {
+      throw new Error('Cannot designate multiple primary captains. Use VICE_CAPTAIN or PLAYER.');
+    }
+
+    const targetRoles = await this.getUserRoles(data.userId);
+    if (!targetRoles.includes('PLAYER')) {
+      throw new Error('Target user must have the PLAYER capability to join a team roster.');
+    }
+
+    const now = new Date().toISOString();
+    const isTestMode = isInMemoryTestMode();
+    const useMemoryStore = isTestMode || !isValidUuid(teamId) || !isValidUuid(data.userId);
+
+    if (!useMemoryStore) {
+      const { data: existing, error: eErr } = await supabaseAdmin
+        .from('team_members')
+        .select('*')
+        .eq('team_id', teamId)
+        .eq('user_id', data.userId)
+        .maybeSingle();
+
+      if (existing) {
+        if (existing.status === 'ACTIVE') {
+          throw new Error('User is already an active member of this team.');
+        }
+        const { data: updated, error: uErr } = await supabaseAdmin
+          .from('team_members')
+          .update({
+            status: data.status || 'ACTIVE',
+            member_role: data.memberRole || 'PLAYER',
+            joined_at: now,
+          })
+          .eq('id', existing.id)
+          .select()
+          .single();
+
+        if (uErr || !updated) {
+          throw new Error(uErr?.message || 'Failed to update team member.');
+        }
+        return formatTeamMemberOutput(updated as TeamMemberDbRecord);
+      }
+
+      const memberId = crypto.randomUUID();
+      const newMember: TeamMemberDbRecord = {
+        id: memberId,
+        team_id: teamId,
+        user_id: data.userId,
+        member_role: data.memberRole || 'PLAYER',
+        status: data.status || 'ACTIVE',
+        joined_at: now,
+      };
+
+      const { data: inserted, error: iErr } = await supabaseAdmin
+        .from('team_members')
+        .insert([newMember])
+        .select()
+        .single();
+
+      if (iErr || !inserted) {
+        throw new Error(iErr?.message || 'Failed to add team member.');
+      }
+      return formatTeamMemberOutput(inserted as TeamMemberDbRecord);
+    }
+
+    for (const [id, m] of memoryTeamMembers.entries()) {
+      if (m.team_id === teamId && m.user_id === data.userId) {
+        if (m.status === 'ACTIVE') {
+          throw new Error('User is already an active member of this team.');
+        }
+        m.status = data.status || 'ACTIVE';
+        m.member_role = data.memberRole || 'PLAYER';
+        m.joined_at = now;
+        memoryTeamMembers.set(id, m);
+        return formatTeamMemberOutput(m);
+      }
+    }
+
+    const memberId = crypto.randomUUID();
+    const newMember: TeamMemberDbRecord = {
+      id: memberId,
+      team_id: teamId,
+      user_id: data.userId,
+      member_role: data.memberRole || 'PLAYER',
+      status: data.status || 'ACTIVE',
+      joined_at: now,
+    };
+    memoryTeamMembers.set(memberId, newMember);
+    return formatTeamMemberOutput(newMember);
+  },
+
+  async removeTeamMember(teamId: string, captainId: string, userId: string): Promise<void> {
+    const team = await this.getTeamById(teamId);
+    if (!team) {
+      throw new Error('Team not found.');
+    }
+    if (team.captainId !== captainId) {
+      throw new Error('Only the team captain can remove members from the roster.');
+    }
+    if (userId === captainId) {
+      throw new Error('Captain cannot remove themselves from their own team roster.');
+    }
+
+    const isTestMode = isInMemoryTestMode();
+    const useMemoryStore = isTestMode || !isValidUuid(teamId) || !isValidUuid(userId);
+
+    if (!useMemoryStore) {
+      const { error } = await supabaseAdmin
+        .from('team_members')
+        .delete()
+        .eq('team_id', teamId)
+        .eq('user_id', userId);
+
+      if (error) {
+        throw new Error(error.message || 'Failed to remove team member.');
+      }
+      return;
+    }
+
+    for (const [id, m] of memoryTeamMembers.entries()) {
+      if (m.team_id === teamId && m.user_id === userId) {
+        memoryTeamMembers.delete(id);
+        return;
+      }
+    }
+  },
+
+  async updateMatchRecruitment(matchId: string, captainId: string, openSlots: number): Promise<MatchOutput> {
+    const now = new Date().toISOString();
+    const isTestMode = isInMemoryTestMode();
+    const useMemoryStore = isTestMode || !isValidUuid(matchId) || !isValidUuid(captainId);
+
+    if (!useMemoryStore) {
+      const { data: match, error: mErr } = await supabaseAdmin
+        .from('matches')
+        .select('*')
+        .eq('id', matchId)
+        .maybeSingle();
+
+      if (mErr || !match) {
+        throw new Error('Match not found.');
+      }
+      if (match.captain_id !== captainId) {
+        throw new Error('Only the match captain can update recruitment.');
+      }
+
+      // Count confirmed participants
+      const { count: participantCount, error: pErr } = await supabaseAdmin
+        .from('match_participants')
+        .select('id', { count: 'exact', head: true })
+        .eq('match_id', matchId);
+
+      if (pErr) {
+        throw new Error(pErr.message || 'Failed to check match participants.');
+      }
+
+      const confirmed = participantCount ?? 0;
+      const maxAllowedOpenSlots = match.total_capacity - confirmed;
+
+      if (typeof openSlots !== 'number' || isNaN(openSlots) || openSlots < 0 || openSlots > maxAllowedOpenSlots) {
+        throw new Error(`openSlots must be between 0 and ${maxAllowedOpenSlots}.`);
+      }
+
+      const newStatus = openSlots === 0 ? 'FULL' : 'OPEN';
+
+      const { data: updated, error: uErr } = await supabaseAdmin
+        .from('matches')
+        .update({
+          open_slots: openSlots,
+          status: newStatus,
+          updated_at: now,
+        })
+        .eq('id', matchId)
+        .select()
+        .single();
+
+      if (uErr || !updated) {
+        throw new Error(uErr?.message || 'Failed to update match recruitment.');
+      }
+
+      return enrichMatch(updated as MatchDbRecord);
+    }
+
+    const match = memoryMatches.get(matchId);
+    if (!match) {
+      throw new Error('Match not found.');
+    }
+    if (match.captain_id !== captainId) {
+      throw new Error('Only the match captain can update recruitment.');
+    }
+
+    let confirmed = 0;
+    for (const p of memoryMatchParticipants.values()) {
+      if (p.match_id === matchId) {
+        confirmed++;
+      }
+    }
+
+    const maxAllowedOpenSlots = match.total_capacity - confirmed;
+
+    if (typeof openSlots !== 'number' || isNaN(openSlots) || openSlots < 0 || openSlots > maxAllowedOpenSlots) {
+      throw new Error(`openSlots must be between 0 and ${maxAllowedOpenSlots}.`);
+    }
+
+    const newStatus = openSlots === 0 ? 'FULL' : 'OPEN';
+    match.open_slots = openSlots;
+    match.status = newStatus;
+    match.updated_at = now;
+    memoryMatches.set(matchId, match);
+
+    return enrichMatch(match);
   },
 };
 

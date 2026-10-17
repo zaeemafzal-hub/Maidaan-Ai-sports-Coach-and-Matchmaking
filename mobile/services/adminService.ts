@@ -5,6 +5,9 @@ import {
   AdminReport,
   ReportCategory,
   ReportStatus,
+  AdminDashboardSummary,
+  AdminHubListItem,
+  Sport,
 } from '../types';
 
 export interface HubVerificationFilters {
@@ -16,7 +19,39 @@ export interface ReportFilters {
   category?: ReportCategory;
 }
 
+export interface AdminHubFilters {
+  status?: string;
+  sport?: Sport;
+}
+
 export const adminService = {
+  /**
+   * GET /api/admin/dashboard
+   * Consolidated operational metrics for Admin Control Center.
+   */
+  async getDashboardSummary(): Promise<ApiResponse<AdminDashboardSummary>> {
+    return api.get<AdminDashboardSummary>('/api/admin/dashboard');
+  },
+
+  /**
+   * GET /api/admin/hubs
+   * List all registered hubs with verification details.
+   */
+  async getHubs(
+    filters?: AdminHubFilters
+  ): Promise<ApiResponse<{ hubs: AdminHubListItem[] }>> {
+    const params = new URLSearchParams();
+    if (filters?.status && filters.status !== 'ALL') {
+      params.append('status', filters.status);
+    }
+    if (filters?.sport) {
+      params.append('sport', filters.sport);
+    }
+    const query = params.toString();
+    const endpoint = `/api/admin/hubs${query ? `?${query}` : ''}`;
+    return api.get<{ hubs: AdminHubListItem[] }>(endpoint);
+  },
+
   /**
    * GET /api/admin/hub-verifications
    * List all hub verification requests, optionally filtered by status.

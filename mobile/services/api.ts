@@ -1,5 +1,6 @@
+import Constants from 'expo-constants';
 import { AuthStorage } from './storage';
-import { supabase } from '../lib/supabase';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 export interface ApiResponse<T = unknown> {
   data?: T;
@@ -7,21 +8,48 @@ export interface ApiResponse<T = unknown> {
   status: number;
 }
 
-const getBaseUrl = (): string => {
-  if (typeof window !== 'undefined' && window.location) {
+/**
+ * Dynamically extract dev host IP from Expo debugger host / hostUri.
+ * This guarantees the mobile app always talks to the machine serving the Expo bundle,
+ * regardless of whether the user is on home Wi-Fi, mobile hotspot, or campus network.
+ */
+export const getDevHost = (): string | null => {
+  const hostUri =
+    Constants.expoConfig?.hostUri ||
+    (Constants as any).manifest?.debuggerHost ||
+    (Constants as any).manifest2?.extra?.expoGo?.debuggerHost;
+  if (hostUri) {
+    const ip = hostUri.split(':')[0];
+    if (ip && ip !== 'localhost' && ip !== '127.0.0.1') {
+      return ip;
+    }
+  }
+  return null;
+};
+
+export const getBaseUrl = (): string => {
+  if (typeof window !== 'undefined' && window.location && window.location.hostname) {
+    if (window.location.port === '8081') {
+      return `http://${window.location.hostname}:5000`;
+    }
     return '';
   }
+
+  const devHost = getDevHost();
+  if (devHost) {
+    return `http://${devHost}:5000`;
+  }
+
   if (process.env.EXPO_PUBLIC_API_URL) {
     return process.env.EXPO_PUBLIC_API_URL.replace(/\/+$/, '');
   }
+
   return 'http://localhost:5000';
 };
 
 class ApiClient {
-  private baseUrl: string;
-
-  constructor() {
-    this.baseUrl = getBaseUrl();
+  getBaseUrl(): string {
+    return getBaseUrl();
   }
 
   private async getHeaders(customHeaders?: Record<string, string>): Promise<Record<string, string>> {
@@ -32,13 +60,15 @@ class ApiClient {
     };
 
     let token: string | null = null;
-    try {
-      const { data } = await supabase.auth.getSession();
-      if (data?.session?.access_token) {
-        token = data.session.access_token;
+    if (isSupabaseConfigured) {
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (data?.session?.access_token) {
+          token = data.session.access_token;
+        }
+      } catch {
+        // ignore
       }
-    } catch {
-      // ignore
     }
 
     if (!token) {
@@ -63,13 +93,19 @@ class ApiClient {
   ): Promise<ApiResponse<T>> {
     const method = options.method || 'GET';
     const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-    const url = `${this.baseUrl}${path}`;
+    const baseUrl = this.getBaseUrl();
+    const url = `${baseUrl}${path}`;
+
+    // Use AbortController timeout to guarantee requests never hang mobile UI indefinitely
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 6000);
 
     try {
       const headers = await this.getHeaders(options.headers);
       const config: RequestInit = {
         method,
         headers,
+        signal: controller.signal,
       };
 
       if (options.body !== undefined && method !== 'GET') {
@@ -77,6 +113,7 @@ class ApiClient {
       }
 
       const res = await fetch(url, config);
+      clearTimeout(timer);
       const status = res.status;
 
       // Handle 401 with a single session refresh attempt if not already retried
@@ -118,11 +155,14 @@ class ApiClient {
         data: json as T,
       };
     } catch (err: unknown) {
+      clearTimeout(timer);
+      const isAbort = (err as any)?.name === 'AbortError';
       return {
         status: 0,
-        error:
-          (err instanceof Error ? err.message : undefined) ||
-          'Network connection error. Please verify your connection to the Maidaan backend.',
+        error: isAbort
+          ? 'Network request timed out. Please check that the backend server is reachable.'
+          : (err instanceof Error ? err.message : undefined) ||
+            'Network connection error. Please verify your connection to the Maidaan backend.',
       };
     }
   }

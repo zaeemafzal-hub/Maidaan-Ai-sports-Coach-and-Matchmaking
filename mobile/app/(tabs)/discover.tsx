@@ -252,6 +252,31 @@ export default function DiscoverScreen() {
           <WeatherCompactBar weather={weather} loading={weatherLoading} />
         </View>
 
+        {/* Sports Concierge Quick Access Banner */}
+        <View className="px-5 pb-3">
+          <Pressable
+            onPress={() => router.push('/concierge')}
+            accessibilityRole="button"
+            accessibilityLabel="Ask Maidaan Sports Concierge"
+            className="flex-row items-center justify-between p-3 rounded-2xl bg-[#141518] border border-[#E85D26]/30 active:bg-[#1B1D22] shadow-sm"
+          >
+            <View className="flex-row items-center flex-1 mr-2">
+              <View className="w-8 h-8 rounded-full bg-[#E85D26]/15 items-center justify-center mr-2.5">
+                <Ionicons name="sparkles" size={16} color="#E85D26" />
+              </View>
+              <View className="flex-1">
+                <Text className="text-white text-xs font-bold uppercase tracking-wider">
+                  Maidaan Concierge
+                </Text>
+                <Text className="text-[#A0A5AD] text-[11px]" numberOfLines={1}>
+                  Instant fixtures, verified hubs, outdoor weather & rules
+                </Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color="#E85D26" />
+          </Pressable>
+        </View>
+
         {/* Horizontal Sport Discipline Selector Pills */}
         <View className="pb-3.5">
           <ScrollView
@@ -268,7 +293,7 @@ export default function DiscoverScreen() {
                   accessibilityRole="button"
                   accessibilityState={{ selected: isSelected }}
                   accessibilityLabel={`Filter sport: ${item.label}`}
-                  className={`flex-row items-center py-2 px-3.5 rounded-2xl mr-2.5 border transition-all ${
+                  className={`flex-row items-center py-2 px-3.5 rounded-2xl mr-2.5 border ${
                     isSelected
                       ? 'bg-[#1B1D22] border-2 border-[#E85D26] shadow-sm shadow-[#E85D26]/25'
                       : 'bg-[#141518] border border-white/[0.08] active:bg-[#1B1D22]'
@@ -303,7 +328,7 @@ export default function DiscoverScreen() {
               accessibilityRole="tab"
               accessibilityState={{ selected: viewMode === 'LIST' }}
               accessibilityLabel="Switch to List View"
-              className={`flex-1 py-1.5 rounded-lg flex-row items-center justify-center transition-all ${
+              className={`flex-1 py-1.5 rounded-lg flex-row items-center justify-center ${
                 viewMode === 'LIST'
                   ? 'bg-[#1B1D22] border border-white/[0.12] shadow-xs'
                   : 'bg-transparent'
@@ -329,7 +354,7 @@ export default function DiscoverScreen() {
               accessibilityRole="tab"
               accessibilityState={{ selected: viewMode === 'MAP' }}
               accessibilityLabel="Switch to Map View"
-              className={`flex-1 py-1.5 rounded-lg flex-row items-center justify-center transition-all ${
+              className={`flex-1 py-1.5 rounded-lg flex-row items-center justify-center ${
                 viewMode === 'MAP'
                   ? 'bg-[#1B1D22] border border-white/[0.12] shadow-xs'
                   : 'bg-transparent'

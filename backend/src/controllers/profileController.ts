@@ -29,22 +29,17 @@ export const ProfileController = {
         return;
       }
 
-      // 2. Validate role & reject ADMIN registration
-      if (!role || typeof role !== 'string') {
-        res.status(400).json({
-          error: 'Account role is required (PLAYER, TEAM_CAPTAIN, or HUB_OWNER).',
-        });
-        return;
-      }
+      // 2. Validate role: default to PLAYER for new accounts
+      const assignedRole: Role = role && typeof role === 'string' ? (role as Role) : 'PLAYER';
 
-      if (role === 'ADMIN') {
+      if (assignedRole === 'ADMIN') {
         res.status(403).json({
           error: 'Administrator accounts cannot be created via public registration.',
         });
         return;
       }
 
-      if (!ALLOWED_PUBLIC_ROLES.includes(role as Role)) {
+      if (!ALLOWED_PUBLIC_ROLES.includes(assignedRole)) {
         res.status(400).json({
           error: `Invalid role selected. Must be one of: ${ALLOWED_PUBLIC_ROLES.join(', ')}.`,
         });
@@ -58,9 +53,13 @@ export const ProfileController = {
           id: userId,
           name: name.trim(),
           email: email.trim().toLowerCase(),
-          role: role as Role,
+          role: assignedRole,
         });
+      } else {
+        await SupabaseRepo.addRole(userId, assignedRole);
       }
+
+      const roles = await SupabaseRepo.getUserRoles(userId);
 
       res.status(200).json({
         success: true,
@@ -69,9 +68,11 @@ export const ProfileController = {
           name: profile.name,
           email: profile.email,
           role: profile.role,
+          roles,
           onboardingCompleted: profile.onboarding_completed,
           createdAt: profile.created_at,
         },
+        roles,
       });
     } catch (error) {
       console.error('[ProfileController.initProfile] Error:', error);
@@ -80,7 +81,8 @@ export const ProfileController = {
   },
 
   /**
-   * Get current authenticated user details and role profile.
+   * Get current authenticated user details and role profiles.
+   * Supports multi-role architecture: returns all active capabilities and role profiles.
    * Used for session restoration on app startup.
    */
   async getMyProfile(req: Request, res: Response): Promise<void> {
@@ -98,37 +100,37 @@ export const ProfileController = {
         return;
       }
 
-      // Fetch role-specific profiles
-      let playerProfile: any = null;
-      let captainProfile: any = null;
-      let hubOwnerProfile: any = null;
+      const roles = await SupabaseRepo.getUserRoles(userId);
 
-      if (profile.role === 'PLAYER') {
-        const pRecord = await SupabaseRepo.getPlayerProfile(userId);
-        if (pRecord) {
-          playerProfile = {
+      // Concurrently fetch all role-specific profiles the user holds
+      const [pRecord, cRecord, hRecord] = await Promise.all([
+        SupabaseRepo.getPlayerProfile(userId),
+        SupabaseRepo.getCaptainProfile(userId),
+        SupabaseRepo.getHubOwnerProfile(userId),
+      ]);
+
+      const playerProfile = pRecord
+        ? {
             userId: pRecord.user_id,
             preferredSports: pRecord.preferred_sports,
             skillLevel: pRecord.skill_level,
             primaryLocation: pRecord.primary_location,
             matchesPlayed: pRecord.matches_played,
-          };
-        }
-      } else if (profile.role === 'TEAM_CAPTAIN') {
-        const cRecord = await SupabaseRepo.getCaptainProfile(userId);
-        if (cRecord) {
-          captainProfile = {
+          }
+        : null;
+
+      const captainProfile = cRecord
+        ? {
             userId: cRecord.user_id,
             teamName: cRecord.team_name,
             sports: cRecord.sports,
             skillLevel: cRecord.skill_level,
             primaryLocation: cRecord.primary_location,
-          };
-        }
-      } else if (profile.role === 'HUB_OWNER') {
-        const hRecord = await SupabaseRepo.getHubOwnerProfile(userId);
-        if (hRecord) {
-          hubOwnerProfile = {
+          }
+        : null;
+
+      const hubOwnerProfile = hRecord
+        ? {
             userId: hRecord.user_id,
             hubName: hRecord.hub_name,
             location: hRecord.location,
@@ -136,18 +138,24 @@ export const ProfileController = {
             contactNumber: hRecord.contact_number,
             sports: hRecord.sports,
             isVerified: hRecord.is_verified,
-          };
-        }
-      }
+          }
+        : null;
 
       res.status(200).json({
         user: {
           id: profile.id,
           name: profile.name,
           email: profile.email,
-          role: profile.role,
+          role: profile.role, // legacy compatibility
+          roles,              // authoritative multi-role array
           onboardingCompleted: profile.onboarding_completed,
           createdAt: profile.created_at,
+        },
+        roles,
+        onboarding: {
+          player: Boolean(playerProfile),
+          captain: Boolean(captainProfile),
+          hubOwner: Boolean(hubOwnerProfile),
         },
         playerProfile,
         captainProfile,

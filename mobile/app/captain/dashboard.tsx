@@ -6,6 +6,7 @@ import {
   Pressable,
   Image,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
@@ -18,6 +19,8 @@ import { ArenaBadge } from '../../components/ui/ArenaBadge';
 import { SpotProgressRing } from '../../components/ui/SpotProgressRing';
 import { Sport, SkillLevel } from '../../types';
 import { matchService } from '../../services/matchService';
+import { teamService, TeamModel } from '../../services/teamService';
+import { joinRequestService } from '../../services/joinRequestService';
 
 // Sport display metadata
 const SPORT_META: Record<
@@ -88,13 +91,11 @@ export interface CaptainFixture {
 export default function CaptainDashboardScreen() {
   const { currentUser, selectedRole, captainProfile } = useAuthStore();
   const [filterTab, setFilterTab] = useState<'all' | 'open' | 'full'>('all');
+  const [pendingRequestsCount, setPendingRequestsCount] = useState<number>(0);
 
   // Determine current effective role without modifying store
   const effectiveRole = currentUser?.role || selectedRole || 'PLAYER';
   const isCaptain = effectiveRole === 'TEAM_CAPTAIN';
-
-  // Deterministic local request count (presentation only)
-  const pendingRequestsCount = 3;
 
   // =========================================================================
   // 1. ROLE GUARD: NON-CAPTAIN USER ACCESS
@@ -195,9 +196,9 @@ export default function CaptainDashboardScreen() {
               </Pressable>
 
               <Pressable
-                onPress={() => router.push('/(auth)/role-selection')}
+                onPress={() => router.push('/(tabs)/profile')}
                 accessibilityRole="button"
-                accessibilityLabel="Switch to Captain Account"
+                accessibilityLabel="Manage Roles in Profile"
                 style={{
                   width: '100%',
                   backgroundColor: '#1B1D22',
@@ -218,7 +219,7 @@ export default function CaptainDashboardScreen() {
                     letterSpacing: 0.5,
                   }}
                 >
-                  Switch Role
+                  Manage Roles in Profile
                 </Text>
               </Pressable>
             </View>
@@ -379,6 +380,12 @@ export default function CaptainDashboardScreen() {
   const [isLoadingFixtures, setIsLoadingFixtures] = useState<boolean>(true);
   const [fixturesError, setFixturesError] = useState<string | null>(null);
 
+  // Real Team Model & Recruitment State
+  const [captainTeam, setCaptainTeam] = useState<TeamModel | null>(null);
+  const [recruitingFixture, setRecruitingFixture] = useState<CaptainFixture | null>(null);
+  const [recruitingSlots, setRecruitingSlots] = useState<number>(0);
+  const [isUpdatingRecruitment, setIsUpdatingRecruitment] = useState<boolean>(false);
+
   const isMountedRef = React.useRef(true);
 
   const loadCaptainFixtures = React.useCallback(async () => {
@@ -387,9 +394,27 @@ export default function CaptainDashboardScreen() {
         setIsLoadingFixtures(true);
         setFixturesError(null);
       }
-      const data = await matchService.getCaptainMatches();
+      const [data, teamData] = await Promise.all([
+        matchService.getCaptainMatches(),
+        teamService.getMyTeam().catch(() => null),
+      ]);
       if (isMountedRef.current) {
         setCaptainFixtures(data.map(mapToCaptainFixture));
+        setCaptainTeam(teamData);
+      }
+      try {
+        const reqPromises = data.map((m) =>
+          joinRequestService.getMatchJoinRequests(m.id).catch(() => [])
+        );
+        const allReqArrays = await Promise.all(reqPromises);
+        const totalPending = allReqArrays.flat().filter((r) => r.status === 'PENDING').length;
+        if (isMountedRef.current) {
+          setPendingRequestsCount(totalPending);
+        }
+      } catch {
+        if (isMountedRef.current) {
+          setPendingRequestsCount(0);
+        }
       }
     } catch (err: any) {
       if (isMountedRef.current) {
@@ -402,6 +427,35 @@ export default function CaptainDashboardScreen() {
       }
     }
   }, []);
+
+  const handleOpenRecruitmentModal = (fixture: CaptainFixture) => {
+    setRecruitingFixture(fixture);
+    setRecruitingSlots(fixture.slotsOpen);
+  };
+
+  const handleSaveRecruitment = async () => {
+    if (!recruitingFixture) return;
+    try {
+      setIsUpdatingRecruitment(true);
+      await matchService.updateMatchRecruitment(recruitingFixture.id, recruitingSlots);
+      setCaptainFixtures((prev) =>
+        prev.map((f) =>
+          f.id === recruitingFixture.id
+            ? {
+                ...f,
+                slotsOpen: recruitingSlots,
+                status: recruitingSlots === 0 ? 'FULL' : 'OPEN',
+              }
+            : f
+        )
+      );
+      setRecruitingFixture(null);
+    } catch (err: any) {
+      console.warn('[CaptainDashboard] Failed to update recruitment:', err);
+    } finally {
+      setIsUpdatingRecruitment(false);
+    }
+  };
 
   useFocusEffect(
     React.useCallback(() => {
@@ -605,7 +659,7 @@ export default function CaptainDashboardScreen() {
                     letterSpacing: -0.5,
                   }}
                 >
-                  {teamName}
+                  {captainTeam?.name || teamName}
                 </Text>
               </View>
             </View>
@@ -635,7 +689,7 @@ export default function CaptainDashboardScreen() {
                     maxWidth: 170,
                   }}
                 >
-                  {primaryLocation}
+                  {captainTeam?.area || primaryLocation}
                 </Text>
               </View>
 
@@ -652,6 +706,64 @@ export default function CaptainDashboardScreen() {
                   Led by {captainName}
                 </Text>
               </View>
+            </View>
+
+            {/* Squad Roster Strip */}
+            <View
+              style={{
+                paddingHorizontal: 16,
+                paddingVertical: 10,
+                backgroundColor: '#1B1D22',
+                borderTopWidth: 1,
+                borderTopColor: 'rgba(255,255,255,0.06)',
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Ionicons name="people-outline" size={15} color="#E85D26" />
+                <Text
+                  style={{
+                    color: '#FFFFFF',
+                    fontSize: 12,
+                    fontWeight: '700',
+                    marginLeft: 6,
+                  }}
+                >
+                  {captainTeam?.memberCount ? `${captainTeam.memberCount} Squad Members` : 'Official Team Roster'}
+                </Text>
+              </View>
+
+              <Pressable
+                onPress={() => router.push('/captain/team')}
+                accessibilityRole="button"
+                accessibilityLabel="Manage Squad Roster"
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  backgroundColor: 'rgba(232,93,38,0.12)',
+                  borderWidth: 1,
+                  borderColor: 'rgba(232,93,38,0.3)',
+                  paddingHorizontal: 10,
+                  paddingVertical: 5,
+                  borderRadius: 8,
+                }}
+              >
+                <Text
+                  style={{
+                    color: '#E85D26',
+                    fontSize: 11,
+                    fontWeight: '800',
+                    textTransform: 'uppercase',
+                    letterSpacing: 0.5,
+                    marginRight: 3,
+                  }}
+                >
+                  Manage Roster
+                </Text>
+                <Ionicons name="chevron-forward" size={12} color="#E85D26" />
+              </Pressable>
             </View>
           </View>
         </View>
@@ -956,6 +1068,67 @@ export default function CaptainDashboardScreen() {
               </Text>
               <Ionicons name="arrow-forward" size={15} color="#E85D26" />
             </View>
+          </Pressable>
+
+          {/* Action 3: MANAGE SQUAD ROSTER */}
+          <Pressable
+            onPress={() => router.push('/captain/team')}
+            accessibilityRole="button"
+            accessibilityLabel="Manage Team Squad and Roster"
+            style={{
+              width: '100%',
+              backgroundColor: '#141518',
+              borderRadius: 20,
+              padding: 16,
+              borderWidth: 1,
+              borderColor: 'rgba(255,255,255,0.08)',
+              marginTop: 10,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+              <View
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 18,
+                  backgroundColor: '#1B1D22',
+                  borderWidth: 1,
+                  borderColor: 'rgba(255,255,255,0.08)',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginRight: 12,
+                }}
+              >
+                <Ionicons name="people-outline" size={18} color="#E85D26" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={{
+                    color: '#FFFFFF',
+                    fontSize: 13,
+                    fontWeight: '800',
+                    textTransform: 'uppercase',
+                    letterSpacing: 0.5,
+                  }}
+                >
+                  My Squad & Roster
+                </Text>
+                <Text
+                  style={{
+                    color: '#A0A5AD',
+                    fontSize: 11,
+                    fontWeight: '500',
+                    marginTop: 1,
+                  }}
+                >
+                  {captainTeam ? `${captainTeam.name} • ${captainTeam.memberCount || 1} members` : 'Manage official team roster'}
+                </Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color="#A0A5AD" />
           </Pressable>
         </View>
 
@@ -1587,32 +1760,69 @@ export default function CaptainDashboardScreen() {
                       </View>
                     </View>
 
-                    {/* Manage Link Button (44px min touch target) */}
-                    <View
-                      style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        backgroundColor: '#1B1D22',
-                        paddingHorizontal: 12,
-                        minHeight: 44,
-                        borderRadius: 10,
-                        borderWidth: 1,
-                        borderColor: 'rgba(255,255,255,0.08)',
-                      }}
-                    >
-                      <Text
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      {/* Recruitment Quick Adjust Button */}
+                      <Pressable
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          handleOpenRecruitmentModal(fixture);
+                        }}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Adjust open recruitment slots for ${fixture.title}`}
                         style={{
-                          color: '#E85D26',
-                          fontSize: 11,
-                          fontWeight: '800',
-                          textTransform: 'uppercase',
-                          letterSpacing: 0.5,
-                          marginRight: 4,
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          backgroundColor: 'rgba(232,93,38,0.12)',
+                          paddingHorizontal: 10,
+                          minHeight: 44,
+                          borderRadius: 10,
+                          borderWidth: 1,
+                          borderColor: 'rgba(232,93,38,0.3)',
+                          marginRight: 8,
                         }}
                       >
-                        Manage
-                      </Text>
-                      <Ionicons name="chevron-forward" size={13} color="#E85D26" />
+                        <Ionicons name="people-outline" size={13} color="#E85D26" />
+                        <Text
+                          style={{
+                            color: '#E85D26',
+                            fontSize: 11,
+                            fontWeight: '800',
+                            textTransform: 'uppercase',
+                            letterSpacing: 0.5,
+                            marginLeft: 4,
+                          }}
+                        >
+                          Slots
+                        </Text>
+                      </Pressable>
+
+                      {/* Manage Link Button (44px min touch target) */}
+                      <View
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          backgroundColor: '#1B1D22',
+                          paddingHorizontal: 12,
+                          minHeight: 44,
+                          borderRadius: 10,
+                          borderWidth: 1,
+                          borderColor: 'rgba(255,255,255,0.08)',
+                        }}
+                      >
+                        <Text
+                          style={{
+                            color: '#E85D26',
+                            fontSize: 11,
+                            fontWeight: '800',
+                            textTransform: 'uppercase',
+                            letterSpacing: 0.5,
+                            marginRight: 4,
+                          }}
+                        >
+                          Manage
+                        </Text>
+                        <Ionicons name="chevron-forward" size={13} color="#E85D26" />
+                      </View>
                     </View>
                   </View>
                 </Pressable>
@@ -1621,6 +1831,139 @@ export default function CaptainDashboardScreen() {
           )}
         </View>
       </ScrollView>
+
+      {/* RECRUITMENT CONTROL MODAL */}
+      <Modal visible={!!recruitingFixture} transparent animationType="fade">
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+          <View style={{ width: '100%', backgroundColor: '#141518', borderRadius: 24, padding: 24, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '900', textTransform: 'uppercase' }}>
+                Open Slot Recruitment
+              </Text>
+              <Pressable onPress={() => setRecruitingFixture(null)}>
+                <Ionicons name="close" size={20} color="#A0A5AD" />
+              </Pressable>
+            </View>
+
+            {recruitingFixture && (
+              <>
+                <Text style={{ color: '#A0A5AD', fontSize: 12, marginTop: 4 }}>
+                  {recruitingFixture.title} • {recruitingFixture.groundName}
+                </Text>
+
+                {/* Stepper Container */}
+                <View style={{ marginTop: 20, alignItems: 'center', backgroundColor: '#1B1D22', borderRadius: 16, padding: 18, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' }}>
+                  <Text style={{ color: '#5C616A', fontSize: 10, fontFamily: 'monospace', textTransform: 'uppercase', fontWeight: '700' }}>
+                    Available Public Slots
+                  </Text>
+                  <Text style={{ color: recruitingSlots === 0 ? '#5C616A' : '#E85D26', fontSize: 36, fontWeight: '900', marginVertical: 8 }}>
+                    {recruitingSlots}
+                  </Text>
+                  <Text style={{ color: recruitingSlots === 0 ? '#EF4444' : '#10B981', fontSize: 11, fontWeight: '700', textTransform: 'uppercase' }}>
+                    {recruitingSlots === 0 ? 'Recruitment Closed (Full)' : 'Active Recruitment'}
+                  </Text>
+
+                  {/* Increment/Decrement Buttons */}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16, marginTop: 16 }}>
+                    <Pressable
+                      onPress={() => setRecruitingSlots((s) => Math.max(0, s - 1))}
+                      disabled={recruitingSlots <= 0}
+                      style={{
+                        width: 44,
+                        height: 44,
+                        borderRadius: 22,
+                        backgroundColor: '#141518',
+                        borderWidth: 1,
+                        borderColor: 'rgba(255,255,255,0.12)',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        opacity: recruitingSlots <= 0 ? 0.4 : 1,
+                      }}
+                    >
+                      <Ionicons name="remove" size={22} color="#FFFFFF" />
+                    </Pressable>
+
+                    <Pressable
+                      onPress={() => setRecruitingSlots(0)}
+                      style={{
+                        paddingHorizontal: 12,
+                        paddingVertical: 8,
+                        borderRadius: 10,
+                        backgroundColor: 'rgba(239,68,68,0.1)',
+                        borderWidth: 1,
+                        borderColor: 'rgba(239,68,68,0.3)',
+                      }}
+                    >
+                      <Text style={{ color: '#EF4444', fontSize: 10, fontWeight: '800', textTransform: 'uppercase' }}>
+                        Close Roster
+                      </Text>
+                    </Pressable>
+
+                    <Pressable
+                      onPress={() => {
+                        const maxAllowed = recruitingFixture.totalSlots;
+                        setRecruitingSlots((s) => Math.min(maxAllowed, s + 1));
+                      }}
+                      style={{
+                        width: 44,
+                        height: 44,
+                        borderRadius: 22,
+                        backgroundColor: '#E85D26',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Ionicons name="add" size={22} color="#0C0D0E" />
+                    </Pressable>
+                  </View>
+                </View>
+
+                {/* Save and Cancel buttons */}
+                <View style={{ flexDirection: 'row', gap: 12, marginTop: 20 }}>
+                  <Pressable
+                    onPress={() => setRecruitingFixture(null)}
+                    style={{
+                      flex: 1,
+                      minHeight: 44,
+                      borderRadius: 12,
+                      backgroundColor: '#1B1D22',
+                      borderWidth: 1,
+                      borderColor: 'rgba(255,255,255,0.08)',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Text style={{ color: '#A0A5AD', fontSize: 12, fontWeight: '700', textTransform: 'uppercase' }}>
+                      Cancel
+                    </Text>
+                  </Pressable>
+
+                  <Pressable
+                    onPress={handleSaveRecruitment}
+                    disabled={isUpdatingRecruitment}
+                    style={{
+                      flex: 1,
+                      minHeight: 44,
+                      borderRadius: 12,
+                      backgroundColor: '#E85D26',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    {isUpdatingRecruitment ? (
+                      <ActivityIndicator size="small" color="#0C0D0E" />
+                    ) : (
+                      <Text style={{ color: '#0C0D0E', fontSize: 12, fontWeight: '900', textTransform: 'uppercase' }}>
+                        Save Slots
+                      </Text>
+                    )}
+                  </Pressable>
+                </View>
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }

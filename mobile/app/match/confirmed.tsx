@@ -131,7 +131,7 @@ export default function SpotConfirmedScreen() {
   // Safe invalid-context guard: do not expose arbitrary group rooms or fabricated match details
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-[#171A1D]" edges={['top', 'bottom']}>
+      <SafeAreaView className="flex-1 bg-[#0C0D0E]" edges={['top', 'bottom']}>
         <ArenaHeader
           title="Spot Confirmed"
           subtitle="Lineup secured"
@@ -150,7 +150,7 @@ export default function SpotConfirmedScreen() {
 
   if (isUnauthorized || !match || !acceptedRequest) {
     return (
-      <SafeAreaView className="flex-1 bg-[#171A1D]" edges={['top', 'bottom']}>
+      <SafeAreaView className="flex-1 bg-[#0C0D0E]" edges={['top', 'bottom']}>
         <ArenaHeader
           title="Spot Confirmed"
           subtitle="Lineup secured"
@@ -158,10 +158,10 @@ export default function SpotConfirmedScreen() {
           onBack={handleBackToDiscover}
         />
         <View className="flex-1 px-6 justify-center items-center">
-          <View className="w-16 h-16 rounded-full bg-[#272C31] border border-white/10 items-center justify-center mb-4">
+          <View className="w-16 h-16 rounded-full bg-[#1B1D22] border border-white/[0.08] items-center justify-center mb-4">
             <Ionicons name="alert-circle-outline" size={32} color="#F4A261" />
           </View>
-          <Text className="text-[#F4F6F7] text-xl font-black uppercase tracking-tight text-center">
+          <Text className="text-[#FFFFFF] text-xl font-black uppercase tracking-tight text-center">
             CONFIRMATION UNAVAILABLE
           </Text>
           <Text className="text-[#A0A5AD] text-xs font-medium text-center mt-2 max-w-[280px] leading-5">
@@ -174,7 +174,7 @@ export default function SpotConfirmedScreen() {
               accessibilityLabel="Back to Discover"
               className="w-full py-4 rounded-xl bg-[#E85D26] items-center justify-center active:opacity-90 shadow-sm"
             >
-              <Text className="text-[#171A1D] text-xs font-black uppercase tracking-wider">
+              <Text className="text-[#0C0D0E] text-xs font-black uppercase tracking-wider">
                 BACK TO DISCOVER
               </Text>
             </Pressable>
@@ -213,7 +213,7 @@ export default function SpotConfirmedScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#171A1D]" edges={['top', 'bottom']}>
+    <SafeAreaView className="flex-1 bg-[#0C0D0E]" edges={['top', 'bottom']}>
       {/* Modern Header */}
       <ArenaHeader
         title="Spot Confirmed"
@@ -239,7 +239,7 @@ export default function SpotConfirmedScreen() {
             </Text>
           </View>
 
-          <Text className="text-[#F4F6F7] text-2xl font-black uppercase tracking-tight text-center">
+          <Text className="text-[#FFFFFF] text-2xl font-black uppercase tracking-tight text-center">
             SPOT CONFIRMED
           </Text>
 
@@ -253,9 +253,9 @@ export default function SpotConfirmedScreen() {
         </View>
 
         {/* 3-Step Matchmaking Progression Board */}
-        <View className="mx-4 mt-6 bg-[#1F2327] border border-white/10 rounded-2xl p-4 shadow-sm">
-          <View className="flex-row items-center justify-between mb-3 pb-2 border-b border-white/5">
-            <Text className="text-[#7F8993] text-[10px] font-bold uppercase tracking-wider">
+        <View className="mx-4 mt-6 bg-[#141518] border border-white/[0.08] rounded-2xl p-4 shadow-sm">
+          <View className="flex-row items-center justify-between mb-3 pb-2 border-b border-white/[0.08]">
+            <Text className="text-[#5C616A] text-[10px] font-bold uppercase tracking-wider">
               MATCHMAKING PROGRESSION
             </Text>
             <View className="flex-row items-center">
@@ -270,10 +270,10 @@ export default function SpotConfirmedScreen() {
             {/* Step 1: Request Submitted */}
             <View className="flex-row items-center">
               <View className="w-6 h-6 rounded-full bg-[#E85D26] items-center justify-center mr-3">
-                <Ionicons name="checkmark" size={14} color="#171A1D" />
+                <Ionicons name="checkmark" size={14} color="#0C0D0E" />
               </View>
               <View className="flex-1">
-                <Text className="text-[#F4F6F7] text-xs font-bold uppercase tracking-wide">
+                <Text className="text-[#FFFFFF] text-xs font-bold uppercase tracking-wide">
                   01. Request Submitted
                 </Text>
                 <Text className="text-[#A0A5AD] text-[11px] font-medium">
@@ -289,10 +289,10 @@ export default function SpotConfirmedScreen() {
             {/* Step 2: Captain Approved */}
             <View className="flex-row items-center">
               <View className="w-6 h-6 rounded-full bg-[#E85D26] items-center justify-center mr-3">
-                <Ionicons name="checkmark" size={14} color="#171A1D" />
+                <Ionicons name="checkmark" size={14} color="#0C0D0E" />
               </View>
               <View className="flex-1">
-                <Text className="text-[#F4F6F7] text-xs font-bold uppercase tracking-wide">
+                <Text className="text-[#FFFFFF] text-xs font-bold uppercase tracking-wide">
                   02. Captain Approved
                 </Text>
                 <Text className="text-[#A0A5AD] text-[11px] font-medium">
@@ -308,10 +308,10 @@ export default function SpotConfirmedScreen() {
             {/* Step 3: Spot Confirmed */}
             <View className="flex-row items-center">
               <View className="w-6 h-6 rounded-full bg-[#E85D26] items-center justify-center mr-3">
-                <Ionicons name="checkmark" size={14} color="#171A1D" />
+                <Ionicons name="checkmark" size={14} color="#0C0D0E" />
               </View>
               <View className="flex-1">
-                <Text className="text-[#F4F6F7] text-xs font-bold uppercase tracking-wide">
+                <Text className="text-[#FFFFFF] text-xs font-bold uppercase tracking-wide">
                   03. Spot Confirmed
                 </Text>
                 <Text className="text-[#E85D26] text-[11px] font-bold">
@@ -324,25 +324,25 @@ export default function SpotConfirmedScreen() {
         </View>
 
         {/* Photography Card */}
-        <View className="mx-4 mt-6 rounded-2xl overflow-hidden bg-[#1F2327] border border-white/10 shadow-md">
+        <View className="mx-4 mt-6 rounded-2xl overflow-hidden bg-[#141518] border border-white/[0.08] shadow-md">
           <View className="h-44 w-full relative">
             <Image
               source={getSportPhoto(match.sport)}
               className="w-full h-full object-cover"
               resizeMode="cover"
             />
-            <View className="absolute inset-0 bg-[#171A1D]/50" />
-            <View className="absolute inset-0 bg-gradient-to-t from-[#171A1D] via-[#171A1D]/30 to-transparent" />
+            <View className="absolute inset-0 bg-[#0C0D0E]/50" />
+            <View className="absolute inset-0 bg-gradient-to-t from-[#0C0D0E] via-[#0C0D0E]/30 to-transparent" />
 
             <View className="absolute top-3 left-4 right-4 flex-row items-center justify-between">
-              <View className="bg-[#1F2327]/90 px-2.5 py-1 rounded-lg border border-white/10">
-                <Text className="text-[#F4F6F7] text-[10px] font-bold uppercase tracking-wider">
+              <View className="bg-[#141518]/90 px-2.5 py-1 rounded-lg border border-white/[0.08]">
+                <Text className="text-[#FFFFFF] text-[10px] font-bold uppercase tracking-wider">
                   MATCH ROSTER ENTRY
                 </Text>
               </View>
 
               <View className="bg-[#E85D26] px-2.5 py-1 rounded-lg">
-                <Text className="text-[#171A1D] text-[10px] font-black uppercase tracking-widest">
+                <Text className="text-[#0C0D0E] text-[10px] font-black uppercase tracking-widest">
                   CONFIRMED
                 </Text>
               </View>
@@ -354,7 +354,7 @@ export default function SpotConfirmedScreen() {
               </Text>
               <Text
                 numberOfLines={1}
-                className="text-[#F4F6F7] text-base font-black uppercase tracking-tight"
+                className="text-[#FFFFFF] text-base font-black uppercase tracking-tight"
               >
                 {match.title}
               </Text>
@@ -363,9 +363,9 @@ export default function SpotConfirmedScreen() {
         </View>
 
         {/* Confirmed Fixture Ticket Sheet */}
-        <View className="mx-4 mt-4 bg-[#1F2327] border border-white/10 rounded-2xl p-5 shadow-sm">
+        <View className="mx-4 mt-4 bg-[#141518] border border-white/[0.08] rounded-2xl p-5 shadow-sm">
           {/* Ticket Header */}
-          <View className="flex-row items-center justify-between pb-3 border-b border-white/5">
+          <View className="flex-row items-center justify-between pb-3 border-b border-white/[0.08]">
             <View className="flex-row items-center">
               <MaterialCommunityIcons
                 name={getSportIcon(match.sport)}
@@ -387,11 +387,11 @@ export default function SpotConfirmedScreen() {
           </View>
 
           {/* Match Title & Format */}
-          <View className="py-3.5 border-b border-white/5">
-            <Text className="text-[#7F8993] text-[10px] font-bold uppercase tracking-widest mb-0.5">
+          <View className="py-3.5 border-b border-white/[0.08]">
+            <Text className="text-[#5C616A] text-[10px] font-bold uppercase tracking-widest mb-0.5">
               MATCH FIXTURE
             </Text>
-            <Text className="text-[#F4F6F7] text-base font-bold uppercase tracking-tight">
+            <Text className="text-[#FFFFFF] text-base font-bold uppercase tracking-tight">
               {match.title}
             </Text>
             {match.format && (
@@ -402,14 +402,14 @@ export default function SpotConfirmedScreen() {
           </View>
 
           {/* Date & Time + Skill Level */}
-          <View className="py-3 border-b border-white/5 flex-row items-center justify-between">
+          <View className="py-3 border-b border-white/[0.08] flex-row items-center justify-between">
             <View className="flex-1 mr-2">
-              <Text className="text-[#7F8993] text-[10px] font-bold uppercase tracking-widest mb-0.5">
+              <Text className="text-[#5C616A] text-[10px] font-bold uppercase tracking-widest mb-0.5">
                 DATE & TIME
               </Text>
               <View className="flex-row items-center">
                 <Ionicons name="time-outline" size={14} color="#E85D26" />
-                <Text className="text-[#F4F6F7] text-xs font-bold ml-1.5">
+                <Text className="text-[#FFFFFF] text-xs font-bold ml-1.5">
                   {match.date} • {match.startTime || match.time}
                 </Text>
               </View>
@@ -417,11 +417,11 @@ export default function SpotConfirmedScreen() {
 
             {match.skillLevel && (
               <View className="items-end">
-                <Text className="text-[#7F8993] text-[10px] font-bold uppercase tracking-widest mb-0.5">
+                <Text className="text-[#5C616A] text-[10px] font-bold uppercase tracking-widest mb-0.5">
                   LEVEL
                 </Text>
-                <View className="px-2 py-0.5 rounded-md bg-[#272C31] border border-white/10">
-                  <Text className="text-[#F4F6F7] text-[10px] font-bold uppercase tracking-wider">
+                <View className="px-2 py-0.5 rounded-md bg-[#1B1D22] border border-white/[0.08]">
+                  <Text className="text-[#FFFFFF] text-[10px] font-bold uppercase tracking-wider">
                     {match.skillLevel}
                   </Text>
                 </View>
@@ -430,14 +430,14 @@ export default function SpotConfirmedScreen() {
           </View>
 
           {/* Venue & Location */}
-          <View className="py-3 border-b border-white/5">
-            <Text className="text-[#7F8993] text-[10px] font-bold uppercase tracking-widest mb-0.5">
+          <View className="py-3 border-b border-white/[0.08]">
+            <Text className="text-[#5C616A] text-[10px] font-bold uppercase tracking-widest mb-0.5">
               VENUE & LOCATION
             </Text>
             <View className="flex-row items-start">
               <Ionicons name="location-sharp" size={14} color="#E85D26" style={{ marginTop: 1 }} />
               <View className="ml-1.5 flex-1">
-                <Text className="text-[#F4F6F7] text-xs font-bold">
+                <Text className="text-[#FFFFFF] text-xs font-bold">
                   {match.groundName}
                 </Text>
                 <Text className="text-[#A0A5AD] text-xs font-medium">
@@ -448,31 +448,31 @@ export default function SpotConfirmedScreen() {
           </View>
 
           {/* Captain Approval Context & Fee */}
-          <View className="py-3 border-b border-white/5 flex-row items-center justify-between">
+          <View className="py-3 border-b border-white/[0.08] flex-row items-center justify-between">
             <View className="flex-1 mr-2">
-              <Text className="text-[#7F8993] text-[10px] font-bold uppercase tracking-widest mb-0.5">
+              <Text className="text-[#5C616A] text-[10px] font-bold uppercase tracking-widest mb-0.5">
                 APPROVED BY
               </Text>
               <View className="flex-row items-center">
                 <Ionicons name="shield-checkmark" size={14} color="#E85D26" />
-                <Text className="text-[#F4F6F7] text-xs font-bold ml-1.5">
+                <Text className="text-[#FFFFFF] text-xs font-bold ml-1.5">
                   {match.captainName || 'Team Captain'}
                 </Text>
               </View>
-              <Text className="text-[#7F8993] text-[10px] font-bold uppercase tracking-wider ml-5">
+              <Text className="text-[#5C616A] text-[10px] font-bold uppercase tracking-wider ml-5">
                 MATCH HOST
               </Text>
             </View>
 
             {match.feePerPlayer && (
               <View className="items-end">
-                <Text className="text-[#7F8993] text-[10px] font-bold uppercase tracking-widest mb-0.5">
+                <Text className="text-[#5C616A] text-[10px] font-bold uppercase tracking-widest mb-0.5">
                   MATCH FEE
                 </Text>
                 <Text className="text-[#E85D26] text-xs font-bold">
                   {match.feePerPlayer}
                 </Text>
-                <Text className="text-[#7F8993] text-[9px]">
+                <Text className="text-[#5C616A] text-[9px]">
                   per player
                 </Text>
               </View>
@@ -481,10 +481,10 @@ export default function SpotConfirmedScreen() {
 
           {/* Arrival Notes */}
           <View className="pt-3">
-            <View className="p-3 rounded-xl bg-[#272C31] border border-white/10">
+            <View className="p-3 rounded-xl bg-[#1B1D22] border border-white/[0.08]">
               <View className="flex-row items-center mb-1">
                 <Ionicons name="information-circle-outline" size={14} color="#E85D26" />
-                <Text className="text-[#F4F6F7] text-xs font-bold uppercase tracking-wider ml-1.5">
+                <Text className="text-[#FFFFFF] text-xs font-bold uppercase tracking-wider ml-1.5">
                   ARRIVE 15 MIN EARLY
                 </Text>
               </View>
@@ -514,11 +514,11 @@ export default function SpotConfirmedScreen() {
             className="w-full py-4 rounded-xl bg-[#E85D26] items-center justify-center shadow-sm active:scale-[0.99] active:opacity-90 flex-row"
           >
             {openingChat ? (
-              <ActivityIndicator size="small" color="#171A1D" />
+              <ActivityIndicator size="small" color="#0C0D0E" />
             ) : (
               <>
-                <Ionicons name="chatbubbles" size={18} color="#171A1D" />
-                <Text className="text-[#171A1D] text-sm font-black uppercase tracking-wider ml-2">
+                <Ionicons name="chatbubbles" size={18} color="#0C0D0E" />
+                <Text className="text-[#0C0D0E] text-sm font-black uppercase tracking-wider ml-2">
                   OPEN MATCH CHAT
                 </Text>
               </>
@@ -532,10 +532,10 @@ export default function SpotConfirmedScreen() {
             onPress={handleViewMatchDetails}
             accessibilityRole="button"
             accessibilityLabel="View Match Details"
-            className="w-full py-3.5 rounded-xl bg-[#1F2327] border border-white/10 items-center justify-center shadow-sm active:bg-[#272C31] flex-row"
+            className="w-full py-3.5 rounded-xl bg-[#141518] border border-white/[0.08] items-center justify-center shadow-sm active:bg-[#1B1D22] flex-row"
           >
-            <Ionicons name="document-text-outline" size={16} color="#F4F6F7" />
-            <Text className="text-[#F4F6F7] text-xs font-bold uppercase tracking-wider ml-1.5">
+            <Ionicons name="document-text-outline" size={16} color="#FFFFFF" />
+            <Text className="text-[#FFFFFF] text-xs font-bold uppercase tracking-wider ml-1.5">
               VIEW MATCH DETAILS
             </Text>
           </Pressable>

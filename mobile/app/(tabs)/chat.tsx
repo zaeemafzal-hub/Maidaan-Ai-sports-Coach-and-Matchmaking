@@ -13,6 +13,8 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { ArenaHeader } from '../../components/ui/ArenaHeader';
 import { ArenaBadge } from '../../components/ui/ArenaBadge';
 import { chatService, ChatRoom } from '../../services/chatService';
+import { socketService } from '../../services/socketService';
+import { ConnectionBanner } from '../../components/chat/ConnectionBanner';
 
 type ChannelFilter = 'ALL' | 'DIRECT' | 'SQUADS';
 
@@ -69,8 +71,29 @@ export default function ChatScreen() {
     useCallback(() => {
       isMountedRef.current = true;
       loadRooms();
+
+      // Listen for incoming messages to reorder and update previews in realtime
+      const unsubscribe = socketService.onMessage((incoming) => {
+        if (!isMountedRef.current) return;
+        setRooms((prev) => {
+          const index = prev.findIndex((r) => r.id === incoming.roomId);
+          if (index !== -1) {
+            const updated = [...prev];
+            const targetRoom = {
+              ...updated[index],
+              lastMessage: incoming.body,
+              lastMessageAt: incoming.createdAt,
+            };
+            updated.splice(index, 1);
+            return [targetRoom, ...updated];
+          }
+          return prev;
+        });
+      });
+
       return () => {
         isMountedRef.current = false;
+        unsubscribe();
       };
     }, [])
   );
@@ -96,7 +119,7 @@ export default function ChatScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#171A1D]" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-[#0C0D0E]" edges={['top']}>
       {/* Modern Header */}
       <ArenaHeader
         title="Messages"
@@ -105,17 +128,20 @@ export default function ChatScreen() {
         rightAction={
           <Pressable
             onPress={() => router.push('/notifications')}
-            className="w-10 h-10 rounded-xl bg-[#1F2327] border border-white/10 items-center justify-center active:bg-[#272C31]"
+            className="w-10 h-10 rounded-xl bg-[#141518] border border-white/[0.08] items-center justify-center active:bg-[#1B1D22]"
             accessibilityRole="button"
             accessibilityLabel="Notifications"
           >
-            <Ionicons name="notifications-outline" size={19} color="#F4F6F7" />
+            <Ionicons name="notifications-outline" size={19} color="#FFFFFF" />
           </Pressable>
         }
       />
 
+      {/* Socket Connection Status Banner */}
+      <ConnectionBanner />
+
       {/* Channel Filters Strip */}
-      <View className="px-4 py-3 bg-[#171A1D] border-b border-white/5">
+      <View className="px-4 py-3 bg-[#0C0D0E] border-b border-white/[0.08]">
         <View className="flex-row items-center justify-between">
           <View className="flex-row space-x-1.5">
             {(
@@ -133,15 +159,15 @@ export default function ChatScreen() {
                   accessibilityRole="tab"
                   accessibilityState={{ selected: isSelected }}
                   accessibilityLabel={`Filter ${filter.label}`}
-                  className={`px-3 py-1.5 rounded-lg border transition-all ${
+                  className={`px-3 py-1.5 rounded-lg border ${
                     isSelected
                       ? 'bg-[#E85D26] border-[#E85D26]'
-                      : 'bg-[#1F2327] border-white/10 active:bg-[#272C31]'
+                      : 'bg-[#141518] border-white/[0.08] active:bg-[#1B1D22]'
                   }`}
                 >
                   <Text
                     className={`text-xs font-bold uppercase tracking-wider ${
-                      isSelected ? 'text-[#171A1D]' : 'text-[#A0A5AD]'
+                      isSelected ? 'text-[#0C0D0E]' : 'text-[#A0A5AD]'
                     }`}
                   >
                     {filter.label}
@@ -153,7 +179,7 @@ export default function ChatScreen() {
 
           {/* Activity State Badge */}
           <View className="flex-row items-center">
-            <Text className="text-[#7F8993] text-[10px] font-bold uppercase tracking-wider">
+            <Text className="text-[#5C616A] text-[10px] font-bold uppercase tracking-wider">
               {rooms.length} {rooms.length === 1 ? 'CHANNEL' : 'CHANNELS'}
             </Text>
           </View>
@@ -170,11 +196,11 @@ export default function ChatScreen() {
         </View>
       ) : error ? (
         <View className="flex-1 items-center justify-center p-8">
-          <View className="p-8 mx-4 rounded-2xl bg-[#1F2327] border border-white/10 items-center justify-center">
-            <View className="w-14 h-14 rounded-full bg-[#F4A261]/10 border border-[#F4A261]/30 items-center justify-center mb-3">
-              <Ionicons name="alert-circle-outline" size={26} color="#F4A261" />
+          <View className="p-8 mx-4 rounded-2xl bg-[#141518] border border-white/[0.08] items-center justify-center">
+            <View className="w-14 h-14 rounded-full bg-[#F59E0B]/10 border border-[#F59E0B]/30 items-center justify-center mb-3">
+              <Ionicons name="alert-circle-outline" size={26} color="#F59E0B" />
             </View>
-            <Text className="text-[#F4F6F7] text-base font-bold uppercase tracking-tight text-center">
+            <Text className="text-[#FFFFFF] text-base font-bold uppercase tracking-tight text-center">
               CHANNELS UNAVAILABLE
             </Text>
             <Text className="text-[#A0A5AD] text-xs text-center mt-1.5 max-w-[260px] leading-4">
@@ -184,7 +210,7 @@ export default function ChatScreen() {
               onPress={() => loadRooms()}
               className="mt-4 px-4 py-2 rounded-lg bg-[#E85D26] active:opacity-90"
             >
-              <Text className="text-[#171A1D] text-xs font-black uppercase tracking-wider">
+              <Text className="text-[#0C0D0E] text-xs font-black uppercase tracking-wider">
                 RETRY
               </Text>
             </Pressable>
@@ -204,11 +230,11 @@ export default function ChatScreen() {
             />
           }
           ListEmptyComponent={
-            <View className="p-8 mt-6 rounded-2xl bg-[#1F2327] border border-white/10 items-center justify-center">
-              <View className="w-14 h-14 rounded-full bg-[#272C31] border border-white/10 items-center justify-center mb-3">
+            <View className="p-8 mt-6 rounded-2xl bg-[#141518] border border-white/[0.08] items-center justify-center">
+              <View className="w-14 h-14 rounded-full bg-[#1B1D22] border border-white/[0.08] items-center justify-center mb-3">
                 <Ionicons name="chatbubbles-outline" size={26} color="#E85D26" />
               </View>
-              <Text className="text-[#F4F6F7] text-base font-bold uppercase tracking-tight text-center">
+              <Text className="text-[#FFFFFF] text-base font-bold uppercase tracking-tight text-center">
                 NO ACTIVE CHANNELS
               </Text>
               <Text className="text-[#A0A5AD] text-xs text-center mt-1.5 max-w-[260px] leading-4">
@@ -220,7 +246,7 @@ export default function ChatScreen() {
                 accessibilityLabel="Discover Matches"
                 className="mt-5 px-5 py-2.5 rounded-xl bg-[#E85D26] active:opacity-90 shadow-sm"
               >
-                <Text className="text-[#171A1D] text-xs font-black uppercase tracking-wider">
+                <Text className="text-[#0C0D0E] text-xs font-black uppercase tracking-wider">
                   DISCOVER MATCHES
                 </Text>
               </Pressable>
@@ -237,13 +263,13 @@ export default function ChatScreen() {
                 accessibilityLabel={`${item.title}, ${
                   isDirect ? 'direct channel' : 'match squad'
                 }. Latest message: ${item.lastMessage || 'No messages yet'}`}
-                className="w-full p-4 rounded-2xl border mb-3 transition-all active:scale-[0.99] bg-[#1F2327] border-white/10 shadow-sm"
+                className="w-full p-4 rounded-2xl border mb-3 active:scale-[0.99] bg-[#141518] border-white/[0.08] shadow-sm"
               >
                 <View className="flex-row items-start">
                   {/* Identity Well */}
                   <View className="mr-3.5 pt-0.5">
                     {isDirect ? (
-                      <View className="w-12 h-12 rounded-xl bg-[#272C31] border border-white/10 items-center justify-center relative">
+                      <View className="w-12 h-12 rounded-xl bg-[#1B1D22] border border-white/[0.08] items-center justify-center relative">
                         <MaterialCommunityIcons name="account" size={24} color="#E85D26" />
                       </View>
                     ) : (
@@ -265,7 +291,7 @@ export default function ChatScreen() {
                       </View>
 
                       {item.lastMessageAt && (
-                        <Text className="text-[#7F8993] text-[10px] font-bold uppercase tracking-wider">
+                        <Text className="text-[#5C616A] text-[10px] font-bold uppercase tracking-wider">
                           {formatTime(item.lastMessageAt)}
                         </Text>
                       )}
@@ -274,14 +300,14 @@ export default function ChatScreen() {
                     {/* Room Title */}
                     <Text
                       numberOfLines={1}
-                      className="text-sm font-bold uppercase tracking-tight text-[#F4F6F7] flex-1 mr-2"
+                      className="text-sm font-bold uppercase tracking-tight text-white flex-1 mr-2"
                     >
                       {item.title}
                     </Text>
 
                     {/* Member Count info */}
                     <View className="flex-row items-center mt-0.5 mb-1.5">
-                      <Text className="text-[#7F8993] text-[10px] font-bold uppercase tracking-wider">
+                      <Text className="text-[#5C616A] text-[10px] font-bold uppercase tracking-wider">
                         {isDirect
                           ? '1-ON-1 CONVERSATION'
                           : `${memberCount} CONFIRMED MEMBERS`}

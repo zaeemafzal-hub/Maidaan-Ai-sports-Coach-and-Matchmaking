@@ -31,16 +31,8 @@ const ALL_SPORTS_MAP: Record<Sport, SportInfo> = {
   football: { sport: 'football', label: 'Football', iconName: 'soccer' },
 };
 
-interface ScheduledVenueMatch {
-  id: string;
-  title: string;
-  sport: Sport;
-  sportLabel: string;
-  time: string;
-  court: string;
-  slotsOpen: number;
-  totalSlots: number;
-}
+import { ScheduledVenueMatch, DEMO_VENUE_MATCHES } from '../../demo/mockHubMatches';
+import { isProduction } from '../../config/runtime';
 
 export default function HubProfileScreen() {
   const { currentUser, hubOwnerProfile, setHubOwnerProfile } = useAuthStore();
@@ -84,38 +76,7 @@ export default function HubProfileScreen() {
     setTimeout(() => setNotification(null), 3500);
   };
 
-  const scheduledMatches: ScheduledVenueMatch[] = [
-    {
-      id: 'vm-01',
-      title: 'Evening 7v7 Floodlit Friendly',
-      sport: 'football',
-      sportLabel: 'Football',
-      time: 'Tonight, 8:30 PM - 10:00 PM',
-      court: 'Turf Pitch 1',
-      slotsOpen: 3,
-      totalSlots: 14,
-    },
-    {
-      id: 'vm-02',
-      title: 'Tape-Ball Floodlit Match',
-      sport: 'cricket',
-      sportLabel: 'Cricket',
-      time: 'Tonight, 9:00 PM - 11:00 PM',
-      court: 'Main Net A',
-      slotsOpen: 4,
-      totalSlots: 16,
-    },
-    {
-      id: 'vm-03',
-      title: 'Doubles Open Round',
-      sport: 'padel',
-      sportLabel: 'Padel',
-      time: 'Tomorrow, 7:00 PM - 8:30 PM',
-      court: 'Enclosed Court 2',
-      slotsOpen: 1,
-      totalSlots: 4,
-    },
-  ];
+  const scheduledMatches: ScheduledVenueMatch[] = isProduction() ? [] : DEMO_VENUE_MATCHES;
 
   const facilities = [
     { icon: 'flashlight-outline' as const, label: 'Floodlights' },
@@ -127,17 +88,17 @@ export default function HubProfileScreen() {
 
   if (!hubOwnerProfile || !hubOwnerProfile.hubName) {
     return (
-      <SafeAreaView className="flex-1 bg-[#171A1D]" edges={['top', 'bottom']}>
+      <SafeAreaView className="flex-1 bg-[#0C0D0E]" edges={['top', 'bottom']}>
         <ArenaHeader
           title="Hub Profile"
           subtitle="Venue Setup Required"
           showBack
         />
         <View className="flex-1 px-6 items-center justify-center">
-          <View className="w-16 h-16 rounded-full bg-[#272C31] items-center justify-center mb-4 border border-white/10">
+          <View className="w-16 h-16 rounded-full bg-[#1B1D22] items-center justify-center mb-4 border border-white/[0.08]">
             <Ionicons name="business-outline" size={32} color="#A0A5AD" />
           </View>
-          <Text className="text-[#F4F6F7] text-xl font-black uppercase tracking-tight text-center">
+          <Text className="text-[#FFFFFF] text-xl font-black uppercase tracking-tight text-center">
             No Hub Profile Configured
           </Text>
           <Text className="text-[#A0A5AD] text-sm font-medium text-center mt-2 mb-6 leading-5">
@@ -164,12 +125,22 @@ export default function HubProfileScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#171A1D]" edges={['top', 'bottom']}>
+    <SafeAreaView className="flex-1 bg-[#0C0D0E]" edges={['top', 'bottom']}>
       {/* Modern Athletic Header */}
       <ArenaHeader
-        title="Hub Profile"
-        subtitle="Venue Overview"
+        title="Venue Profile"
+        subtitle="Facility Specifications"
         showBack
+        fallbackRoute="/hub/dashboard"
+        rightAction={
+          <Pressable
+            onPress={() => router.push('/onboarding/hub-setup?mode=edit')}
+            className="px-3 py-1.5 rounded-xl bg-[#E85D26] flex-row items-center"
+          >
+            <Ionicons name="pencil" size={14} color="#FFFFFF" />
+            <Text className="text-white text-xs font-bold uppercase ml-1">Edit</Text>
+          </Pressable>
+        }
       />
 
       <ScrollView
@@ -178,19 +149,19 @@ export default function HubProfileScreen() {
         className="flex-1"
       >
         {/* Photography Hero Section */}
-        <View className="relative w-full h-54 bg-[#1F2327] overflow-hidden border-b border-white/10">
+        <View className="relative w-full h-54 bg-[#141518] overflow-hidden border-b border-white/[0.08]">
           <Image
             source={IMAGES.arenaGround}
             className="w-full h-full opacity-40"
             resizeMode="cover"
           />
-          <View className="absolute inset-0 bg-gradient-to-t from-[#171A1D] via-[#171A1D]/50 to-transparent" />
+          <View className="absolute inset-0 bg-gradient-to-t from-[#0C0D0E] via-[#0C0D0E]/50 to-transparent" />
 
           {/* Top Badges */}
           <View className="absolute top-3 left-4 right-4 flex-row items-center justify-between">
-            <View className="bg-[#171A1D]/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10 flex-row items-center">
+            <View className="bg-[#0C0D0E]/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/[0.08] flex-row items-center">
               <Ionicons name="location-sharp" size={12} color="#A0A5AD" />
-              <Text className="text-[#F4F6F7] text-xs font-bold uppercase tracking-wider ml-1">
+              <Text className="text-[#FFFFFF] text-xs font-bold uppercase tracking-wider ml-1">
                 {profile.location}
               </Text>
             </View>
@@ -206,7 +177,7 @@ export default function HubProfileScreen() {
           <View className="absolute bottom-3 left-4 right-4">
             <Text
               numberOfLines={1}
-              className="text-[#F4F6F7] text-2xl font-black uppercase tracking-tight"
+              className="text-[#FFFFFF] text-2xl font-black uppercase tracking-tight"
             >
               {profile.hubName}
             </Text>
@@ -221,9 +192,9 @@ export default function HubProfileScreen() {
 
         {/* Temporary Notification Banner */}
         {notification && (
-          <View className="mx-4 mt-3 p-3 bg-[#1F2327] rounded-xl border border-white/10 flex-row items-center">
+          <View className="mx-4 mt-3 p-3 bg-[#141518] rounded-xl border border-white/[0.08] flex-row items-center">
             <Ionicons name="information-circle" size={16} color="#E85D26" />
-            <Text className="text-[#F4F6F7] text-xs font-medium ml-2 flex-1">
+            <Text className="text-[#FFFFFF] text-xs font-medium ml-2 flex-1">
               {notification}
             </Text>
           </View>
@@ -231,13 +202,13 @@ export default function HubProfileScreen() {
 
         <View className="px-4 pt-4 space-y-4">
           {/* Identity & Verification Card */}
-          <View className="bg-[#1F2327] rounded-2xl border border-white/10 p-4 shadow-sm">
+          <View className="bg-[#141518] rounded-2xl border border-white/[0.08] p-4 shadow-sm">
             <View className="flex-row items-start justify-between">
               <View className="flex-1 pr-3">
-                <Text className="text-[#7F8993] text-[10px] font-mono uppercase tracking-wider font-bold">
+                <Text className="text-[#5C616A] text-[10px] font-mono uppercase tracking-wider font-bold">
                   Official Venue Details
                 </Text>
-                <Text className="text-[#F4F6F7] text-lg font-black uppercase tracking-tight mt-0.5">
+                <Text className="text-[#FFFFFF] text-lg font-black uppercase tracking-tight mt-0.5">
                   {profile.hubName}
                 </Text>
                 <View className="flex-row items-center mt-1">
@@ -254,7 +225,7 @@ export default function HubProfileScreen() {
                   className={`px-2.5 py-1 rounded-lg border ${
                     profile.isVerified
                       ? 'bg-[#E85D26]/15 border-[#E85D26]'
-                      : 'bg-[#272C31] border-white/10'
+                      : 'bg-[#1B1D22] border-white/[0.08]'
                   }`}
                 >
                   <Text
@@ -269,20 +240,20 @@ export default function HubProfileScreen() {
             </View>
 
             {/* Contact details */}
-            <View className="mt-3 pt-3 border-t border-white/5 flex-row items-center justify-between">
+            <View className="mt-3 pt-3 border-t border-white/[0.08] flex-row items-center justify-between">
               <View className="flex-row items-center">
                 <Ionicons name="call-outline" size={14} color="#E85D26" />
-                <Text className="text-[#F4F6F7] text-xs font-bold ml-1.5">
+                <Text className="text-[#FFFFFF] text-xs font-bold ml-1.5">
                   {profile.contactNumber || 'No contact provided'}
                 </Text>
               </View>
-              <Text className="text-[#7F8993] text-[11px] font-semibold uppercase">
+              <Text className="text-[#5C616A] text-[11px] font-semibold uppercase">
                 Desk Coordinator
               </Text>
             </View>
 
             {/* Verification Status Description */}
-            <View className="mt-3 p-3 bg-[#272C31] rounded-xl border border-white/5 flex-row items-start">
+            <View className="mt-3 p-3 bg-[#1B1D22] rounded-xl border border-white/[0.08] flex-row items-start">
               <Ionicons
                 name={profile.isVerified ? 'shield-checkmark' : 'time-outline'}
                 size={16}
@@ -305,31 +276,31 @@ export default function HubProfileScreen() {
 
             <View className="flex-row space-x-2">
               {/* Courts Count Tile */}
-              <View className="flex-1 bg-[#1F2327] border border-white/10 rounded-2xl p-3.5 items-center mr-2">
-                <Text className="text-[#F4F6F7] text-2xl font-black">
+              <View className="flex-1 bg-[#141518] border border-white/[0.08] rounded-2xl p-3.5 items-center mr-2">
+                <Text className="text-[#FFFFFF] text-2xl font-black">
                   {profile.courtsCount}
                 </Text>
-                <Text className="text-[#7F8993] text-[10px] font-bold uppercase tracking-wider mt-0.5 text-center">
+                <Text className="text-[#5C616A] text-[10px] font-bold uppercase tracking-wider mt-0.5 text-center">
                   Courts / Pitches
                 </Text>
               </View>
 
               {/* Supported Sports Tile */}
-              <View className="flex-1 bg-[#1F2327] border border-white/10 rounded-2xl p-3.5 items-center mr-2">
+              <View className="flex-1 bg-[#141518] border border-white/[0.08] rounded-2xl p-3.5 items-center mr-2">
                 <Text className="text-[#E85D26] text-2xl font-black">
                   {profile.sports?.length ?? 0}
                 </Text>
-                <Text className="text-[#7F8993] text-[10px] font-bold uppercase tracking-wider mt-0.5 text-center">
+                <Text className="text-[#5C616A] text-[10px] font-bold uppercase tracking-wider mt-0.5 text-center">
                   Active Sports
                 </Text>
               </View>
 
               {/* Scheduled Slots Tile */}
-              <View className="flex-1 bg-[#1F2327] border border-white/10 rounded-2xl p-3.5 items-center">
-                <Text className="text-[#F4F6F7] text-2xl font-black">
+              <View className="flex-1 bg-[#141518] border border-white/[0.08] rounded-2xl p-3.5 items-center">
+                <Text className="text-[#FFFFFF] text-2xl font-black">
                   {scheduledMatches.length}
                 </Text>
-                <Text className="text-[#7F8993] text-[10px] font-bold uppercase tracking-wider mt-0.5 text-center">
+                <Text className="text-[#5C616A] text-[10px] font-bold uppercase tracking-wider mt-0.5 text-center">
                   Matches Today
                 </Text>
               </View>
@@ -342,34 +313,34 @@ export default function HubProfileScreen() {
               <Text className="text-[#A0A5AD] text-xs font-mono uppercase tracking-wider font-bold">
                 Supported Sports
               </Text>
-              <Text className="text-[#7F8993] text-[10px] font-semibold uppercase">
+              <Text className="text-[#5C616A] text-[10px] font-semibold uppercase">
                 {(profile.sports?.length ?? 0)} Configured
               </Text>
             </View>
 
             <View className="flex-row flex-wrap gap-2">
               {profile.sports && profile.sports.length > 0 ? (
-                profile.sports.map((sport) => {
+                profile.sports.map((sport: Sport) => {
                   const info = ALL_SPORTS_MAP[sport];
                   return (
                     <View
                       key={sport}
-                      className="flex-row items-center bg-[#1F2327] border border-white/10 px-3.5 py-2.5 rounded-xl mr-2 mb-2"
+                      className="flex-row items-center bg-[#141518] border border-white/[0.08] px-3.5 py-2.5 rounded-xl mr-2 mb-2"
                     >
                       <MaterialCommunityIcons
                         name={info?.iconName || 'soccer'}
                         size={18}
                         color="#E85D26"
                       />
-                      <Text className="text-[#F4F6F7] text-xs font-bold uppercase ml-2 tracking-wide">
+                      <Text className="text-[#FFFFFF] text-xs font-bold uppercase ml-2 tracking-wide">
                         {info?.label || sport}
                       </Text>
                     </View>
                   );
                 })
               ) : (
-                <View className="bg-[#1F2327] border border-white/10 p-4 rounded-2xl w-full">
-                  <Text className="text-[#7F8993] text-xs">
+                <View className="bg-[#141518] border border-white/[0.08] p-4 rounded-2xl w-full">
+                  <Text className="text-[#5C616A] text-xs">
                     No sports configured yet.
                   </Text>
                 </View>
@@ -378,17 +349,17 @@ export default function HubProfileScreen() {
           </View>
 
           {/* Hub Management Actions */}
-          <View className="mt-4 bg-[#1F2327] rounded-2xl p-4 border border-white/10 shadow-sm">
+          <View className="mt-4 bg-[#141518] rounded-2xl p-4 border border-white/[0.08] shadow-sm">
             <View className="flex-row items-center justify-between mb-3">
               <View>
-                <Text className="text-[#F4F6F7] text-sm font-black uppercase tracking-tight">
+                <Text className="text-[#FFFFFF] text-sm font-black uppercase tracking-tight">
                   Hub Courts & Allocations
                 </Text>
                 <Text className="text-[#A0A5AD] text-xs font-medium mt-0.5">
                   Inspect court layouts, surfaces, and active playing slots.
                 </Text>
               </View>
-              <View className="w-9 h-9 rounded-xl bg-[#272C31] items-center justify-center border border-white/10">
+              <View className="w-9 h-9 rounded-xl bg-[#1B1D22] items-center justify-center border border-white/[0.08]">
                 <Ionicons name="grid-outline" size={18} color="#E85D26" />
               </View>
             </View>
@@ -400,8 +371,8 @@ export default function HubProfileScreen() {
               className="w-full bg-[#E85D26] min-h-[46px] rounded-xl items-center justify-center active:opacity-90 active:scale-[0.99]"
             >
               <View className="flex-row items-center">
-                <Ionicons name="layers" size={16} color="#171A1D" />
-                <Text className="text-[#171A1D] text-xs font-black uppercase tracking-wider ml-2">
+                <Ionicons name="layers" size={16} color="#0C0D0E" />
+                <Text className="text-[#0C0D0E] text-xs font-black uppercase tracking-wider ml-2">
                   MANAGE HUB COURTS
                 </Text>
               </View>
@@ -426,57 +397,67 @@ export default function HubProfileScreen() {
               <Text className="text-[#A0A5AD] text-xs font-mono uppercase tracking-wider font-bold">
                 Community Matches at this Venue
               </Text>
-              <Text className="text-[#7F8993] text-[10px] font-semibold uppercase">
+              <Text className="text-[#5C616A] text-[10px] font-semibold uppercase">
                 Active Today
               </Text>
             </View>
 
-            {scheduledMatches.map((m) => (
-              <View
-                key={m.id}
-                className="bg-[#1F2327] border border-white/10 rounded-2xl p-4 mb-2.5 shadow-sm"
-              >
-                <View className="flex-row items-start justify-between">
-                  <View className="flex-1 pr-2">
-                    <Text className="text-[#F4F6F7] text-sm font-black uppercase tracking-tight">
-                      {m.title}
-                    </Text>
-                    <View className="flex-row items-center mt-1">
-                      <Ionicons name="time-outline" size={12} color="#A0A5AD" />
-                      <Text className="text-[#A0A5AD] text-xs font-medium ml-1">
-                        {m.time}
+            {scheduledMatches.length === 0 ? (
+              <View className="bg-[#141518] border border-white/[0.08] rounded-2xl p-6 items-center justify-center">
+                <Ionicons name="calendar-outline" size={28} color="#5C616A" />
+                <Text className="text-[#FFFFFF] text-sm font-bold mt-2">No Matches Scheduled Today</Text>
+                <Text className="text-[#5C616A] text-xs text-center mt-1">
+                  Community games hosted at this venue will appear here.
+                </Text>
+              </View>
+            ) : (
+              scheduledMatches.map((m) => (
+                <View
+                  key={m.id}
+                  className="bg-[#141518] border border-white/[0.08] rounded-2xl p-4 mb-2.5 shadow-sm"
+                >
+                  <View className="flex-row items-start justify-between">
+                    <View className="flex-1 pr-2">
+                      <Text className="text-[#FFFFFF] text-sm font-black uppercase tracking-tight">
+                        {m.title}
+                      </Text>
+                      <View className="flex-row items-center mt-1">
+                        <Ionicons name="time-outline" size={12} color="#A0A5AD" />
+                        <Text className="text-[#A0A5AD] text-xs font-medium ml-1">
+                          {m.time}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <View className="bg-[#1B1D22] px-2.5 py-1 rounded-lg border border-white/[0.08]">
+                      <Text className="text-[#FFFFFF] text-[10px] font-bold uppercase">
+                        {m.sportLabel}
                       </Text>
                     </View>
                   </View>
 
-                  <View className="bg-[#272C31] px-2.5 py-1 rounded-lg border border-white/10">
-                    <Text className="text-[#F4F6F7] text-[10px] font-bold uppercase">
-                      {m.sportLabel}
-                    </Text>
+                  <View className="mt-2.5 pt-2 border-t border-white/[0.08] flex-row items-center justify-between">
+                    <View className="flex-row items-center">
+                      <Ionicons name="location-outline" size={12} color="#A0A5AD" />
+                      <Text className="text-[#A0A5AD] text-xs font-medium ml-1">
+                        {m.court}
+                      </Text>
+                    </View>
+
+                    <View className="flex-row items-center">
+                      <Ionicons name="people-outline" size={12} color="#E85D26" />
+                      <Text className="text-[#E85D26] text-xs font-bold ml-1 uppercase">
+                        {m.slotsOpen} of {m.totalSlots} Slots Open
+                      </Text>
+                    </View>
                   </View>
                 </View>
-
-                <View className="mt-2.5 pt-2 border-t border-white/5 flex-row items-center justify-between">
-                  <View className="flex-row items-center">
-                    <Ionicons name="location-outline" size={12} color="#A0A5AD" />
-                    <Text className="text-[#A0A5AD] text-xs font-medium ml-1">
-                      {m.court}
-                    </Text>
-                  </View>
-
-                  <View className="flex-row items-center">
-                    <Ionicons name="people-outline" size={12} color="#E85D26" />
-                    <Text className="text-[#E85D26] text-xs font-bold ml-1 uppercase">
-                      {m.slotsOpen} of {m.totalSlots} Slots Open
-                    </Text>
-                  </View>
-                </View>
-              </View>
-            ))}
+              ))
+            )}
           </View>
 
           {/* Venue Facilities */}
-          <View className="mt-4 bg-[#1F2327] rounded-2xl border border-white/10 p-4">
+          <View className="mt-4 bg-[#141518] rounded-2xl border border-white/[0.08] p-4">
             <Text className="text-[#A0A5AD] text-xs font-mono uppercase tracking-wider mb-3 font-bold">
               Venue Amenities & Facilities
             </Text>
@@ -485,18 +466,18 @@ export default function HubProfileScreen() {
               {facilities.map((fac) => (
                 <View
                   key={fac.label}
-                  className="flex-row items-center bg-[#272C31] px-3 py-2 rounded-xl border border-white/10 mr-2 mb-2"
+                  className="flex-row items-center bg-[#1B1D22] px-3 py-2 rounded-xl border border-white/[0.08] mr-2 mb-2"
                 >
                   <Ionicons name={fac.icon} size={14} color="#E85D26" />
-                  <Text className="text-[#F4F6F7] text-xs font-bold ml-1.5">
+                  <Text className="text-[#FFFFFF] text-xs font-bold ml-1.5">
                     {fac.label}
                   </Text>
                 </View>
               ))}
             </View>
 
-            <View className="mt-2 pt-3 border-t border-white/5 flex-row items-center justify-between">
-              <Text className="text-[#7F8993] text-xs">
+            <View className="mt-2 pt-3 border-t border-white/[0.08] flex-row items-center justify-between">
+              <Text className="text-[#5C616A] text-xs">
                 Operating under Maidaan Fair Play standards
               </Text>
               <Pressable

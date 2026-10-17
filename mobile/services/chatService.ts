@@ -29,6 +29,7 @@ export interface ChatMessage {
   senderRole?: Role;
   body: string;
   createdAt: string;
+  clientMessageId?: string;
 }
 
 export const chatService = {

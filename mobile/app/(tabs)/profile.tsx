@@ -11,7 +11,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/useAuthStore';
 import { ArenaBadge } from '../../components/ui/ArenaBadge';
 import { AmbientGlowOverlay } from '../../components/ui/AmbientCanvas';
-import { Sport, SkillLevel } from '../../types';
+import { Sport, SkillLevel, Role, AppMode } from '../../types';
 
 const SPORT_META: Record<
   Sport,
@@ -29,72 +29,46 @@ const SKILL_METAS: Record<SkillLevel, { label: string; tierBadge: string; tag: s
   advanced: { label: 'Advanced', tierBadge: 'TIER 3', tag: 'Premier League' },
 };
 
-export interface PlayerMatchHistoryItem {
-  id: string;
-  title: string;
-  sport: Sport;
-  sportLabel: string;
-  format: string;
-  date: string;
-  venueName: string;
-  status: 'completed' | 'confirmed' | 'upcoming';
-}
-
-const DETERMINISTIC_RECENT_MATCHES: PlayerMatchHistoryItem[] = [
-  {
-    id: 'hist-01',
-    title: 'Model Town 7v7 Floodlit Match',
-    sport: 'football',
-    sportLabel: 'Football',
-    format: '7v7 Artificial Turf',
-    date: 'Yesterday · 8:30 PM',
-    venueName: 'Model Town Football Turf, Pitch 1',
-    status: 'completed',
-  },
-  {
-    id: 'hist-02',
-    title: 'Gulberg Floodlit Tape-Ball T10',
-    sport: 'cricket',
-    sportLabel: 'Cricket',
-    format: 'T10 Tape-Ball (8 Overs)',
-    date: '3 Days Ago · 9:00 PM',
-    venueName: 'Gulberg Central Sports Nets',
-    status: 'completed',
-  },
-  {
-    id: 'hist-03',
-    title: 'DHA Phase 5 Padel Doubles',
-    sport: 'padel',
-    sportLabel: 'Padel',
-    format: '2v2 Outdoor Padel',
-    date: 'Last Weekend · 7:00 PM',
-    venueName: 'DHA Phase 5 Padel Club, Court B',
-    status: 'completed',
-  },
-  {
-    id: 'hist-04',
-    title: 'Johar Town Badminton Open',
-    sport: 'badminton',
-    sportLabel: 'Badminton',
-    format: 'Men Doubles Indoor',
-    date: 'Tomorrow · 7:30 PM',
-    venueName: 'Johar Town Sports Complex, Court 2',
-    status: 'upcoming',
-  },
-];
+import { PlayerMatchHistoryItem, DEMO_RECENT_MATCHES } from '../../demo/mockHistory';
+import { isProduction } from '../../config/runtime';
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
-  const { currentUser, playerProfile, reset } = useAuthStore();
+  const {
+    currentUser,
+    playerProfile,
+    hubOwnerProfile,
+    roles = ['PLAYER'],
+    activeMode = 'PLAYER',
+    setActiveMode,
+    logout,
+  } = useAuthStore();
   const [activeTab, setActiveTab] = useState<'overview' | 'history'>('overview');
 
-  const handleSignOut = () => {
-    reset();
+  const handleSignOut = async () => {
+    await logout();
     router.replace('/(auth)/login');
   };
 
   const handleGoToSetup = () => {
     router.push('/onboarding/player-setup');
+  };
+
+  const handleSwitchMode = async (targetMode: AppMode) => {
+    await setActiveMode(targetMode);
+    if (targetMode === 'TEAM_CAPTAIN') {
+      router.push('/captain/dashboard');
+    } else if (targetMode === 'HUB_OWNER') {
+      if (!hubOwnerProfile) {
+        router.push('/onboarding/hub-setup');
+      } else {
+        router.push('/hub/dashboard');
+      }
+    } else if (targetMode === 'ADMIN') {
+      router.push('/admin/dashboard');
+    } else {
+      router.push('/(tabs)/discover');
+    }
   };
 
   const profileName = currentUser?.name || 'Player';
@@ -104,7 +78,7 @@ export default function ProfileScreen() {
     profileName
       .split(' ')
       .filter(Boolean)
-      .map((n) => n[0])
+      .map((n: string) => n[0])
       .join('')
       .substring(0, 2)
       .toUpperCase() || 'P';
@@ -188,13 +162,14 @@ export default function ProfileScreen() {
   const preferredSports: Sport[] = playerProfile.preferredSports || [];
   const skillInfo = SKILL_METAS[currentSkill] || SKILL_METAS.intermediate;
 
-  const relevantRecentMatches = DETERMINISTIC_RECENT_MATCHES.filter((m) =>
-    preferredSports.includes(m.sport)
-  );
-  const displayMatches =
-    relevantRecentMatches.length > 0
-      ? relevantRecentMatches
-      : DETERMINISTIC_RECENT_MATCHES.slice(0, 3);
+  const relevantRecentMatches = isProduction()
+    ? []
+    : DEMO_RECENT_MATCHES.filter((m) => preferredSports.includes(m.sport));
+  const displayMatches = isProduction()
+    ? []
+    : relevantRecentMatches.length > 0
+    ? relevantRecentMatches
+    : DEMO_RECENT_MATCHES.slice(0, 3);
 
   const actualMatchesPlayed =
     typeof playerProfile.matchesPlayed === 'number'
@@ -270,6 +245,55 @@ export default function ProfileScreen() {
             <Text style={{ color: '#A0A5AD' }} className="text-[#A0A5AD] text-xs font-medium ml-1">
               {primaryLocation} • {profileRole === 'PLAYER' ? 'Player' : profileRole}
             </Text>
+          </View>
+
+          {/* Active Mode Switcher Pill Bar (Multi-Role Support) */}
+          <Text className="text-[#5C616A] text-[10px] font-bold uppercase tracking-wider mt-4 mb-2 text-center">
+            ACTIVE MODE
+          </Text>
+          <View className="flex-row items-center justify-center flex-wrap" style={{ gap: 8 }}>
+            {roles.map((r: Role) => {
+              const isActive = activeMode === r;
+              const roleLabels: Record<Role, string> = {
+                PLAYER: 'Player',
+                TEAM_CAPTAIN: 'Captain',
+                HUB_OWNER: 'Ground Owner',
+                ADMIN: 'Admin',
+              };
+              return (
+                <Pressable
+                  key={r}
+                  onPress={() => handleSwitchMode(r as AppMode)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Switch to ${roleLabels[r] || r} mode`}
+                  className={`px-3.5 py-1.5 rounded-full flex-row items-center border ${
+                    isActive
+                      ? 'bg-[#E85D26] border-[#E85D26]'
+                      : 'bg-[#141518] border-white/[0.12] active:bg-[#1B1D22]'
+                  }`}
+                >
+                  <View
+                    className={`w-1.5 h-1.5 rounded-full mr-1.5 ${
+                      isActive ? 'bg-[#0C0D0E]' : 'bg-[#A0A5AD]'
+                    }`}
+                  />
+                  <Text
+                    style={{ color: isActive ? '#0C0D0E' : '#FFFFFF' }}
+                    className="text-xs font-bold uppercase tracking-wider"
+                  >
+                    {roleLabels[r] || r}
+                  </Text>
+                  {isActive && (
+                    <Text
+                      style={{ color: '#0C0D0E' }}
+                      className="text-[9px] font-black uppercase tracking-wider ml-1"
+                    >
+                      (Active)
+                    </Text>
+                  )}
+                </Pressable>
+              );
+            })}
           </View>
         </View>
 
@@ -378,7 +402,7 @@ export default function ProfileScreen() {
               onPress={() => setActiveTab('overview')}
               accessibilityRole="tab"
               accessibilityState={{ selected: activeTab === 'overview' }}
-              className={`flex-1 py-2 items-center rounded-lg min-h-[44px] justify-center transition-all ${
+              className={`flex-1 py-2 items-center rounded-lg min-h-[44px] justify-center ${
                 activeTab === 'overview'
                   ? 'bg-[#1B1D22] border border-white/[0.08] shadow-sm'
                   : 'bg-transparent'
@@ -399,7 +423,7 @@ export default function ProfileScreen() {
               onPress={() => setActiveTab('history')}
               accessibilityRole="tab"
               accessibilityState={{ selected: activeTab === 'history' }}
-              className={`flex-1 py-2 items-center rounded-lg min-h-[44px] justify-center transition-all ${
+              className={`flex-1 py-2 items-center rounded-lg min-h-[44px] justify-center ${
                 activeTab === 'history'
                   ? 'bg-[#1B1D22] border border-white/[0.08] shadow-sm'
                   : 'bg-transparent'
@@ -448,7 +472,18 @@ export default function ProfileScreen() {
             </View>
 
             <View style={{ gap: 10 }}>
-              {displayMatches.map((item) => (
+              {displayMatches.length === 0 ? (
+                <View className="py-8 items-center justify-center bg-[#141518] rounded-2xl border border-white/[0.08] px-4">
+                  <Ionicons name="football-outline" size={32} color="#5C616A" />
+                  <Text style={{ color: '#FFFFFF' }} className="text-white text-sm font-semibold mt-2">
+                    No matches played yet
+                  </Text>
+                  <Text style={{ color: '#A0A5AD' }} className="text-[#A0A5AD] text-xs text-center mt-1">
+                    Explore open fixtures on the discover circuit to join your first game.
+                  </Text>
+                </View>
+              ) : (
+                displayMatches.map((item) => (
                 <View
                   key={item.id}
                   className="bg-[#141518] rounded-2xl p-4 border border-white/[0.08] shadow-sm"
@@ -492,7 +527,75 @@ export default function ProfileScreen() {
                     </Text>
                   </View>
                 </View>
-              ))}
+              ))
+            )}
+            </View>
+          </View>
+        )}
+
+        {/* ACCOUNT CAPABILITIES (Unlock Captain or Ground Owner) */}
+        {(!roles.includes('TEAM_CAPTAIN') || !roles.includes('HUB_OWNER')) && (
+          <View className="px-5 mt-6">
+            <Text style={{ color: '#FFFFFF' }} className="text-white text-xs font-bold uppercase tracking-wider mb-2.5">
+              Account Capabilities
+            </Text>
+
+            <View style={{ gap: 10 }}>
+              {!roles.includes('TEAM_CAPTAIN') && (
+                <View className="bg-[#141518] rounded-2xl p-4 border border-white/[0.08]">
+                  <View className="flex-row items-center">
+                    <View className="w-10 h-10 rounded-xl bg-[#E85D26]/15 items-center justify-center border border-[#E85D26]/30">
+                      <Ionicons name="shield-checkmark" size={20} color="#E85D26" />
+                    </View>
+                    <View className="ml-3 flex-1">
+                      <Text style={{ color: '#FFFFFF' }} className="text-white text-sm font-bold">
+                        Become a Team Captain
+                      </Text>
+                      <Text style={{ color: '#A0A5AD' }} className="text-[#A0A5AD] text-xs font-normal mt-0.5 leading-snug">
+                        Create matches, recruit players, and manage squad rosters under your account.
+                      </Text>
+                    </View>
+                  </View>
+                  <Pressable
+                    onPress={() => router.push('/onboarding/captain-setup')}
+                    accessibilityRole="button"
+                    accessibilityLabel="Activate Captain Mode"
+                    className="mt-3.5 py-2.5 rounded-xl bg-[#1B1D22] border border-[#E85D26]/40 items-center justify-center active:bg-[#22252B]"
+                  >
+                    <Text style={{ color: '#E85D26' }} className="text-[#E85D26] text-xs font-bold uppercase tracking-wider">
+                      Activate Captain Mode
+                    </Text>
+                  </Pressable>
+                </View>
+              )}
+
+              {!roles.includes('HUB_OWNER') && (
+                <View className="bg-[#141518] rounded-2xl p-4 border border-white/[0.08]">
+                  <View className="flex-row items-center">
+                    <View className="w-10 h-10 rounded-xl bg-[#22C55E]/15 items-center justify-center border border-[#22C55E]/30">
+                      <Ionicons name="business" size={20} color="#22C55E" />
+                    </View>
+                    <View className="ml-3 flex-1">
+                      <Text style={{ color: '#FFFFFF' }} className="text-white text-sm font-bold">
+                        Register a Sports Venue
+                      </Text>
+                      <Text style={{ color: '#A0A5AD' }} className="text-[#A0A5AD] text-xs font-normal mt-0.5 leading-snug">
+                        List your facility courts, host tournaments, and manage venue bookings.
+                      </Text>
+                    </View>
+                  </View>
+                  <Pressable
+                    onPress={() => router.push('/onboarding/hub-setup')}
+                    accessibilityRole="button"
+                    accessibilityLabel="Register Venue as Ground Owner"
+                    className="mt-3.5 py-2.5 rounded-xl bg-[#1B1D22] border border-[#22C55E]/40 items-center justify-center active:bg-[#22252B]"
+                  >
+                    <Text style={{ color: '#22C55E' }} className="text-[#22C55E] text-xs font-bold uppercase tracking-wider">
+                      Register Sports Venue
+                    </Text>
+                  </Pressable>
+                </View>
+              )}
             </View>
           </View>
         )}

@@ -526,6 +526,22 @@ export default function AICoachScreen() {
         </View>
 
         <View className="flex-row items-center space-x-2">
+          {/* Sports Concierge Entry Point */}
+          <Pressable
+            onPress={() => router.push('/concierge')}
+            accessibilityRole="button"
+            accessibilityLabel="Open Maidaan Sports Concierge"
+            className="min-h-[44px] px-3.5 py-2 rounded-full bg-[#E85D26]/15 border border-[#E85D26]/40 flex-row items-center active:bg-[#E85D26]/30 mr-2 shadow-sm"
+          >
+            <Ionicons name="sparkles" size={14} color="#E85D26" />
+            <Text
+              style={{ color: '#E85D26' }}
+              className="text-[#E85D26] text-xs font-bold uppercase tracking-wider ml-1.5"
+            >
+              Concierge
+            </Text>
+          </Pressable>
+
           {/* Quick Trigger to Voice Mode (Phone 3 Benchmark) */}
           <Pressable
             onPress={() => router.push('/coach/voice')}

@@ -134,7 +134,7 @@ export default function RequestSentScreen() {
   const status = request?.status || 'PENDING';
 
   return (
-    <SafeAreaView className="flex-1 bg-[#171A1D]" edges={['top', 'bottom']}>
+    <SafeAreaView className="flex-1 bg-[#0C0D0E]" edges={['top', 'bottom']}>
       {/* Modern Header */}
       <ArenaHeader
         title="Request Status"
@@ -174,7 +174,7 @@ export default function RequestSentScreen() {
               )}
 
               {/* Headings */}
-              <Text className="text-[#F4F6F7] text-2xl font-black uppercase tracking-tight text-center">
+              <Text className="text-[#FFFFFF] text-2xl font-black uppercase tracking-tight text-center">
                 {status === 'ACCEPTED'
                   ? 'REQUEST ACCEPTED'
                   : status === 'REJECTED'
@@ -189,7 +189,7 @@ export default function RequestSentScreen() {
                     ? 'bg-[#E85D26]/15 border-[#E85D26]'
                     : status === 'REJECTED'
                     ? 'bg-[#F4A261]/15 border-[#F4A261]'
-                    : 'bg-white/5 border-white/10'
+                    : 'bg-white/5 border-white/[0.08]'
                 }`}
               >
                 <Text
@@ -220,8 +220,8 @@ export default function RequestSentScreen() {
             </View>
 
             {/* Request Progression Status Board */}
-            <View className="mx-4 mt-6 bg-[#1F2327] border border-white/10 rounded-2xl p-4 shadow-sm">
-              <Text className="text-[#7F8993] text-[10px] font-bold uppercase tracking-wider mb-3">
+            <View className="mx-4 mt-6 bg-[#141518] border border-white/[0.08] rounded-2xl p-4 shadow-sm">
+              <Text className="text-[#5C616A] text-[10px] font-bold uppercase tracking-wider mb-3">
                 MATCHMAKING PROGRESSION
               </Text>
 
@@ -229,10 +229,10 @@ export default function RequestSentScreen() {
                 {/* Step 1: Request Submitted */}
                 <View className="flex-row items-center">
                   <View className="w-6 h-6 rounded-full bg-[#E85D26] items-center justify-center mr-3">
-                    <Ionicons name="checkmark" size={14} color="#171A1D" />
+                    <Ionicons name="checkmark" size={14} color="#0C0D0E" />
                   </View>
                   <View className="flex-1">
-                    <Text className="text-[#F4F6F7] text-xs font-bold uppercase tracking-wide">
+                    <Text className="text-[#FFFFFF] text-xs font-bold uppercase tracking-wide">
                       01. Request Submitted
                     </Text>
                     <Text className="text-[#A0A5AD] text-[11px] font-medium">
@@ -242,7 +242,7 @@ export default function RequestSentScreen() {
                 </View>
 
                 {/* Step 2: Captain Review */}
-                <View className="flex-row items-center mt-2 pt-2 border-t border-white/5">
+                <View className="flex-row items-center mt-2 pt-2 border-t border-white/[0.08]">
                   <View
                     className={`w-6 h-6 rounded-full items-center justify-center mr-3 ${
                       status !== 'PENDING'
@@ -253,13 +253,13 @@ export default function RequestSentScreen() {
                     <Ionicons
                       name={status !== 'PENDING' ? 'checkmark' : 'time-outline'}
                       size={14}
-                      color={status !== 'PENDING' ? '#171A1D' : '#F4A261'}
+                      color={status !== 'PENDING' ? '#0C0D0E' : '#F4A261'}
                     />
                   </View>
                   <View className="flex-1">
                     <Text
                       className={`text-xs font-bold uppercase tracking-wide ${
-                        status === 'PENDING' ? 'text-[#F4A261]' : 'text-[#F4F6F7]'
+                        status === 'PENDING' ? 'text-[#F4A261]' : 'text-[#FFFFFF]'
                       }`}
                     >
                       02. Captain Review {status === 'PENDING' ? '(Pending)' : '(Evaluated)'}
@@ -271,14 +271,14 @@ export default function RequestSentScreen() {
                 </View>
 
                 {/* Step 3: Decision */}
-                <View className="flex-row items-center mt-2 pt-2 border-t border-white/5">
+                <View className="flex-row items-center mt-2 pt-2 border-t border-white/[0.08]">
                   <View
                     className={`w-6 h-6 rounded-full items-center justify-center mr-3 ${
                       status === 'ACCEPTED'
                         ? 'bg-[#E85D26]'
                         : status === 'REJECTED'
                         ? 'bg-[#F4A261]'
-                        : 'bg-[#272C31] border border-white/10'
+                        : 'bg-[#1B1D22] border border-white/[0.08]'
                     }`}
                   >
                     <Ionicons
@@ -290,7 +290,7 @@ export default function RequestSentScreen() {
                           : 'radio-button-off'
                       }
                       size={13}
-                      color={status !== 'PENDING' ? '#171A1D' : '#7F8993'}
+                      color={status !== 'PENDING' ? '#0C0D0E' : '#5C616A'}
                     />
                   </View>
                   <View className="flex-1">
@@ -300,7 +300,7 @@ export default function RequestSentScreen() {
                           ? 'text-[#E85D26]'
                           : status === 'REJECTED'
                           ? 'text-[#F4A261]'
-                          : 'text-[#7F8993]'
+                          : 'text-[#5C616A]'
                       }`}
                     >
                       03. Final Decision {status !== 'PENDING' ? `(${status})` : ''}
@@ -319,24 +319,24 @@ export default function RequestSentScreen() {
 
             {/* Match Summary Ticket */}
             {match && (
-              <View className="mx-4 mt-4 bg-[#1F2327] border border-white/10 rounded-2xl overflow-hidden shadow-sm">
-                <View className="h-28 w-full relative bg-[#272C31]">
+              <View className="mx-4 mt-4 bg-[#141518] border border-white/[0.08] rounded-2xl overflow-hidden shadow-sm">
+                <View className="h-28 w-full relative bg-[#1B1D22]">
                   <Image
                     source={getSportPhoto(match.sport)}
                     className="w-full h-full object-cover"
                     resizeMode="cover"
                   />
-                  <View className="absolute inset-0 bg-[#171A1D]/60" />
+                  <View className="absolute inset-0 bg-[#0C0D0E]/60" />
 
                   <View className="absolute top-3 left-3 right-3 flex-row items-center justify-between">
-                    <View className="flex-row items-center bg-[#1F2327]/90 px-2.5 py-1 rounded-lg border border-white/10">
+                    <View className="flex-row items-center bg-[#141518]/90 px-2.5 py-1 rounded-lg border border-white/[0.08]">
                       <MaterialCommunityIcons
                         name={getSportIcon(match.sport)}
                         size={12}
                         color="#E85D26"
                         style={{ marginRight: 4 }}
                       />
-                      <Text className="text-[#F4F6F7] text-[10px] font-bold uppercase tracking-wider">
+                      <Text className="text-[#FFFFFF] text-[10px] font-bold uppercase tracking-wider">
                         {match.sportLabel}
                       </Text>
                     </View>
@@ -362,7 +362,7 @@ export default function RequestSentScreen() {
                   <View className="absolute bottom-2.5 left-3 right-3">
                     <Text
                       numberOfLines={1}
-                      className="text-[#F4F6F7] text-base font-bold uppercase tracking-tight"
+                      className="text-[#FFFFFF] text-base font-bold uppercase tracking-tight"
                     >
                       {match.title}
                     </Text>
@@ -370,21 +370,21 @@ export default function RequestSentScreen() {
                 </View>
 
                 <View className="p-4">
-                  <View className="flex-row items-center justify-between pb-3 border-b border-dashed border-white/10">
+                  <View className="flex-row items-center justify-between pb-3 border-b border-dashed border-white/[0.08]">
                     <View>
-                      <Text className="text-[#7F8993] text-[10px] font-bold uppercase">
+                      <Text className="text-[#5C616A] text-[10px] font-bold uppercase">
                         SCHEDULED TIME
                       </Text>
-                      <Text className="text-[#F4F6F7] text-xs font-bold uppercase mt-0.5">
+                      <Text className="text-[#FFFFFF] text-xs font-bold uppercase mt-0.5">
                         {match.date} • {match.startTime || match.time}
                       </Text>
                     </View>
 
                     <View className="items-end">
-                      <Text className="text-[#7F8993] text-[10px] font-bold uppercase">
+                      <Text className="text-[#5C616A] text-[10px] font-bold uppercase">
                         SKILL LEVEL
                       </Text>
-                      <Text className="text-[#F4F6F7] text-xs font-bold uppercase mt-0.5">
+                      <Text className="text-[#FFFFFF] text-xs font-bold uppercase mt-0.5">
                         {match.skillLevel}
                       </Text>
                     </View>
@@ -398,7 +398,7 @@ export default function RequestSentScreen() {
                       style={{ marginTop: 1 }}
                     />
                     <View className="ml-1.5 flex-1">
-                      <Text className="text-[#F4F6F7] text-xs font-bold">
+                      <Text className="text-[#FFFFFF] text-xs font-bold">
                         {match.groundName}
                       </Text>
                       <Text className="text-[#A0A5AD] text-[11px] font-medium">
@@ -407,22 +407,22 @@ export default function RequestSentScreen() {
                     </View>
                   </View>
 
-                  <View className="mt-3.5 pt-3 border-t border-white/5 flex-row items-center justify-between">
+                  <View className="mt-3.5 pt-3 border-t border-white/[0.08] flex-row items-center justify-between">
                     <View className="flex-row items-center flex-1 pr-2">
-                      <View className="w-8 h-8 rounded-lg bg-[#272C31] items-center justify-center mr-2 border border-white/10">
+                      <View className="w-8 h-8 rounded-lg bg-[#1B1D22] items-center justify-center mr-2 border border-white/[0.08]">
                         <Ionicons name="shield-outline" size={14} color="#E85D26" />
                       </View>
                       <View>
-                        <Text className="text-[#7F8993] text-[10px] font-bold uppercase">
+                        <Text className="text-[#5C616A] text-[10px] font-bold uppercase">
                           REQUEST SENT TO
                         </Text>
-                        <Text className="text-[#F4F6F7] text-xs font-bold uppercase">
+                        <Text className="text-[#FFFFFF] text-xs font-bold uppercase">
                           {match.captainName || 'Team Captain'}
                         </Text>
                       </View>
                     </View>
 
-                    <View className="bg-[#272C31] px-2.5 py-1 rounded-lg border border-white/10">
+                    <View className="bg-[#1B1D22] px-2.5 py-1 rounded-lg border border-white/[0.08]">
                       <Text className="text-[#A0A5AD] text-[10px] font-bold uppercase">
                         MATCH HOST
                       </Text>
@@ -442,8 +442,8 @@ export default function RequestSentScreen() {
                   accessibilityLabel="View Confirmed Spot"
                   className="w-full min-h-[48px] py-3.5 px-6 rounded-xl bg-[#E85D26] items-center justify-center shadow-sm active:scale-[0.98] active:opacity-90 flex-row"
                 >
-                  <Ionicons name="checkmark-circle" size={16} color="#171A1D" style={{ marginRight: 6 }} />
-                  <Text className="text-[#171A1D] text-sm font-black uppercase tracking-wider">
+                  <Ionicons name="checkmark-circle" size={16} color="#0C0D0E" style={{ marginRight: 6 }} />
+                  <Text className="text-[#0C0D0E] text-sm font-black uppercase tracking-wider">
                     VIEW CONFIRMED SPOT
                   </Text>
                 </Pressable>
@@ -455,8 +455,8 @@ export default function RequestSentScreen() {
                   accessibilityLabel="Back to Discover"
                   className="w-full min-h-[48px] py-3.5 px-6 rounded-xl bg-[#E85D26] items-center justify-center shadow-sm active:scale-[0.98] active:opacity-90 flex-row"
                 >
-                  <Ionicons name="search" size={15} color="#171A1D" style={{ marginRight: 6 }} />
-                  <Text className="text-[#171A1D] text-sm font-black uppercase tracking-wider">
+                  <Ionicons name="search" size={15} color="#0C0D0E" style={{ marginRight: 6 }} />
+                  <Text className="text-[#0C0D0E] text-sm font-black uppercase tracking-wider">
                     BACK TO DISCOVER
                   </Text>
                 </Pressable>

@@ -12,6 +12,7 @@ import adminRoutes from './routes/adminRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
 import coachRoutes from './routes/coachRoutes.js';
 import weatherRoutes from './routes/weatherRoutes.js';
+import agentRoutes from './routes/agentRoutes.js';
 
 const app = express();
 
@@ -19,7 +20,7 @@ const app = express();
 app.use(
   cors({
     origin: '*', // Development CORS policy allowing Expo and preview iframes
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   })
 );
@@ -48,6 +49,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/coach', coachRoutes);
 app.use('/api/weather', weatherRoutes);
+app.use('/api/agent', agentRoutes);
 
 // 404 handler for API routes
 app.use('/api/*', (_req, res) => {

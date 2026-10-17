@@ -20,7 +20,7 @@ import { ArenaHeader } from '../../components/ui/ArenaHeader';
 import { IMAGES } from '../../constants/images';
 
 export default function CreateAccountScreen() {
-  const { selectedRole, setCurrentUser } = useAuthStore();
+  const { setCurrentUser, setAuthStatus, setOnboardingCompleted, loadProfile } = useAuthStore();
 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -76,14 +76,6 @@ export default function CreateAccountScreen() {
       return;
     }
 
-    if (!selectedRole) {
-      setErrors({
-        general: 'Please select a role before creating your account.',
-      });
-      router.push('/(auth)/role-selection');
-      return;
-    }
-
     setIsSubmitting(true);
     setErrors({});
 
@@ -92,7 +84,7 @@ export default function CreateAccountScreen() {
         name: fullName.trim(),
         email: email.trim().toLowerCase(),
         password,
-        role: selectedRole,
+        role: 'PLAYER',
       });
 
       if (result.needsEmailConfirmation) {
@@ -101,21 +93,15 @@ export default function CreateAccountScreen() {
       }
 
       setCurrentUser(result.user);
+      setAuthStatus('ONBOARDING_REQUIRED');
+      setOnboardingCompleted(false);
 
-      switch (selectedRole) {
-        case 'PLAYER':
-          router.replace('/onboarding/player-setup');
-          break;
-        case 'TEAM_CAPTAIN':
-          router.replace('/onboarding/captain-setup');
-          break;
-        case 'HUB_OWNER':
-          router.replace('/onboarding/hub-setup');
-          break;
-        default:
-          router.push('/(auth)/role-selection');
-          break;
+      try {
+        await loadProfile();
+      } catch {
+        // Safe fallback: new player setup screen handles profile completion
       }
+      router.replace('/onboarding/player-setup');
     } catch (err: any) {
       setErrors({
         general: err?.message || 'Failed to create account. Please try again.',
@@ -136,7 +122,7 @@ export default function CreateAccountScreen() {
           title="Account Verification"
           subtitle="Email Confirmation"
           showBack
-          fallbackRoute="/(auth)/role-selection"
+          fallbackRoute="/(auth)/welcome"
           onBack={() => setShowConfirmation(false)}
         />
         <View className="flex-1 px-5 justify-center items-center">
@@ -177,9 +163,9 @@ export default function CreateAccountScreen() {
     <SafeAreaView className="flex-1 bg-[#0C0D0E]" edges={['top', 'bottom']}>
       <ArenaHeader
         title="Create Account"
-        subtitle="Step 2 of 2"
+        subtitle="Join the Arena"
         showBack
-        fallbackRoute="/(auth)/role-selection"
+        fallbackRoute="/(auth)/welcome"
         rightAction={
           <Pressable onPress={handleLogin} className="py-1.5 px-3 rounded-full bg-brand-primary/15 border border-brand-primary/30">
             <Text className="text-brand-primary text-xs font-semibold uppercase tracking-wider">
@@ -210,7 +196,7 @@ export default function CreateAccountScreen() {
             <View className="absolute bottom-4 left-5 right-5">
               <View className="flex-row items-center self-start px-2.5 py-0.5 rounded-full bg-brand-primary/15 border border-brand-primary/30 mb-1.5">
                 <Text className="text-brand-primary text-[10px] font-bold uppercase tracking-wider">
-                  Role: {selectedRole || 'PLAYER'}
+                  Athlete Account
                 </Text>
               </View>
               <Text className="text-white text-2xl font-bold tracking-tight">

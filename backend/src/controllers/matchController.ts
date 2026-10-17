@@ -124,9 +124,24 @@ export const MatchController = {
         normalizedPos = { x, y };
       }
 
+      // Validate team ownership if teamId is provided
+      let validatedTeamId: string | undefined = undefined;
+      if (req.body.teamId) {
+        const teamIdToVerify = String(req.body.teamId).trim();
+        const team = await SupabaseRepo.getTeamById(teamIdToVerify);
+        if (!team || team.captainId !== captainId) {
+          res.status(403).json({
+            error: 'Specified team does not exist or does not belong to the authenticated captain.',
+          });
+          return;
+        }
+        validatedTeamId = teamIdToVerify;
+      }
+
       // Create match in repository
       const match = await SupabaseRepo.createMatch({
         captainId,
+        teamId: validatedTeamId,
         sport: sport as Sport,
         title: title.trim(),
         format: format ? format.trim() : undefined,
@@ -221,6 +236,45 @@ export const MatchController = {
     } catch (error) {
       console.error('[MatchController.getCaptainMatches] Error:', error);
       res.status(500).json({ error: 'Failed to load captain matches.' });
+    }
+  },
+
+  /**
+   * PATCH /api/captain/matches/:id/recruitment
+   * Only TEAM_CAPTAIN who owns the match can update recruitment.
+   */
+  async updateRecruitment(req: Request, res: Response): Promise<void> {
+    try {
+      if (!req.auth || !req.auth.userId) {
+        res.status(401).json({ error: 'Authentication required.' });
+        return;
+      }
+
+      const captainId = req.auth.userId;
+      const matchId = req.params.id;
+      const { openSlots } = req.body;
+
+      if (openSlots === undefined || openSlots === null || isNaN(Number(openSlots))) {
+        res.status(400).json({ error: 'openSlots is required and must be a valid number.' });
+        return;
+      }
+
+      const match = await SupabaseRepo.updateMatchRecruitment(matchId, captainId, Number(openSlots));
+      res.status(200).json({
+        match,
+        message: Number(openSlots) === 0 ? 'Recruitment closed.' : `Recruitment updated to ${openSlots} open slot(s).`,
+      });
+    } catch (err: any) {
+      const msg = err?.message || 'Failed to update match recruitment.';
+      if (msg.includes('not found')) {
+        res.status(404).json({ error: msg });
+        return;
+      }
+      if (msg.includes('Only the match captain')) {
+        res.status(403).json({ error: msg });
+        return;
+      }
+      res.status(400).json({ error: msg });
     }
   },
 };

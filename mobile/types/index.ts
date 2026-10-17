@@ -4,16 +4,26 @@
  */
 
 export type Role = 'PLAYER' | 'TEAM_CAPTAIN' | 'HUB_OWNER' | 'ADMIN';
+export type UserRole = Role;
+export type AppMode = 'PLAYER' | 'TEAM_CAPTAIN' | 'HUB_OWNER' | 'ADMIN';
 
 export type Sport = 'cricket' | 'badminton' | 'padel' | 'football';
 
 export type SkillLevel = 'beginner' | 'intermediate' | 'advanced';
 
+export interface OnboardingStatus {
+  player: boolean;
+  captain: boolean;
+  hubOwner: boolean;
+}
+
 export interface User {
   id: string;
   email: string;
   name: string;
-  role: Role;
+  role: Role;        // legacy compatibility
+  roles: Role[];     // authoritative capabilities array
+  onboardingCompleted?: boolean;
   avatarUrl?: string;
   phone?: string;
   createdAt: string;
@@ -115,6 +125,63 @@ export interface AppNotification {
 }
 
 export type HubVerificationStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+
+export interface HubDashboardSummary {
+  hub: {
+    id: string;
+    name: string;
+    location: string;
+    contactNumber: string | null;
+    sports: Sport[];
+    courtCount: number;
+    isVerified: boolean;
+  };
+  verification: {
+    status: HubVerificationStatus | 'NOT_SUBMITTED';
+    adminNote: string | null;
+    submittedAt: string | null;
+    reviewedAt: string | null;
+    isVerified?: boolean;
+  };
+  courts: {
+    total: number;
+    available: number;
+    limited: number;
+    unavailable: number;
+  };
+}
+
+export interface AdminDashboardSummary {
+  users: {
+    total: number;
+  };
+  matches: {
+    total: number;
+    open: number;
+  };
+  hubs: {
+    total: number;
+    verified: number;
+    pendingVerification: number;
+  };
+  reports: {
+    open: number;
+  };
+}
+
+export interface AdminHubListItem {
+  id: string;
+  userId: string;
+  hubName: string;
+  ownerName: string;
+  location: string;
+  contactNumber: string | null;
+  sports: Sport[];
+  courtCount: number;
+  isVerified: boolean;
+  verificationStatus: HubVerificationStatus | 'NOT_SUBMITTED';
+  createdAt: string;
+}
 
 export interface HubVerificationRequest {
   id: string;

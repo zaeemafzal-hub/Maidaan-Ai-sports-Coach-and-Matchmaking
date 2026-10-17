@@ -3,6 +3,7 @@ import { MatchSlotItem } from '../constants/matches';
 import { Sport, SkillLevel } from '../types';
 
 export interface CreateMatchPayload {
+  teamId?: string;
   sport: Sport;
   title: string;
   format?: string;
@@ -22,6 +23,7 @@ export interface BackendMatchRecord {
   id: string;
   captainId: string;
   captainName?: string;
+  teamId?: string;
   teamName?: string;
   sport: Sport;
   title: string;
@@ -180,5 +182,22 @@ export const matchService = {
     }
 
     return toFrontendMatch(res.data);
+  },
+
+  /**
+   * PATCH /api/captain/matches/:id/recruitment
+   * Safely update open slots and derived recruitment state.
+   */
+  async updateMatchRecruitment(matchId: string, openSlots: number): Promise<BackendMatchRecord> {
+    const res = await api.patch<{ match: BackendMatchRecord; message: string }>(
+      `/api/captain/matches/${matchId}/recruitment`,
+      { openSlots }
+    );
+
+    if (!res.data || res.error) {
+      throw new Error(res.error || 'Failed to update match recruitment.');
+    }
+
+    return res.data.match;
   },
 };

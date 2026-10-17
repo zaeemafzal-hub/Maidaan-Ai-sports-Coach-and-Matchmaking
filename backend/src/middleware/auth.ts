@@ -1,11 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
 import { supabaseAdmin, isServerSupabaseConfigured } from '../lib/supabase.js';
 import { SupabaseRepo, Role } from '../models/supabaseRepo.js';
+import { allowsSyntheticAuth } from '../config/runtime.js';
 
 export interface AuthenticatedContext {
   userId: string;
   email: string;
   role?: Role;
+  roles?: Role[];
 }
 
 declare global {
@@ -29,19 +31,26 @@ export async function verifyAuthToken(token: string): Promise<AuthenticatedConte
     let verifiedUserId: string | null = null;
     let verifiedEmail: string | null = null;
 
-    if (token.startsWith('test_token:')) {
-      const parts = token.split(':');
-      verifiedUserId = parts[1] || 'test-user-id';
-      verifiedEmail = parts[2] ? decodeURIComponent(parts[2]) : 'test@maidaan.pk';
-    } else if (token.startsWith('test_token_')) {
-      const remainder = token.replace('test_token_', '');
-      const lastUnderscore = remainder.lastIndexOf('_');
-      if (lastUnderscore > 0) {
-        verifiedUserId = remainder.substring(0, lastUnderscore);
-        verifiedEmail = decodeURIComponent(remainder.substring(lastUnderscore + 1));
+    if (token.startsWith('test_token:') || token.startsWith('test_token_')) {
+      if (!allowsSyntheticAuth()) {
+        // Strict data isolation: synthetic test tokens are prohibited outside test mode
+        return null;
+      }
+
+      if (token.startsWith('test_token:')) {
+        const parts = token.split(':');
+        verifiedUserId = parts[1] || 'test-user-id';
+        verifiedEmail = parts[2] ? decodeURIComponent(parts[2]) : 'test@maidaan.pk';
       } else {
-        verifiedUserId = remainder;
-        verifiedEmail = 'test@maidaan.pk';
+        const remainder = token.replace('test_token_', '');
+        const lastUnderscore = remainder.lastIndexOf('_');
+        if (lastUnderscore > 0) {
+          verifiedUserId = remainder.substring(0, lastUnderscore);
+          verifiedEmail = decodeURIComponent(remainder.substring(lastUnderscore + 1));
+        } else {
+          verifiedUserId = remainder;
+          verifiedEmail = 'test@maidaan.pk';
+        }
       }
     } else if (isServerSupabaseConfigured) {
       // Official Supabase server-side token verification
@@ -61,13 +70,15 @@ export async function verifyAuthToken(token: string): Promise<AuthenticatedConte
       return null;
     }
 
-    // Load trusted server-side role from public.profiles
+    // Load trusted server-side role and capabilities from public.user_roles / public.profiles
+    const roles = await SupabaseRepo.getUserRoles(verifiedUserId);
     const profile = await SupabaseRepo.getProfile(verifiedUserId);
 
     return {
       userId: verifiedUserId,
       email: verifiedEmail || (profile ? profile.email : ''),
-      role: profile ? profile.role : undefined,
+      role: profile ? profile.role : (roles[0] || undefined),
+      roles,
     };
   } catch (error) {
     console.error('[verifyAuthToken] Error verifying token:', error);
@@ -78,8 +89,8 @@ export async function verifyAuthToken(token: string): Promise<AuthenticatedConte
 /**
  * Reusable Supabase authentication middleware.
  * Verifies access token with Supabase server-side.
- * Attaches verified req.auth = { userId, email, role }.
- * Never trusts userId or role from request body or query parameters.
+ * Attaches verified req.auth = { userId, email, role, roles }.
+ * Never trusts userId or role from request body, headers, or query parameters.
  */
 export const authenticateSupabaseUser = async (
   req: Request,
@@ -117,9 +128,9 @@ export const authenticateSupabaseUser = async (
 };
 
 /**
- * Role-Based Access Control (RBAC) middleware.
- * Verifies role from trusted server-side profile data.
- * Rejects requests if role does not match.
+ * Role-Based Access Control (RBAC) middleware for multi-role architecture.
+ * Checks server-side capabilities from user_roles.
+ * Rejects requests if user does not possess at least one of the allowed roles.
  */
 export const authorizeRoles = (...allowedRoles: Role[]) => {
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -130,21 +141,22 @@ export const authorizeRoles = (...allowedRoles: Role[]) => {
       return;
     }
 
-    // Ensure trusted role is loaded from database
-    let userRole = req.auth.role;
-    if (!userRole) {
-      const profile = await SupabaseRepo.getProfile(req.auth.userId);
-      if (profile) {
-        userRole = profile.role;
-        req.auth.role = userRole;
+    // Load trusted server-side capabilities from database
+    let userRoles = req.auth.roles;
+    if (!userRoles || userRoles.length === 0) {
+      userRoles = await SupabaseRepo.getUserRoles(req.auth.userId);
+      req.auth.roles = userRoles;
+      if (!req.auth.role && userRoles.length > 0) {
+        req.auth.role = userRoles[0];
       }
     }
 
-    if (!userRole || !allowedRoles.includes(userRole)) {
+    const hasPermission = allowedRoles.some((allowed) => userRoles!.includes(allowed));
+    if (!hasPermission) {
       res.status(403).json({
         error: `Access forbidden: This action requires role [${allowedRoles.join(
           ', '
-        )}], but your account role is ${userRole || 'UNKNOWN'}.`,
+        )}], but your account capabilities are [${userRoles.join(', ')}].`,
       });
       return;
     }

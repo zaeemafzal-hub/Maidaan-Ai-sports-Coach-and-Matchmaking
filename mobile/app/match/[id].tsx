@@ -20,6 +20,7 @@ import { WeatherOutlookCard } from '../../components/ui/WeatherOutlookCard';
 import { SpotProgressRing } from '../../components/ui/SpotProgressRing';
 import { matchService } from '../../services/matchService';
 import { joinRequestService } from '../../services/joinRequestService';
+import { chatService } from '../../services/chatService';
 import { AmbientGlowOverlay } from '../../components/ui/AmbientCanvas';
 
 const getSportPhoto = (sport: Sport) => {
@@ -611,17 +612,39 @@ export default function MatchDetailsScreen() {
             </View>
           </View>
         ) : isCaptainOfMatch ? (
-          <View className="items-center py-1">
+          <View className="items-center py-1 flex-row space-x-2">
+            <Pressable
+              onPress={async () => {
+                try {
+                  const room = await chatService.openMatchGroupRoom(match.id);
+                  router.push({
+                    pathname: '/chat/[id]',
+                    params: { id: room.id, type: room.type },
+                  });
+                } catch (err: any) {
+                  setSubmitError(err?.message || 'Could not open squad chat.');
+                }
+              }}
+              accessibilityRole="button"
+              className="flex-1 bg-[#E85D26] py-3.5 rounded-full items-center justify-center active:scale-[0.98] mr-2"
+            >
+              <Text
+                style={{ color: '#0C0D0E' }}
+                className="text-[#0C0D0E] text-sm font-black uppercase tracking-wider"
+              >
+                Squad Chat
+              </Text>
+            </Pressable>
             <Pressable
               onPress={() => router.push('/captain/dashboard')}
               accessibilityRole="button"
-              className="w-full bg-[#1B1D22] border-2 border-[#E85D26] py-3.5 rounded-full items-center justify-center active:scale-[0.98]"
+              className="flex-1 bg-[#1B1D22] border-2 border-white/20 py-3.5 rounded-full items-center justify-center active:scale-[0.98]"
             >
               <Text
                 style={{ color: '#FFFFFF' }}
                 className="text-white text-sm font-bold uppercase tracking-wider"
               >
-                View Captain Dashboard
+                Dashboard
               </Text>
             </Pressable>
           </View>

@@ -14,7 +14,7 @@ export default function WelcomeScreen() {
   const insets = useSafeAreaInsets();
 
   const handleGetStarted = () => {
-    router.push('/(auth)/role-selection');
+    router.push('/(auth)/create-account');
   };
 
   const handleLogin = () => {

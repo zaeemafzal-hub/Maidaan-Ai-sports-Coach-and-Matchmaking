@@ -6,6 +6,7 @@ import {
   Pressable,
   Image,
   ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
@@ -16,13 +17,7 @@ import { ArenaBadge } from '../../components/ui/ArenaBadge';
 import { PrimaryButton } from '../../components/ui/PrimaryButton';
 import { IMAGES } from '../../constants/images';
 import { adminService } from '../../services/adminService';
-
-export interface AdminQueueSummary {
-  pendingHubs: number;
-  openReports: number;
-  followUpReports: number;
-  completedReviews: number;
-}
+import { AdminDashboardSummary } from '../../types';
 
 export interface AdminActivityItem {
   id: string;
@@ -35,70 +30,48 @@ export interface AdminActivityItem {
 }
 
 export default function AdminDashboardScreen() {
-  const { currentUser } = useAuthStore();
+  const { currentUser, roles = [] } = useAuthStore();
 
-  const isAdmin = currentUser?.role === 'ADMIN';
+  const isAdmin =
+    roles.includes('ADMIN') ||
+    currentUser?.roles?.includes('ADMIN') ||
+    currentUser?.role === 'ADMIN';
 
-  // Live operational state
+  // Live operational metrics
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [summary, setSummary] = useState<AdminQueueSummary>({
-    pendingHubs: 0,
-    openReports: 0,
-    followUpReports: 0,
-    completedReviews: 0,
+
+  const [metrics, setMetrics] = useState<AdminDashboardSummary>({
+    users: { total: 0 },
+    matches: { total: 0, open: 0 },
+    hubs: { total: 0, verified: 0, pendingVerification: 0 },
+    reports: { open: 0 },
   });
+
   const [activities, setActivities] = useState<AdminActivityItem[]>([]);
 
   const isMountedRef = React.useRef(true);
 
-  const fetchDashboardData = useCallback(async () => {
+  const fetchDashboardData = useCallback(async (isPull = false) => {
     if (!isAdmin) return;
 
     try {
-      if (isMountedRef.current) {
-        setLoading(true);
-        setError(null);
-      }
+      if (!isPull) setLoading(true);
+      setError(null);
 
-      const [verifRes, reportsRes] = await Promise.all([
+      const [summaryRes, verifRes, reportsRes] = await Promise.all([
+        adminService.getDashboardSummary(),
         adminService.getHubVerifications(),
         adminService.getReports(),
       ]);
 
-      if (!verifRes.data || !reportsRes.data) {
-        const err =
-          verifRes.error ||
-          reportsRes.error ||
-          'Failed to retrieve operational queue data.';
-        if (isMountedRef.current) {
-          setError(err);
-        }
-        return;
+      if (summaryRes.data && isMountedRef.current) {
+        setMetrics(summaryRes.data);
       }
 
-      const verifications = verifRes.data.requests || [];
-      const reports = reportsRes.data.reports || [];
-
-      const pendingHubs = verifications.filter((r) => r.status === 'PENDING').length;
-      const openReports = reports.filter((r) => r.status === 'OPEN').length;
-      const followUpReports = reports.filter((r) => r.status === 'FOLLOW_UP').length;
-      const completedHubs = verifications.filter(
-        (r) => r.status === 'APPROVED' || r.status === 'REJECTED'
-      ).length;
-      const completedReports = reports.filter(
-        (r) => r.status === 'RESOLVED' || r.status === 'DISMISSED'
-      ).length;
-      const completedReviews = completedHubs + completedReports;
-
-      if (isMountedRef.current) {
-        setSummary({
-          pendingHubs,
-          openReports,
-          followUpReports,
-          completedReviews,
-        });
-      }
+      const verifications = verifRes.data?.requests || [];
+      const reports = reportsRes.data?.reports || [];
 
       const liveItems: AdminActivityItem[] = [
         ...verifications.map((v) => ({
@@ -150,6 +123,7 @@ export default function AdminDashboardScreen() {
     } finally {
       if (isMountedRef.current) {
         setLoading(false);
+        setRefreshing(false);
       }
     }
   }, [isAdmin]);
@@ -164,38 +138,36 @@ export default function AdminDashboardScreen() {
     }, [fetchDashboardData])
   );
 
-  // =========================================================================
-  // 1. ROLE GUARD: NON-ADMIN ACCESS
-  // =========================================================================
+  // 1. Role Guard
   if (!isAdmin) {
     return (
-      <SafeAreaView className="flex-1 bg-[#171A1D]" edges={['top']}>
+      <SafeAreaView className="flex-1 bg-[#0C0D0E]" edges={['top']}>
         <ArenaHeader
           title="Admin Desk"
           subtitle="Access Restriction"
           showBack
-          onBack={() => router.replace('/(tabs)/discover')}
+          fallbackRoute="/(tabs)/profile"
         />
-        <View className="flex-1 items-center justify-center p-6 bg-[#171A1D]">
-          <View className="w-16 h-16 rounded-full bg-[#F4A261]/10 items-center justify-center border border-[#F4A261]/30 mb-5">
-            <Ionicons name="shield-outline" size={28} color="#F4A261" />
+        <View className="flex-1 items-center justify-center p-6 bg-[#0C0D0E]">
+          <View className="w-16 h-16 rounded-full bg-red-950/40 items-center justify-center border border-red-500/30 mb-5">
+            <Ionicons name="shield-outline" size={28} color="#EF4444" />
           </View>
 
           <ArenaBadge label="ADMIN ACCESS REQUIRED" variant="rust" size="md" />
 
-          <Text className="text-[#F4F6F7] text-lg font-black uppercase tracking-tight text-center mt-3">
+          <Text className="text-white text-lg font-black uppercase tracking-tight text-center mt-3">
             Admin Access Required
           </Text>
 
-          <Text className="text-[#A0A5AD] text-sm text-center mt-2 max-w-[310px] leading-5">
+          <Text className="text-[#8E9298] text-sm text-center mt-2 max-w-[310px] leading-5">
             This workspace is restricted to Maidaan administrators. Public accounts cannot access platform review queues.
           </Text>
 
-          <View className="w-full mt-6 space-y-3">
+          <View className="w-full mt-6">
             <PrimaryButton
-              title="RETURN TO DISCOVER"
+              title="RETURN TO PROFILE"
               variant="primary"
-              onPress={() => router.replace('/(tabs)/discover')}
+              onPress={() => router.replace('/(tabs)/profile')}
             />
           </View>
         </View>
@@ -203,334 +175,272 @@ export default function AdminDashboardScreen() {
     );
   }
 
-  // =========================================================================
-  // 2. ADMIN IDENTITY PRESENTATION
-  // =========================================================================
-  const adminName = currentUser?.name?.trim() || 'Administrator';
-  const adminIdentifier = currentUser?.id ? `ID: ${currentUser.id.substring(0, 8)}` : 'ADM-01';
+  const adminName = currentUser?.name?.trim() || 'Platform Admin';
 
-  const areQueuesClear = summary.pendingHubs === 0 && summary.openReports === 0;
-
-  // =========================================================================
-  // 3. MAIN DASHBOARD RENDER
-  // =========================================================================
   return (
-    <SafeAreaView className="flex-1 bg-[#171A1D]" edges={['top']}>
-      {/* Modern Athletic Header */}
+    <SafeAreaView className="flex-1 bg-[#0C0D0E]" edges={['top']}>
       <ArenaHeader
-        title="Admin Desk"
-        subtitle="Platform Governance"
+        title="Admin Control Center"
+        subtitle="Platform Governance & Moderation"
         showBack
-        onBack={() => router.replace('/(tabs)/discover')}
+        fallbackRoute="/(tabs)/profile"
+        rightAction={
+          <Pressable
+            onPress={() => router.push('/(tabs)/profile')}
+            className="w-10 h-10 rounded-xl bg-[#141518] border border-white/[0.08] items-center justify-center"
+          >
+            <Ionicons name="person-outline" size={18} color="#A0A5AD" />
+          </Pressable>
+        }
       />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 56 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => {
+              setRefreshing(true);
+              fetchDashboardData(true);
+            }}
+            tintColor="#E85D26"
+            colors={['#E85D26']}
+          />
+        }
       >
-        {/* Operational Banner */}
-        <View className="px-4 pt-3">
-          <View className="h-18 w-full rounded-2xl overflow-hidden border border-white/10 relative bg-[#1F2327]">
-            <Image
-              source={IMAGES.arenaGround}
-              className="w-full h-full opacity-30"
-              resizeMode="cover"
-            />
-            <View className="absolute inset-0 px-4 py-3 flex-row items-center justify-between bg-gradient-to-r from-[#171A1D]/80 to-transparent">
-              <View className="flex-1 pr-2">
-                <Text className="text-[#7F8993] text-[10px] font-mono uppercase tracking-widest font-bold">
-                  Admin Session Active
-                </Text>
-                <Text
-                  numberOfLines={1}
-                  className="text-[#F4F6F7] text-base font-black uppercase tracking-tight"
-                >
-                  {adminName} • {adminIdentifier}
-                </Text>
-              </View>
-              <ArenaBadge label="ADMIN" variant="olive" size="sm" />
+        {/* Operational Identity Card */}
+        <View className="px-5 pt-3">
+          <View className="p-4 rounded-2xl bg-[#141518] border border-white/[0.08] flex-row items-center justify-between">
+            <View className="flex-1 pr-3">
+              <Text className="text-[#8E9298] text-[10px] font-bold uppercase tracking-widest">
+                Authenticated Admin Session
+              </Text>
+              <Text numberOfLines={1} className="text-white text-base font-bold tracking-tight mt-0.5">
+                {adminName}
+              </Text>
+            </View>
+            <View className="px-2.5 py-1 rounded-full bg-[#1B3B2B] border border-[#22C55E]/30 flex-row items-center">
+              <View className="w-1.5 h-1.5 rounded-full bg-[#22C55E] mr-1.5" />
+              <Text className="text-[#22C55E] text-[10px] font-bold uppercase tracking-wider">
+                ADMIN
+              </Text>
             </View>
           </View>
         </View>
 
-        {/* LOADING INDICATOR */}
-        {loading && (
-          <View className="mx-4 mt-4 p-4 bg-[#1F2327] rounded-2xl border border-white/10 flex-row items-center justify-center">
+        {loading && !refreshing && (
+          <View className="mx-5 mt-4 p-4 bg-[#141518] rounded-2xl border border-white/[0.08] flex-row items-center justify-center">
             <ActivityIndicator size="small" color="#E85D26" />
-            <Text className="text-[#A0A5AD] text-xs font-mono ml-3">
+            <Text className="text-[#8E9298] text-xs ml-3 font-semibold">
               Syncing operational metrics...
             </Text>
           </View>
         )}
 
-        {/* ERROR WITH RETRY */}
         {error && !loading && (
-          <View className="mx-4 mt-4 p-4 bg-[#F4A261]/10 rounded-2xl border border-[#F4A261]/30">
-            <View className="flex-row items-center mb-2">
-              <Ionicons name="alert-circle-outline" size={18} color="#F4A261" />
-              <Text className="text-[#F4A261] text-xs font-black uppercase tracking-tight ml-2">
-                Metric Sync Error
-              </Text>
+          <View className="mx-5 mt-4 p-4 bg-red-950/40 rounded-2xl border border-red-500/20">
+            <View className="flex-row items-center mb-1">
+              <Ionicons name="alert-circle-outline" size={16} color="#EF4444" />
+              <Text className="text-red-200 text-xs font-bold ml-1.5">Sync Error</Text>
             </View>
-            <Text className="text-[#A0A5AD] text-xs leading-4 mb-3">
-              {error}
-            </Text>
-            <PrimaryButton
-              title="RETRY SYNC"
-              variant="outline"
-              onPress={fetchDashboardData}
-            />
+            <Text className="text-red-300 text-xs leading-4 mb-3">{error}</Text>
+            <PrimaryButton title="RETRY SYNC" onPress={() => fetchDashboardData()} />
           </View>
         )}
 
-        {/* REVIEW WORKLOAD SUMMARY STRIP */}
-        <View className="px-4 mt-4">
-          <View className="flex-row items-center justify-between mb-2">
-            <Text
-              accessibilityRole="header"
-              className="text-[#A0A5AD] text-xs font-mono uppercase tracking-wider font-bold"
-            >
-              Moderation & Verification Workload
-            </Text>
-            <Text className="text-[#7F8993] text-[10px] font-mono">
-              Live Queue Status
-            </Text>
-          </View>
+        {/* Platform Overview Metrics Grid */}
+        <View className="px-5 mt-5">
+          <Text className="text-white text-xs font-bold uppercase tracking-wider mb-3">
+            Platform Metrics Overview
+          </Text>
 
-          <View className="flex-row gap-2">
-            {/* Stat 1: Hubs Pending */}
-            <View className="flex-1 bg-[#1F2327] rounded-2xl p-3.5 border border-white/10">
-              <Text className="text-[#7F8993] text-[10px] font-mono uppercase tracking-wider font-bold">
-                HUBS PENDING
-              </Text>
-              <Text className="text-[#F4A261] text-2xl font-black tracking-tight mt-0.5">
-                {summary.pendingHubs}
-              </Text>
-              <Text className="text-[#A0A5AD] text-[10px] font-medium mt-0.5">
-                Awaiting audit
-              </Text>
+          <View className="gap-2.5">
+            {/* Row 1: Users & Matches */}
+            <View className="flex-row gap-2.5">
+              <View className="flex-1 p-4 rounded-2xl bg-[#141518] border border-white/[0.08]">
+                <Text className="text-[#8E9298] text-[10px] font-bold uppercase tracking-wider">
+                  TOTAL PLAYERS
+                </Text>
+                <Text className="text-white text-2xl font-black mt-1">
+                  {metrics.users.total}
+                </Text>
+                <Text className="text-[#8E9298] text-[10px] mt-0.5">Registered accounts</Text>
+              </View>
+
+              <View className="flex-1 p-4 rounded-2xl bg-[#141518] border border-white/[0.08]">
+                <Text className="text-[#8E9298] text-[10px] font-bold uppercase tracking-wider">
+                  TOTAL MATCHES
+                </Text>
+                <Text className="text-white text-2xl font-black mt-1">
+                  {metrics.matches.total}
+                </Text>
+                <Text className="text-[#22C55E] text-[10px] font-semibold mt-0.5">
+                  {metrics.matches.open} open fixtures
+                </Text>
+              </View>
             </View>
 
-            {/* Stat 2: Reports Open */}
-            <View className="flex-1 bg-[#1F2327] rounded-2xl p-3.5 border border-white/10">
-              <Text className="text-[#7F8993] text-[10px] font-mono uppercase tracking-wider font-bold">
-                REPORTS OPEN
-              </Text>
-              <Text className="text-[#F4A261] text-2xl font-black tracking-tight mt-0.5">
-                {summary.openReports}
-              </Text>
-              <Text className="text-[#A0A5AD] text-[10px] font-medium mt-0.5">
-                Safety & conduct
-              </Text>
-            </View>
+            {/* Row 2: Hubs Total & Verified */}
+            <View className="flex-row gap-2.5">
+              <View className="flex-1 p-4 rounded-2xl bg-[#141518] border border-white/[0.08]">
+                <Text className="text-[#8E9298] text-[10px] font-bold uppercase tracking-wider">
+                  REGISTERED HUBS
+                </Text>
+                <Text className="text-white text-2xl font-black mt-1">
+                  {metrics.hubs.total}
+                </Text>
+                <Text className="text-[#8E9298] text-[10px] mt-0.5">Sports facilities</Text>
+              </View>
 
-            {/* Stat 3: Reviews Completed */}
-            <View className="flex-1 bg-[#1F2327] rounded-2xl p-3.5 border border-white/10">
-              <Text className="text-[#7F8993] text-[10px] font-mono uppercase tracking-wider font-bold">
-                RESOLVED
-              </Text>
-              <Text className="text-[#E85D26] text-2xl font-black tracking-tight mt-0.5">
-                {summary.completedReviews}
-              </Text>
-              <Text className="text-[#A0A5AD] text-[10px] font-medium mt-0.5">
-                Completed
-              </Text>
+              <View className="flex-1 p-4 rounded-2xl bg-[#141518] border border-white/[0.08]">
+                <Text className="text-[#8E9298] text-[10px] font-bold uppercase tracking-wider">
+                  VERIFIED HUBS
+                </Text>
+                <Text className="text-[#22C55E] text-2xl font-black mt-1">
+                  {metrics.hubs.verified}
+                </Text>
+                <Text className="text-[#22C55E] text-[10px] font-semibold mt-0.5">
+                  Official badge active
+                </Text>
+              </View>
             </View>
           </View>
         </View>
 
-        {/* EMPTY WORKLOAD STATE */}
-        {!loading && areQueuesClear ? (
-          <View className="mx-4 mt-4 bg-[#1F2327] rounded-2xl p-5 border border-white/10 items-center">
-            <View className="w-12 h-12 rounded-full bg-[#E85D26]/20 border border-[#E85D26]/40 items-center justify-center mb-2">
-              <Ionicons name="checkmark-done" size={24} color="#E85D26" />
-            </View>
-            <Text className="text-[#F4F6F7] text-xs font-black uppercase tracking-wider">
-              Review Queues Clear
-            </Text>
-            <Text className="text-[#A0A5AD] text-xs text-center mt-1">
-              No Hub verifications or reports are waiting for review.
-            </Text>
-          </View>
-        ) : null}
-
-        {/* ACTIVE REVIEW QUEUES */}
-        <View className="px-4 mt-6">
-          <Text
-            accessibilityRole="header"
-            className="text-[#A0A5AD] text-xs font-mono uppercase tracking-wider font-bold mb-3"
-          >
+        {/* Active Governance Queues */}
+        <View className="px-5 mt-5">
+          <Text className="text-white text-xs font-bold uppercase tracking-wider mb-3">
             Active Review Queues
           </Text>
 
-          {/* QUEUE 01: HUB VERIFICATION */}
-          <Pressable
-            onPress={() => router.push('/admin/hub-verification')}
-            accessibilityRole="button"
-            accessibilityLabel={`Open Hub Verification queue. ${summary.pendingHubs} submissions pending.`}
-            className="w-full bg-[#1F2327] rounded-2xl p-4 border border-white/10 mb-3 shadow-sm active:bg-[#272C31] active:scale-[0.99]"
-          >
-            <View className="flex-row items-center justify-between mb-2">
-              <View className="flex-row items-center">
-                <Text className="text-[#7F8993] text-xs font-mono font-bold mr-2">
-                  01
-                </Text>
-                <View className="w-2 h-2 rounded-full bg-[#F4A261] mr-2" />
-                <Text className="text-[#F4F6F7] text-sm font-black uppercase tracking-tight">
-                  Hub Verification
-                </Text>
-              </View>
-              <ArenaBadge
-                label={`${summary.pendingHubs} PENDING`}
-                variant="rust"
-                size="sm"
-              />
-            </View>
-
-            <Text className="text-[#A0A5AD] text-xs leading-4 mb-3">
-              Review Hub Owner submissions awaiting administrative verification. Inspect court dimensions, safety floodlights, and ground amenities.
-            </Text>
-
-            <View className="flex-row items-center justify-between pt-2.5 border-t border-white/5">
-              <View className="flex-row items-center">
-                <Ionicons name="business-outline" size={14} color="#E85D26" />
-                <Text className="text-[#A0A5AD] text-xs ml-1.5">
-                  Verification Desk
-                </Text>
-              </View>
-              <View className="flex-row items-center">
-                <Text className="text-[#E85D26] text-xs font-bold uppercase tracking-wider mr-1">
-                  Review Hubs
-                </Text>
-                <Ionicons name="arrow-forward" size={14} color="#E85D26" />
-              </View>
-            </View>
-          </Pressable>
-
-          {/* QUEUE 02: REPORT REVIEW */}
-          <Pressable
-            onPress={() => router.push('/admin/report-review')}
-            accessibilityRole="button"
-            accessibilityLabel={`Open Report Review queue. ${summary.openReports} reports awaiting action.`}
-            className="w-full bg-[#1F2327] rounded-2xl p-4 border border-white/10 shadow-sm active:bg-[#272C31] active:scale-[0.99]"
-          >
-            <View className="flex-row items-center justify-between mb-2">
-              <View className="flex-row items-center">
-                <Text className="text-[#7F8993] text-xs font-mono font-bold mr-2">
-                  02
-                </Text>
-                <View className="w-2 h-2 rounded-full bg-[#F4A261] mr-2" />
-                <Text className="text-[#F4F6F7] text-sm font-black uppercase tracking-tight">
-                  Report Review
-                </Text>
-              </View>
-              <ArenaBadge
-                label={`${summary.openReports} OPEN`}
-                variant="rust"
-                size="sm"
-              />
-            </View>
-
-            <Text className="text-[#A0A5AD] text-xs leading-4 mb-3">
-              Review submitted player safety and conduct reports. Audit incident reports, match dispute notices, and sportsmanship violations.
-            </Text>
-
-            <View className="flex-row items-center justify-between pt-2.5 border-t border-white/5">
-              <View className="flex-row items-center">
-                <Ionicons name="shield-checkmark-outline" size={14} color="#F4A261" />
-                <Text className="text-[#A0A5AD] text-xs ml-1.5">
-                  Conduct Audit
-                </Text>
-              </View>
-              <View className="flex-row items-center">
-                <Text className="text-[#F4A261] text-xs font-bold uppercase tracking-wider mr-1">
-                  Review Reports
-                </Text>
-                <Ionicons name="arrow-forward" size={14} color="#F4A261" />
-              </View>
-            </View>
-          </Pressable>
-        </View>
-
-        {/* RECENT ADMIN ACTIVITY LOG */}
-        <View className="px-4 mt-6">
-          <View className="flex-row items-center justify-between mb-2.5">
-            <Text
-              accessibilityRole="header"
-              className="text-[#A0A5AD] text-xs font-mono uppercase tracking-wider font-bold"
+          <View className="flex-row gap-2.5">
+            {/* Hub Verification Queue Card */}
+            <Pressable
+              onPress={() => router.push('/admin/hub-verification')}
+              className="flex-1 p-4 rounded-2xl bg-[#141518] border border-[#EAB308]/20"
             >
-              Recent Admin Activity
-            </Text>
-            <Text className="text-[#7F8993] text-[10px] font-mono">
-              Audit Log
-            </Text>
-          </View>
-
-          <View className="bg-[#1F2327] rounded-2xl border border-white/10 divide-y divide-white/5 shadow-sm">
-            {activities.length === 0 && !loading ? (
-              <View className="p-4 items-center">
-                <Text className="text-[#7F8993] text-xs font-mono">
-                  No administrative actions recorded yet
-                </Text>
-              </View>
-            ) : (
-              activities.map((item) => (
-                <View key={item.id} className="p-4">
-                  <View className="flex-row items-center justify-between mb-1">
-                    <View className="flex-row items-center flex-1 pr-2">
-                      <View
-                        className={`w-1.5 h-1.5 rounded-full mr-2 ${
-                          item.category === 'HUB' ? 'bg-[#E85D26]' : 'bg-[#F4A261]'
-                        }`}
-                      />
-                      <Text
-                        numberOfLines={1}
-                        className="text-[#F4F6F7] text-xs font-black uppercase tracking-tight flex-1"
-                      >
-                        {item.action}
-                      </Text>
-                    </View>
-
-                    <ArenaBadge
-                      label={item.status}
-                      variant={
-                        item.status === 'RESOLVED' || item.status === 'REVIEWED'
-                          ? 'olive'
-                          : item.status === 'OPEN'
-                          ? 'rust'
-                          : 'stone'
-                      }
-                      size="sm"
-                    />
-                  </View>
-
-                  <Text className="text-[#A0A5AD] text-xs leading-4 mt-0.5">
-                    {item.detail}
+              <View className="flex-row items-center justify-between mb-2">
+                <Ionicons name="shield-checkmark" size={18} color="#EAB308" />
+                <View className="px-2 py-0.5 rounded-full bg-[#3B2C1A]">
+                  <Text className="text-[#EAB308] text-[10px] font-bold">
+                    {metrics.hubs.pendingVerification}
                   </Text>
-
-                  <View className="flex-row items-center justify-between mt-2 pt-1.5 border-t border-white/5">
-                    <Text className="text-[#7F8993] text-[10px] font-mono">
-                      REF: {item.id.toUpperCase()}
-                    </Text>
-                    <Text className="text-[#7F8993] text-[10px] font-mono">
-                      {item.timestampLabel}
-                    </Text>
-                  </View>
                 </View>
-              ))
-            )}
+              </View>
+              <Text className="text-white text-xs font-bold uppercase tracking-wider">
+                Hub Verification
+              </Text>
+              <Text className="text-[#8E9298] text-[11px] mt-1">
+                {metrics.hubs.pendingVerification === 0
+                  ? 'No hubs awaiting review.'
+                  : `${metrics.hubs.pendingVerification} awaiting audit`}
+              </Text>
+            </Pressable>
+
+            {/* Reports Queue Card */}
+            <Pressable
+              onPress={() => router.push('/admin/report-review')}
+              className="flex-1 p-4 rounded-2xl bg-[#141518] border border-[#EF4444]/20"
+            >
+              <View className="flex-row items-center justify-between mb-2">
+                <Ionicons name="alert-circle" size={18} color="#EF4444" />
+                <View className="px-2 py-0.5 rounded-full bg-[#3B1A1A]">
+                  <Text className="text-[#EF4444] text-[10px] font-bold">
+                    {metrics.reports.open}
+                  </Text>
+                </View>
+              </View>
+              <Text className="text-white text-xs font-bold uppercase tracking-wider">
+                Open Reports
+              </Text>
+              <Text className="text-[#8E9298] text-[11px] mt-1">
+                {metrics.reports.open === 0
+                  ? 'No open reports.'
+                  : `${metrics.reports.open} reports open`}
+              </Text>
+            </Pressable>
           </View>
         </View>
 
-        {/* PLATFORM OPERATIONS DISCLAIMER */}
-        <View className="px-4 mt-5">
-          <View className="p-3.5 bg-[#1F2327] rounded-xl border border-white/5">
-            <Text className="text-[#7F8993] text-xs leading-4 text-center">
-              Maidaan Administrative Workspace • Platform Governance Desk
-              {'\n'}
-              Decisions made in review queues execute policy checks under fair play standards.
-            </Text>
+        {/* Moderation Actions Grid */}
+        <View className="px-5 mt-5">
+          <Text className="text-white text-xs font-bold uppercase tracking-wider mb-3">
+            Governance Workspaces
+          </Text>
+
+          <View className="gap-2.5">
+            <Pressable
+              onPress={() => router.push('/admin/hub-verification')}
+              className="p-4 rounded-2xl bg-[#141518] border border-white/[0.08] flex-row items-center justify-between"
+            >
+              <View className="flex-row items-center flex-1 pr-3">
+                <View className="w-10 h-10 rounded-xl bg-[#1B1E22] items-center justify-center mr-3">
+                  <Ionicons name="business" size={20} color="#E85D26" />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-white text-xs font-bold uppercase tracking-wide">
+                    Hub Verification Desk
+                  </Text>
+                  <Text className="text-[#8E9298] text-[11px] mt-0.5">
+                    Review facility documents and issue verified venue credentials.
+                  </Text>
+                </View>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color="#8E9298" />
+            </Pressable>
+
+            <Pressable
+              onPress={() => router.push('/admin/report-review')}
+              className="p-4 rounded-2xl bg-[#141518] border border-white/[0.08] flex-row items-center justify-between"
+            >
+              <View className="flex-row items-center flex-1 pr-3">
+                <View className="w-10 h-10 rounded-xl bg-[#1B1E22] items-center justify-center mr-3">
+                  <Ionicons name="flag" size={20} color="#E85D26" />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-white text-xs font-bold uppercase tracking-wide">
+                    Community Moderation Desk
+                  </Text>
+                  <Text className="text-[#8E9298] text-[11px] mt-0.5">
+                    Audit player conduct disputes, spam, and sportsmanship reports.
+                  </Text>
+                </View>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color="#8E9298" />
+            </Pressable>
           </View>
+        </View>
+
+        {/* Recent Platform Moderation Feed */}
+        <View className="px-5 mt-6">
+          <Text className="text-white text-xs font-bold uppercase tracking-wider mb-3">
+            Recent Audit Activity
+          </Text>
+
+          {activities.length === 0 ? (
+            <View className="p-6 rounded-2xl bg-[#141518] border border-white/[0.08] items-center">
+              <Ionicons name="checkmark-done-circle-outline" size={28} color="#4B5563" />
+              <Text className="text-[#8E9298] text-xs font-semibold mt-2">
+                All platform queues are clear.
+              </Text>
+            </View>
+          ) : (
+            <View className="gap-2.5">
+              {activities.map((item) => (
+                <View
+                  key={item.id}
+                  className="p-3.5 rounded-xl bg-[#141518] border border-white/[0.08]"
+                >
+                  <View className="flex-row items-center justify-between mb-1.5">
+                    <Text className="text-white text-xs font-bold">{item.action}</Text>
+                    <Text className="text-[#8E9298] text-[10px]">{item.timestampLabel}</Text>
+                  </View>
+                  <Text className="text-[#8E9298] text-xs leading-4">{item.detail}</Text>
+                </View>
+              ))}
+            </View>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>

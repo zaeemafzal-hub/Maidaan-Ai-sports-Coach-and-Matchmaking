@@ -4,16 +4,27 @@ import app from './app.js';
 import { SupabaseRepo } from './models/supabaseRepo.js';
 import { isServerSupabaseConfigured } from './lib/supabase.js';
 import { initSocketServer } from './socket/socketServer.js';
+import {
+  isProduction,
+  isTest,
+  validateProductionInvariants,
+  getAppDataMode,
+} from './config/runtime.js';
 
 dotenv.config();
 
+// Enforce strict production invariants at startup
+validateProductionInvariants(isServerSupabaseConfigured);
+
 const PORT = Number(process.env.BACKEND_PORT) || 5000;
 
-// Initialize Supabase admin and initial matches seeds in test mode or local sandbox
+// Initialize Supabase admin and initial matches ONLY in test mode or local sandbox
 (async () => {
-  await SupabaseRepo.seedAdminIfMissing();
-  if (process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured) {
-    await SupabaseRepo.seedInitialMatchesIfEmpty();
+  if (!isProduction()) {
+    await SupabaseRepo.seedAdminIfMissing();
+    if (isTest() || !isServerSupabaseConfigured) {
+      await SupabaseRepo.seedInitialMatchesIfEmpty();
+    }
   }
 })();
 

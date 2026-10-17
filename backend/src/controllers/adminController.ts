@@ -4,6 +4,7 @@ import {
   HubVerificationStatus,
   ReportCategory,
   ReportStatus,
+  Sport,
 } from '../models/supabaseRepo.js';
 
 const VALID_VERIFICATION_STATUSES: HubVerificationStatus[] = [
@@ -27,7 +28,56 @@ const VALID_REPORT_CATEGORIES: ReportCategory[] = [
   'OTHER',
 ];
 
+const VALID_SPORTS: Sport[] = ['cricket', 'badminton', 'padel', 'football'];
+
 export const AdminController = {
+  /**
+   * GET /api/admin/dashboard
+   * Consolidated real operational metrics for Admin Control Center.
+   */
+  async getDashboardSummary(req: Request, res: Response): Promise<void> {
+    try {
+      const summary = await SupabaseRepo.getAdminDashboardSummary();
+      res.status(200).json(summary);
+    } catch (err: any) {
+      console.error('[AdminController.getDashboardSummary] Error:', err);
+      res.status(500).json({ error: 'Unable to retrieve admin dashboard metrics.' });
+    }
+  },
+
+  /**
+   * GET /api/admin/hubs
+   * List all registered hubs with owner context and verification state.
+   */
+  async getHubs(req: Request, res: Response): Promise<void> {
+    try {
+      const statusQuery = req.query.status as string | undefined;
+      const sportQuery = req.query.sport as string | undefined;
+
+      let sportFilter: Sport | undefined = undefined;
+      if (sportQuery) {
+        const lowerSport = sportQuery.toLowerCase() as Sport;
+        if (!VALID_SPORTS.includes(lowerSport)) {
+          res.status(400).json({
+            error: `Invalid sport filter "${sportQuery}". Allowed: ${VALID_SPORTS.join(', ')}.`,
+          });
+          return;
+        }
+        sportFilter = lowerSport;
+      }
+
+      const hubs = await SupabaseRepo.getAdminHubs({
+        status: statusQuery,
+        sport: sportFilter,
+      });
+
+      res.status(200).json({ hubs });
+    } catch (err: any) {
+      console.error('[AdminController.getHubs] Error:', err);
+      res.status(500).json({ error: 'Unable to retrieve hubs list.' });
+    }
+  },
+
   /**
    * GET /api/admin/hub-verifications
    * List all hub verification requests with venue context, optionally filtered by status.
@@ -83,6 +133,7 @@ export const AdminController = {
   /**
    * PATCH /api/admin/hub-verifications/:id
    * Review a hub verification request (APPROVE or REJECT).
+   * Accepts { action: 'APPROVE' | 'REJECT' } or { status: 'APPROVED' | 'REJECTED' }.
    */
   async reviewHubVerification(req: Request, res: Response): Promise<void> {
     try {
@@ -93,12 +144,21 @@ export const AdminController = {
 
       const adminId = req.auth.userId;
       const { id } = req.params;
-      const { action, adminNote } = req.body || {};
+      const { action, status, adminNote } = req.body || {};
+
+      let resolvedAction: 'APPROVE' | 'REJECT' | null = null;
+      if (action === 'APPROVE' || action === 'REJECT') {
+        resolvedAction = action;
+      } else if (status === 'APPROVED') {
+        resolvedAction = 'APPROVE';
+      } else if (status === 'REJECTED') {
+        resolvedAction = 'REJECT';
+      }
 
       // 1. Validate action
-      if (action !== 'APPROVE' && action !== 'REJECT') {
+      if (!resolvedAction) {
         res.status(400).json({
-          error: "Action must be either 'APPROVE' or 'REJECT'.",
+          error: "Action must be either 'APPROVE' or 'REJECT' (or status 'APPROVED' or 'REJECTED').",
         });
         return;
       }
@@ -132,7 +192,7 @@ export const AdminController = {
       const updated = await SupabaseRepo.reviewHubVerification({
         requestId: id,
         adminId,
-        action,
+        action: resolvedAction,
         adminNote: adminNote ? adminNote.trim() : null,
       });
 
@@ -213,6 +273,7 @@ export const AdminController = {
   /**
    * PATCH /api/admin/reports/:id
    * Review a community report (RESOLVE, DISMISS, or FOLLOW_UP).
+   * Accepts { action: 'RESOLVE' | 'DISMISS' | 'FOLLOW_UP' } or { status: 'RESOLVED' | 'DISMISSED' | 'FOLLOW_UP' }.
    */
   async reviewReport(req: Request, res: Response): Promise<void> {
     try {
@@ -223,10 +284,21 @@ export const AdminController = {
 
       const adminId = req.auth.userId;
       const { id } = req.params;
-      const { action, adminNote } = req.body || {};
+      const { action, status, adminNote } = req.body || {};
+
+      let resolvedAction: 'RESOLVE' | 'DISMISS' | 'FOLLOW_UP' | null = null;
+      if (action === 'RESOLVE' || action === 'DISMISS' || action === 'FOLLOW_UP') {
+        resolvedAction = action;
+      } else if (status === 'RESOLVED') {
+        resolvedAction = 'RESOLVE';
+      } else if (status === 'DISMISSED') {
+        resolvedAction = 'DISMISS';
+      } else if (status === 'FOLLOW_UP') {
+        resolvedAction = 'FOLLOW_UP';
+      }
 
       // 1. Validate action
-      if (action !== 'RESOLVE' && action !== 'DISMISS' && action !== 'FOLLOW_UP') {
+      if (!resolvedAction) {
         res.status(400).json({
           error: "Action must be one of: 'RESOLVE', 'DISMISS', 'FOLLOW_UP'.",
         });
@@ -254,7 +326,7 @@ export const AdminController = {
       if (existing.status === 'OPEN') {
         // OPEN can transition to RESOLVED, DISMISSED, or FOLLOW_UP
       } else if (existing.status === 'FOLLOW_UP') {
-        if (action !== 'RESOLVE' && action !== 'DISMISS') {
+        if (resolvedAction !== 'RESOLVE' && resolvedAction !== 'DISMISS') {
           res.status(409).json({
             error: "Report is already in 'FOLLOW_UP' status. Allowed actions are 'RESOLVE' or 'DISMISS'.",
           });
@@ -271,7 +343,7 @@ export const AdminController = {
       const updated = await SupabaseRepo.reviewReport({
         reportId: id,
         adminId,
-        action,
+        action: resolvedAction,
         adminNote: adminNote ? adminNote.trim() : null,
       });
 

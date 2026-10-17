@@ -15,6 +15,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/useAuthStore';
 import { MatchSlotItem } from '../../constants/matches';
 import { matchService } from '../../services/matchService';
+import { teamService } from '../../services/teamService';
 import { ArenaHeader } from '../../components/ui/ArenaHeader';
 import { ArenaBadge } from '../../components/ui/ArenaBadge';
 import { PrimaryButton } from '../../components/ui/PrimaryButton';
@@ -239,6 +240,22 @@ export default function CreateMatchScreen() {
   const [showSuccessModal, setShowSuccessModal] = useState<boolean>(false);
   const [weather, setWeather] = useState<WeatherOutlook | null>(null);
   const [weatherLoading, setWeatherLoading] = useState<boolean>(false);
+  const [captainTeamId, setCaptainTeamId] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    let isCancelled = false;
+    teamService
+      .getMyTeam()
+      .then((t) => {
+        if (!isCancelled && t) {
+          setCaptainTeamId(t.id);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
 
   // Debounced weather outlook fetcher based on area, date, time, and sport
   React.useEffect(() => {
@@ -319,21 +336,21 @@ export default function CreateMatchScreen() {
   // =========================================================================
   if (!isCaptain) {
     return (
-      <SafeAreaView className="flex-1 bg-[#171A1D]" edges={['top']}>
+      <SafeAreaView className="flex-1 bg-[#0C0D0E]" edges={['top']}>
         <ArenaHeader
           title="Create Match"
           subtitle="Role Restriction"
           showBack
           onBack={() => router.replace('/(tabs)/discover')}
         />
-        <View className="flex-1 items-center justify-center p-6 bg-[#171A1D]">
+        <View className="flex-1 items-center justify-center p-6 bg-[#0C0D0E]">
           <View className="w-16 h-16 rounded-full bg-[#F4A261]/10 items-center justify-center border border-[#F4A261]/30 mb-5">
             <Ionicons name="lock-closed" size={28} color="#F4A261" />
           </View>
 
           <ArenaBadge label="CAPTAIN REQUIRED" variant="rust" size="md" />
 
-          <Text className="text-[#F4F6F7] text-lg font-black uppercase tracking-tight text-center mt-3">
+          <Text className="text-[#FFFFFF] text-lg font-black uppercase tracking-tight text-center mt-3">
             Captain Privileges Required
           </Text>
 
@@ -348,9 +365,9 @@ export default function CreateMatchScreen() {
               onPress={() => router.replace('/(tabs)/discover')}
             />
             <PrimaryButton
-              title="SWITCH TO CAPTAIN PROFILE"
+              title="SET UP CAPTAIN PROFILE"
               variant="outline"
-              onPress={() => router.replace('/(auth)/role-selection')}
+              onPress={() => router.replace('/onboarding/captain-setup')}
             />
           </View>
         </View>
@@ -451,6 +468,7 @@ export default function CreateMatchScreen() {
         .join('\n');
 
       const newFixture = await matchService.createMatch({
+        teamId: captainTeamId || undefined,
         sport,
         title: title.trim(),
         format: format.trim() || SPORTS_CONFIG[sport].defaultFormat,
@@ -483,7 +501,7 @@ export default function CreateMatchScreen() {
   const reservedCount = totalSlots - slotsOpen;
 
   return (
-    <SafeAreaView className="flex-1 bg-[#171A1D]" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-[#0C0D0E]" edges={['top']}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         className="flex-1"
@@ -504,16 +522,16 @@ export default function CreateMatchScreen() {
         />
 
         <ScrollView
-          className="flex-1 bg-[#171A1D]"
+          className="flex-1 bg-[#0C0D0E]"
           contentContainerStyle={{ paddingBottom: 64 }}
           keyboardShouldPersistTaps="handled"
         >
           {/* TOP BANNER: CAPTAIN CREDENTIAL CONTEXT */}
-          <View className="px-4 py-3 bg-[#1F2327] border-b border-white/10 flex-row items-center justify-between">
+          <View className="px-4 py-3 bg-[#141518] border-b border-white/[0.08] flex-row items-center justify-between">
             <View className="flex-row items-center flex-1 pr-2">
               <View className="w-2.5 h-2.5 rounded-full bg-[#E85D26] mr-2" />
               <View>
-                <Text className="text-[#F4F6F7] text-xs font-black uppercase tracking-tight">
+                <Text className="text-[#FFFFFF] text-xs font-black uppercase tracking-tight">
                   {displayTeamName}
                 </Text>
                 <Text className="text-[#A0A5AD] text-[10px] font-mono">
@@ -530,7 +548,7 @@ export default function CreateMatchScreen() {
               <Text className="text-[#F4A261] text-xs font-bold uppercase tracking-wider">
                 Captain Identity Unavailable
               </Text>
-              <Text className="text-[#F4F6F7] text-xs mt-1">
+              <Text className="text-[#FFFFFF] text-xs mt-1">
                 {formErrors.auth}
               </Text>
             </View>
@@ -538,7 +556,7 @@ export default function CreateMatchScreen() {
 
           {/* PAGE TITLE & INSTRUCTIONS */}
           <View className="px-4 pt-4 pb-2">
-            <Text className="text-[#F4F6F7] text-xl font-black uppercase tracking-tight">
+            <Text className="text-[#FFFFFF] text-xl font-black uppercase tracking-tight">
               Open Player Slots
             </Text>
             <Text className="text-[#A0A5AD] text-xs leading-4 mt-0.5">
@@ -572,17 +590,17 @@ export default function CreateMatchScreen() {
                     className={`flex-1 py-3 px-1 items-center rounded-xl border ${
                       isSelected
                         ? 'bg-[#E85D26] border-[#E85D26] shadow-sm'
-                        : 'bg-[#1F2327] border-white/10 active:bg-[#272C31]'
+                        : 'bg-[#141518] border-white/[0.08] active:bg-[#1B1D22]'
                     }`}
                   >
                     <MaterialCommunityIcons
                       name={conf.icon}
                       size={22}
-                      color={isSelected ? '#171A1D' : '#A0A5AD'}
+                      color={isSelected ? '#0C0D0E' : '#A0A5AD'}
                     />
                     <Text
                       className={`text-[11px] font-bold uppercase tracking-wider mt-1.5 ${
-                        isSelected ? 'text-[#171A1D]' : 'text-[#A0A5AD]'
+                        isSelected ? 'text-[#0C0D0E]' : 'text-[#A0A5AD]'
                       }`}
                     >
                       {conf.label}
@@ -602,8 +620,8 @@ export default function CreateMatchScreen() {
             </Text>
 
             {/* Title Input */}
-            <View className="bg-[#1F2327] p-4 rounded-2xl border border-white/10 mb-3">
-              <Text className="text-[#7F8993] text-[10px] font-mono uppercase mb-2 font-bold">
+            <View className="bg-[#141518] p-4 rounded-2xl border border-white/[0.08] mb-3">
+              <Text className="text-[#5C616A] text-[10px] font-mono uppercase mb-2 font-bold">
                 Match Listing Title
               </Text>
               <TextInput
@@ -615,8 +633,8 @@ export default function CreateMatchScreen() {
                   }
                 }}
                 placeholder="e.g. Model Town 7v7 Floodlit Friendly"
-                placeholderTextColor="#7F8993"
-                className="text-[#F4F6F7] text-sm font-bold bg-[#272C31] p-3 rounded-xl border border-white/10"
+                placeholderTextColor="#5C616A"
+                className="text-[#FFFFFF] text-sm font-bold bg-[#1B1D22] p-3 rounded-xl border border-white/[0.08]"
               />
               {formErrors.title ? (
                 <Text className="text-[#F4A261] text-xs font-medium mt-1">
@@ -626,8 +644,8 @@ export default function CreateMatchScreen() {
             </View>
 
             {/* Format Selector */}
-            <View className="bg-[#1F2327] p-4 rounded-2xl border border-white/10">
-              <Text className="text-[#7F8993] text-[10px] font-mono uppercase mb-2 font-bold">
+            <View className="bg-[#141518] p-4 rounded-2xl border border-white/[0.08]">
+              <Text className="text-[#5C616A] text-[10px] font-mono uppercase mb-2 font-bold">
                 Sport Format Presets
               </Text>
               <View className="flex-row flex-wrap">
@@ -640,12 +658,12 @@ export default function CreateMatchScreen() {
                       className={`mr-2 mb-2 px-3 py-1.5 rounded-xl border ${
                         isSelected
                           ? 'bg-[#E85D26] border-[#E85D26]'
-                          : 'bg-[#272C31] border-white/10 active:bg-white/5'
+                          : 'bg-[#1B1D22] border-white/[0.08] active:bg-white/5'
                       }`}
                     >
                       <Text
                         className={`text-xs ${
-                          isSelected ? 'text-[#171A1D] font-bold' : 'text-[#A0A5AD]'
+                          isSelected ? 'text-[#0C0D0E] font-bold' : 'text-[#A0A5AD]'
                         }`}
                       >
                         {fmt}
@@ -665,10 +683,10 @@ export default function CreateMatchScreen() {
               3. Schedule & Duration
             </Text>
 
-            <View className="bg-[#1F2327] p-4 rounded-2xl border border-white/10 space-y-3">
+            <View className="bg-[#141518] p-4 rounded-2xl border border-white/[0.08] space-y-3">
               {/* Date Selector */}
               <View>
-                <Text className="text-[#7F8993] text-[10px] font-mono uppercase mb-2 font-bold">
+                <Text className="text-[#5C616A] text-[10px] font-mono uppercase mb-2 font-bold">
                   Match Date
                 </Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
@@ -681,12 +699,12 @@ export default function CreateMatchScreen() {
                         className={`mr-2 px-3.5 py-2 rounded-xl border ${
                           isSelected
                             ? 'bg-[#E85D26] border-[#E85D26]'
-                            : 'bg-[#272C31] border-white/10'
+                            : 'bg-[#1B1D22] border-white/[0.08]'
                         }`}
                       >
                         <Text
                           className={`text-xs font-bold uppercase tracking-wider ${
-                            isSelected ? 'text-[#171A1D]' : 'text-[#A0A5AD]'
+                            isSelected ? 'text-[#0C0D0E]' : 'text-[#A0A5AD]'
                           }`}
                         >
                           {d}
@@ -698,8 +716,8 @@ export default function CreateMatchScreen() {
               </View>
 
               {/* Time Window Selector */}
-              <View className="pt-3 border-t border-white/5">
-                <Text className="text-[#7F8993] text-[10px] font-mono uppercase mb-2 font-bold">
+              <View className="pt-3 border-t border-white/[0.08]">
+                <Text className="text-[#5C616A] text-[10px] font-mono uppercase mb-2 font-bold">
                   Time Window
                 </Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
@@ -712,12 +730,12 @@ export default function CreateMatchScreen() {
                         className={`mr-2 px-3.5 py-2 rounded-xl border ${
                           isSelected
                             ? 'bg-[#E85D26] border-[#E85D26]'
-                            : 'bg-[#272C31] border-white/10'
+                            : 'bg-[#1B1D22] border-white/[0.08]'
                         }`}
                       >
                         <Text
                           className={`text-xs font-mono ${
-                            isSelected ? 'text-[#171A1D] font-bold' : 'text-[#A0A5AD]'
+                            isSelected ? 'text-[#0C0D0E] font-bold' : 'text-[#A0A5AD]'
                           }`}
                         >
                           {t}
@@ -729,8 +747,8 @@ export default function CreateMatchScreen() {
               </View>
 
               {/* Duration Selector */}
-              <View className="pt-3 border-t border-white/5 flex-row items-center justify-between">
-                <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold">
+              <View className="pt-3 border-t border-white/[0.08] flex-row items-center justify-between">
+                <Text className="text-[#5C616A] text-[10px] font-mono uppercase font-bold">
                   Estimated Duration
                 </Text>
                 <View className="flex-row space-x-1.5">
@@ -743,12 +761,12 @@ export default function CreateMatchScreen() {
                         className={`px-3 py-1.5 rounded-xl border ${
                           isSelected
                             ? 'bg-[#E85D26] border-[#E85D26]'
-                            : 'bg-[#272C31] border-white/10'
+                            : 'bg-[#1B1D22] border-white/[0.08]'
                         }`}
                       >
                         <Text
                           className={`text-xs font-mono font-bold ${
-                            isSelected ? 'text-[#171A1D]' : 'text-[#A0A5AD]'
+                            isSelected ? 'text-[#0C0D0E]' : 'text-[#A0A5AD]'
                           }`}
                         >
                           {dur}
@@ -769,13 +787,13 @@ export default function CreateMatchScreen() {
               <Text className="text-[#A0A5AD] text-xs font-mono uppercase tracking-wider font-bold">
                 4. Venue & Locality
               </Text>
-              <Text className="text-[#7F8993] text-[10px] font-mono">
+              <Text className="text-[#5C616A] text-[10px] font-mono">
                 Lahore Circuit
               </Text>
             </View>
 
-            <View className="bg-[#1F2327] p-4 rounded-2xl border border-white/10 mb-2">
-              <Text className="text-[#7F8993] text-[10px] font-mono uppercase mb-2 font-bold">
+            <View className="bg-[#141518] p-4 rounded-2xl border border-white/[0.08] mb-2">
+              <Text className="text-[#5C616A] text-[10px] font-mono uppercase mb-2 font-bold">
                 Ground / Venue Name
               </Text>
               <TextInput
@@ -787,8 +805,8 @@ export default function CreateMatchScreen() {
                   }
                 }}
                 placeholder="e.g. Model Town Football Turf, Pitch 1"
-                placeholderTextColor="#7F8993"
-                className="text-[#F4F6F7] text-sm font-bold bg-[#272C31] p-3 rounded-xl border border-white/10 mb-3"
+                placeholderTextColor="#5C616A"
+                className="text-[#FFFFFF] text-sm font-bold bg-[#1B1D22] p-3 rounded-xl border border-white/[0.08] mb-3"
               />
               {formErrors.groundName ? (
                 <Text className="text-[#F4A261] text-xs font-medium mb-2">
@@ -796,7 +814,7 @@ export default function CreateMatchScreen() {
                 </Text>
               ) : null}
 
-              <Text className="text-[#7F8993] text-[10px] font-mono uppercase mb-2 font-bold">
+              <Text className="text-[#5C616A] text-[10px] font-mono uppercase mb-2 font-bold">
                 Area / Neighborhood
               </Text>
               <TextInput
@@ -808,8 +826,8 @@ export default function CreateMatchScreen() {
                   }
                 }}
                 placeholder="e.g. Model Town, Lahore"
-                placeholderTextColor="#7F8993"
-                className="text-[#F4F6F7] text-sm font-bold bg-[#272C31] p-3 rounded-xl border border-white/10"
+                placeholderTextColor="#5C616A"
+                className="text-[#FFFFFF] text-sm font-bold bg-[#1B1D22] p-3 rounded-xl border border-white/[0.08]"
               />
               {formErrors.area ? (
                 <Text className="text-[#F4A261] text-xs font-medium mt-1">
@@ -819,7 +837,7 @@ export default function CreateMatchScreen() {
             </View>
 
             {/* Quick Demo Venue Labels */}
-            <Text className="text-[#7F8993] text-[10px] font-mono uppercase mb-2 px-0.5 font-bold">
+            <Text className="text-[#5C616A] text-[10px] font-mono uppercase mb-2 px-0.5 font-bold">
               Venue Presets (Tap to Fill)
             </Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
@@ -827,10 +845,10 @@ export default function CreateMatchScreen() {
                 <Pressable
                   key={v.name}
                   onPress={() => handleSelectVenuePreset(v)}
-                  className="mr-2 bg-[#272C31] px-3 py-2 rounded-xl border border-white/10 active:bg-white/5"
+                  className="mr-2 bg-[#1B1D22] px-3 py-2 rounded-xl border border-white/[0.08] active:bg-white/5"
                 >
-                  <Text className="text-[#F4F6F7] text-xs font-bold">{v.name}</Text>
-                  <Text className="text-[#7F8993] text-[10px]">{v.area}</Text>
+                  <Text className="text-[#FFFFFF] text-xs font-bold">{v.name}</Text>
+                  <Text className="text-[#5C616A] text-[10px]">{v.area}</Text>
                 </Pressable>
               ))}
             </ScrollView>
@@ -851,14 +869,14 @@ export default function CreateMatchScreen() {
               />
             </View>
 
-            <View className="bg-[#1F2327] p-4 rounded-2xl border border-white/10">
+            <View className="bg-[#141518] p-4 rounded-2xl border border-white/[0.08]">
               {/* Stepper Row: Total Slots */}
-              <View className="flex-row items-center justify-between pb-3 border-b border-white/5">
+              <View className="flex-row items-center justify-between pb-3 border-b border-white/[0.08]">
                 <View className="flex-1 pr-3">
-                  <Text className="text-[#F4F6F7] text-xs font-black uppercase">
+                  <Text className="text-[#FFFFFF] text-xs font-black uppercase">
                     Total Squad Capacity
                   </Text>
-                  <Text className="text-[#7F8993] text-[10px] mt-0.5">
+                  <Text className="text-[#5C616A] text-[10px] mt-0.5">
                     Total players required for match fixture
                   </Text>
                 </View>
@@ -868,13 +886,13 @@ export default function CreateMatchScreen() {
                     onPress={() => handleAdjustTotalSlots(-1)}
                     accessibilityRole="button"
                     accessibilityLabel="Decrease total squad size"
-                    className="w-9 h-9 rounded-xl bg-[#272C31] items-center justify-center border border-white/10 active:bg-white/5"
+                    className="w-9 h-9 rounded-xl bg-[#1B1D22] items-center justify-center border border-white/[0.08] active:bg-white/5"
                   >
-                    <Ionicons name="remove" size={16} color="#F4F6F7" />
+                    <Ionicons name="remove" size={16} color="#FFFFFF" />
                   </Pressable>
 
                   <View className="w-10 items-center">
-                    <Text className="text-[#F4F6F7] text-base font-black font-mono">
+                    <Text className="text-[#FFFFFF] text-base font-black font-mono">
                       {totalSlots}
                     </Text>
                   </View>
@@ -883,9 +901,9 @@ export default function CreateMatchScreen() {
                     onPress={() => handleAdjustTotalSlots(1)}
                     accessibilityRole="button"
                     accessibilityLabel="Increase total squad size"
-                    className="w-9 h-9 rounded-xl bg-[#272C31] items-center justify-center border border-white/10 active:bg-white/5"
+                    className="w-9 h-9 rounded-xl bg-[#1B1D22] items-center justify-center border border-white/[0.08] active:bg-white/5"
                   >
-                    <Ionicons name="add" size={16} color="#F4F6F7" />
+                    <Ionicons name="add" size={16} color="#FFFFFF" />
                   </Pressable>
                 </View>
               </View>
@@ -893,10 +911,10 @@ export default function CreateMatchScreen() {
               {/* Stepper Row: Open Slots Wanted */}
               <View className="flex-row items-center justify-between pt-3">
                 <View className="flex-1 pr-3">
-                  <Text className="text-[#F4F6F7] text-xs font-black uppercase">
+                  <Text className="text-[#FFFFFF] text-xs font-black uppercase">
                     Open Player Slots Wanted
                   </Text>
-                  <Text className="text-[#7F8993] text-[10px] mt-0.5">
+                  <Text className="text-[#5C616A] text-[10px] mt-0.5">
                     Replacement players discoverable on board
                   </Text>
                 </View>
@@ -906,9 +924,9 @@ export default function CreateMatchScreen() {
                     onPress={() => handleAdjustOpenSlots(-1)}
                     accessibilityRole="button"
                     accessibilityLabel="Decrease open player slots"
-                    className="w-9 h-9 rounded-xl bg-[#272C31] items-center justify-center border border-white/10 active:bg-white/5"
+                    className="w-9 h-9 rounded-xl bg-[#1B1D22] items-center justify-center border border-white/[0.08] active:bg-white/5"
                   >
-                    <Ionicons name="remove" size={16} color="#F4F6F7" />
+                    <Ionicons name="remove" size={16} color="#FFFFFF" />
                   </Pressable>
 
                   <View className="w-10 items-center">
@@ -921,9 +939,9 @@ export default function CreateMatchScreen() {
                     onPress={() => handleAdjustOpenSlots(1)}
                     accessibilityRole="button"
                     accessibilityLabel="Increase open player slots"
-                    className="w-9 h-9 rounded-xl bg-[#272C31] items-center justify-center border border-white/10 active:bg-white/5"
+                    className="w-9 h-9 rounded-xl bg-[#1B1D22] items-center justify-center border border-white/[0.08] active:bg-white/5"
                   >
-                    <Ionicons name="add" size={16} color="#F4F6F7" />
+                    <Ionicons name="add" size={16} color="#FFFFFF" />
                   </Pressable>
                 </View>
               </View>
@@ -935,7 +953,7 @@ export default function CreateMatchScreen() {
               ) : null}
 
               {/* Visual Breakdown Strip */}
-              <View className="mt-4 pt-3 border-t border-white/5">
+              <View className="mt-4 pt-3 border-t border-white/[0.08]">
                 <View className="flex-row justify-between text-[11px] font-mono mb-2">
                   <Text className="text-[#A0A5AD] text-xs">
                     Roster Status ({reservedCount} filled + {slotsOpen} open)
@@ -946,7 +964,7 @@ export default function CreateMatchScreen() {
                 </View>
 
                 {/* Progress Bar */}
-                <View className="h-2 w-full bg-[#272C31] rounded-full overflow-hidden flex-row">
+                <View className="h-2 w-full bg-[#1B1D22] rounded-full overflow-hidden flex-row">
                   <View
                     style={{ width: `${(reservedCount / totalSlots) * 100}%` }}
                     className="h-full bg-[#7FD1AE]"
@@ -1000,20 +1018,20 @@ export default function CreateMatchScreen() {
                     onPress={() => setSkillLevel(lvl)}
                     className={`flex-1 p-3.5 rounded-2xl border ${
                       isSelected
-                        ? 'bg-[#272C31] border-[#E85D26] shadow-sm'
-                        : 'bg-[#1F2327] border-white/10 active:bg-[#272C31]'
+                        ? 'bg-[#1B1D22] border-[#E85D26] shadow-sm'
+                        : 'bg-[#141518] border-white/[0.08] active:bg-[#1B1D22]'
                     }`}
                   >
                     <View className="flex-row items-center justify-between mb-1">
                       <Text
                         className={`text-xs font-black uppercase ${
-                          isSelected ? 'text-[#E85D26]' : 'text-[#F4F6F7]'
+                          isSelected ? 'text-[#E85D26]' : 'text-[#FFFFFF]'
                         }`}
                       >
                         {conf.label}
                       </Text>
                     </View>
-                    <Text className="text-[#7F8993] text-[10px] leading-3 mt-0.5">
+                    <Text className="text-[#5C616A] text-[10px] leading-3 mt-0.5">
                       {conf.subtitle}
                     </Text>
                   </Pressable>
@@ -1030,14 +1048,14 @@ export default function CreateMatchScreen() {
               7. Split & Details
             </Text>
 
-            <View className="bg-[#1F2327] p-4 rounded-2xl border border-white/10 space-y-3">
+            <View className="bg-[#141518] p-4 rounded-2xl border border-white/[0.08] space-y-3">
               {/* Fee per player */}
               <View>
                 <View className="flex-row items-center justify-between mb-1.5">
-                  <Text className="text-[#7F8993] text-[10px] font-mono uppercase font-bold">
+                  <Text className="text-[#5C616A] text-[10px] font-mono uppercase font-bold">
                     Pitch Fee Per Player
                   </Text>
-                  <Text className="text-[#7F8993] text-[9px] font-mono">
+                  <Text className="text-[#5C616A] text-[9px] font-mono">
                     On-Site Split Only
                   </Text>
                 </View>
@@ -1045,17 +1063,17 @@ export default function CreateMatchScreen() {
                   value={feePerPlayer}
                   onChangeText={setFeePerPlayer}
                   placeholder="e.g. Rs. 450 or Free"
-                  placeholderTextColor="#7F8993"
-                  className="text-[#F4F6F7] text-sm font-bold bg-[#272C31] p-3 rounded-xl border border-white/10 mb-1"
+                  placeholderTextColor="#5C616A"
+                  className="text-[#FFFFFF] text-sm font-bold bg-[#1B1D22] p-3 rounded-xl border border-white/[0.08] mb-1"
                 />
-                <Text className="text-[#7F8993] text-[10px] leading-3.5">
+                <Text className="text-[#5C616A] text-[10px] leading-3.5">
                   Recreational venue cost sharing. Collected directly at ground — no in-app billing.
                 </Text>
               </View>
 
               {/* Match Description */}
-              <View className="pt-3 border-t border-white/5">
-                <Text className="text-[#7F8993] text-[10px] font-mono uppercase mb-1.5 font-bold">
+              <View className="pt-3 border-t border-white/[0.08]">
+                <Text className="text-[#5C616A] text-[10px] font-mono uppercase mb-1.5 font-bold">
                   Match Description & Requirements
                 </Text>
                 <TextInput
@@ -1064,22 +1082,22 @@ export default function CreateMatchScreen() {
                   multiline
                   numberOfLines={2}
                   placeholder="Notes about footwear, bibs, squad expectations..."
-                  placeholderTextColor="#7F8993"
-                  className="text-[#F4F6F7] text-xs leading-4 bg-[#272C31] p-3 rounded-xl border border-white/10 min-h-[50px]"
+                  placeholderTextColor="#5C616A"
+                  className="text-[#FFFFFF] text-xs leading-4 bg-[#1B1D22] p-3 rounded-xl border border-white/[0.08] min-h-[50px]"
                 />
               </View>
 
               {/* Venue / Parking Notes */}
-              <View className="pt-3 border-t border-white/5">
-                <Text className="text-[#7F8993] text-[10px] font-mono uppercase mb-1.5 font-bold">
+              <View className="pt-3 border-t border-white/[0.08]">
+                <Text className="text-[#5C616A] text-[10px] font-mono uppercase mb-1.5 font-bold">
                   Venue Arrival Notes
                 </Text>
                 <TextInput
                   value={venueNotes}
                   onChangeText={setVenueNotes}
                   placeholder="e.g. Meet by pitch 1 entrance; changing rooms on left"
-                  placeholderTextColor="#7F8993"
-                  className="text-[#F4F6F7] text-xs leading-4 bg-[#272C31] p-3 rounded-xl border border-white/10"
+                  placeholderTextColor="#5C616A"
+                  className="text-[#FFFFFF] text-xs leading-4 bg-[#1B1D22] p-3 rounded-xl border border-white/[0.08]"
                 />
               </View>
             </View>
@@ -1106,7 +1124,7 @@ export default function CreateMatchScreen() {
                 <Text className="text-[#F4A261] text-xs font-bold uppercase tracking-wider mb-0.5">
                   Fixture Creation Failed
                 </Text>
-                <Text className="text-[#F4F6F7] text-xs leading-4">
+                <Text className="text-[#FFFFFF] text-xs leading-4">
                   {formErrors.submit}
                 </Text>
                 <Text className="text-[#A0A5AD] text-[10px] mt-1">
@@ -1123,7 +1141,7 @@ export default function CreateMatchScreen() {
               onPress={handlePublishMatch}
             />
 
-            <Text className="text-[#7F8993] text-xs text-center mt-2.5">
+            <Text className="text-[#5C616A] text-xs text-center mt-2.5">
               Configured fixture validates squad requirements and slots according to Maidaan standards.
             </Text>
           </View>
@@ -1141,15 +1159,15 @@ export default function CreateMatchScreen() {
             handleResetForm();
           }}
         >
-          <View className="flex-1 bg-[#171A1D]/85 items-center justify-center p-5">
-            <View className="w-full max-w-sm bg-[#1F2327] rounded-2xl p-6 border border-white/10 shadow-2xl">
+          <View className="flex-1 bg-[#0C0D0E]/85 items-center justify-center p-5">
+            <View className="w-full max-w-sm bg-[#141518] rounded-2xl p-6 border border-white/[0.08] shadow-2xl">
               <View className="w-12 h-12 rounded-xl bg-[#E85D26] items-center justify-center mb-3">
-                <Ionicons name="checkmark-sharp" size={26} color="#171A1D" />
+                <Ionicons name="checkmark-sharp" size={26} color="#0C0D0E" />
               </View>
 
               <ArenaBadge label="MATCH SCHEDULED" variant="olive" size="sm" />
 
-              <Text className="text-[#F4F6F7] text-lg font-black uppercase tracking-tight mt-2">
+              <Text className="text-[#FFFFFF] text-lg font-black uppercase tracking-tight mt-2">
                 Fixture Created
               </Text>
 
@@ -1159,12 +1177,12 @@ export default function CreateMatchScreen() {
 
               {/* Fixture Summary Card */}
               {createdFixture ? (
-                <View className="my-4 p-3.5 bg-[#272C31] rounded-xl border border-white/10">
-                  <Text className="text-[#F4F6F7] text-xs font-black uppercase" numberOfLines={1}>
+                <View className="my-4 p-3.5 bg-[#1B1D22] rounded-xl border border-white/[0.08]">
+                  <Text className="text-[#FFFFFF] text-xs font-black uppercase" numberOfLines={1}>
                     {createdFixture.title}
                   </Text>
 
-                  <View className="flex-row items-center justify-between mt-2 pt-2 border-t border-white/5">
+                  <View className="flex-row items-center justify-between mt-2 pt-2 border-t border-white/[0.08]">
                     <Text className="text-[#A0A5AD] text-xs font-mono">
                       {createdFixture.date} • {createdFixture.time}
                     </Text>
@@ -1176,7 +1194,7 @@ export default function CreateMatchScreen() {
                   </View>
 
                   <Text
-                    className="text-[#7F8993] text-xs mt-1"
+                    className="text-[#5C616A] text-xs mt-1"
                     numberOfLines={1}
                   >
                     {createdFixture.groundName}
@@ -1214,9 +1232,9 @@ export default function CreateMatchScreen() {
                     setShowSuccessModal(false);
                     handleResetForm();
                   }}
-                  className="py-3 items-center bg-[#272C31] rounded-xl border border-white/10 active:bg-white/5 mt-1"
+                  className="py-3 items-center bg-[#1B1D22] rounded-xl border border-white/[0.08] active:bg-white/5 mt-1"
                 >
-                  <Text className="text-[#F4F6F7] text-xs font-bold uppercase tracking-wider">
+                  <Text className="text-[#FFFFFF] text-xs font-bold uppercase tracking-wider">
                     Create Another
                   </Text>
                 </Pressable>

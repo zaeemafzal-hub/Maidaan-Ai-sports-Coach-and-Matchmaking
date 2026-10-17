@@ -1,5 +1,5 @@
 import { api } from './api';
-import { HubCourt, CourtStatus, Sport } from '../types';
+import { HubCourt, CourtStatus, Sport, HubDashboardSummary, HubVerificationStatus, HubOwnerProfile } from '../types';
 
 export interface CreateHubCourtPayload {
   name: string;
@@ -13,7 +13,104 @@ export interface UpdateHubCourtPayload {
   status?: CourtStatus;
 }
 
+export interface UpdateVenueProfilePayload {
+  hubName?: string;
+  contactNumber?: string;
+  sports?: Sport[];
+  location?: string;
+}
+
+export interface VerificationStatusResponse {
+  id?: string;
+  hubOwnerId?: string;
+  status: HubVerificationStatus | 'NOT_SUBMITTED';
+  submittedAt: string | null;
+  reviewedAt: string | null;
+  adminNote: string | null;
+  isVerified?: boolean;
+}
+
 export const hubCourtService = {
+  /**
+   * GET /api/hub/dashboard
+   * Fetch aggregated summary for the authenticated Hub Owner.
+   */
+  async getDashboardSummary(): Promise<HubDashboardSummary> {
+    const res = await api.get<HubDashboardSummary>('/api/hub/dashboard');
+
+    if (res.error || !res.data) {
+      const err = new Error(res.error || 'Failed to fetch hub dashboard summary.');
+      (err as any).status = res.status;
+      throw err;
+    }
+
+    return res.data;
+  },
+
+  /**
+   * GET /api/hub/verification
+   * Fetch current verification status for the authenticated Hub Owner.
+   */
+  async getVerificationStatus(): Promise<VerificationStatusResponse> {
+    const res = await api.get<VerificationStatusResponse>('/api/hub/verification');
+
+    if (res.error || !res.data) {
+      const err = new Error(res.error || 'Failed to fetch hub verification status.');
+      (err as any).status = res.status;
+      throw err;
+    }
+
+    return res.data;
+  },
+
+  /**
+   * POST /api/hub/verification-request
+   * Submit venue for official platform verification.
+   */
+  async submitVerificationRequest(): Promise<VerificationStatusResponse> {
+    const res = await api.post<VerificationStatusResponse>('/api/hub/verification-request');
+
+    if (res.error || !res.data) {
+      const err = new Error(res.error || 'Failed to submit verification request.');
+      (err as any).status = res.status;
+      throw err;
+    }
+
+    return res.data;
+  },
+
+  /**
+   * GET /api/hub/profile
+   * Fetch venue profile of the authenticated Hub Owner.
+   */
+  async getVenueProfile(): Promise<HubOwnerProfile> {
+    const res = await api.get<{ profile: HubOwnerProfile }>('/api/hub/profile');
+
+    if (res.error || !res.data?.profile) {
+      const err = new Error(res.error || 'Failed to fetch hub venue profile.');
+      (err as any).status = res.status;
+      throw err;
+    }
+
+    return res.data.profile;
+  },
+
+  /**
+   * PATCH /api/hub/profile
+   * Update mutable venue details (name, contact, location, sports).
+   */
+  async updateVenueProfile(payload: UpdateVenueProfilePayload): Promise<HubOwnerProfile> {
+    const res = await api.patch<{ profile: HubOwnerProfile }>('/api/hub/profile', payload);
+
+    if (res.error || !res.data?.profile) {
+      const err = new Error(res.error || 'Failed to update hub venue profile.');
+      (err as any).status = res.status;
+      throw err;
+    }
+
+    return res.data.profile;
+  },
+
   /**
    * GET /api/hub/courts
    * Fetch all courts registered by the authenticated hub owner.

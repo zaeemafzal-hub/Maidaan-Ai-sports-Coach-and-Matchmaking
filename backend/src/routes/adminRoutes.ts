@@ -7,6 +7,12 @@ const router = Router();
 // All Admin routes require authentication and trusted ADMIN role
 router.use(authenticateSupabaseUser, authorizeRoles('ADMIN'));
 
+// Admin Dashboard Operational Metrics Endpoint
+router.get('/dashboard', AdminController.getDashboardSummary);
+
+// Hub List Endpoint
+router.get('/hubs', AdminController.getHubs);
+
 // Hub Verification Review Endpoints
 router.get('/hub-verifications', AdminController.getHubVerifications);
 router.get('/hub-verifications/:id', AdminController.getHubVerificationById);

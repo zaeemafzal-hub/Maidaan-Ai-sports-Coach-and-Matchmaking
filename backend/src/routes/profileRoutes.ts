@@ -12,7 +12,7 @@ router.get('/me', authenticateSupabaseUser, ProfileController.getMyProfile);
 
 // Role-protected profile setup/updates (IDOR-protected: strictly req.auth.userId)
 router.put('/player', authenticateSupabaseUser, authorizeRoles('PLAYER'), ProfileController.updatePlayerProfile);
-router.put('/captain', authenticateSupabaseUser, authorizeRoles('TEAM_CAPTAIN'), ProfileController.updateCaptainProfile);
-router.put('/hub', authenticateSupabaseUser, authorizeRoles('HUB_OWNER'), ProfileController.updateHubOwnerProfile);
+router.put('/captain', authenticateSupabaseUser, authorizeRoles('PLAYER', 'TEAM_CAPTAIN'), ProfileController.updateCaptainProfile);
+router.put('/hub', authenticateSupabaseUser, authorizeRoles('PLAYER', 'HUB_OWNER'), ProfileController.updateHubOwnerProfile);
 
 export default router;

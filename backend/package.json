@@ -6,10 +6,14 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.js"
+    "start": "node dist/server.js",
+    "seed:demo": "tsx scripts/seedDemo.ts",
+    "test": "tsx tests/agent.test.ts && tsx tests/multiRoleAuth.test.ts && tsx tests/captainTeam.test.ts && tsx tests/hubOwner.test.ts && tsx tests/adminControl.test.ts && tsx tests/dataIsolation.test.ts && tsx tests/chatRealtime.test.ts"
   },
   "dependencies": {
     "@google/genai": "^2.29.0",
+    "@langchain/core": "^1.2.17",
+    "@langchain/langgraph": "^1.5.0",
     "@supabase/supabase-js": "^2.49.1",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
