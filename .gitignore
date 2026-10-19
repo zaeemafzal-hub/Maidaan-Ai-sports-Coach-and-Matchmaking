@@ -18,6 +18,11 @@ output/*.png
 output/playwright/
 output/cloudflared-*
 output/download-cloudflared.mjs
+# Local acceptance evidence and generated design previews
+output/f0-*.json
+output/admin-desk-*.json
+output/audit-dependencies.json
+output/ui-redesign-proposal/
 node_modules/
 backend/node_modules/
 mobile/node_modules/

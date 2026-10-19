@@ -10,7 +10,7 @@ import {
 import { actionStore } from '../actions/actionStore.js';
 import { extractCreateMatchParams } from '../actions/extractActionParams.js';
 import { CAPTAIN_SYSTEM_PROMPT } from '../prompts/captain.js';
-import { GoogleGenAI } from '@google/genai';
+import { generateAIText, isAIConfigured } from '../../ai/providerFactory.js';
 import { sharedRAGEngine } from '../../rag/ragEngine.js';
 
 export async function captainNode(state: AgentState): Promise<AgentUpdate> {
@@ -262,30 +262,21 @@ export async function captainNode(state: AgentState): Promise<AgentUpdate> {
       };
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (apiKey && process.env.NODE_ENV !== 'test') {
+    if (isAIConfigured() && process.env.NODE_ENV !== 'test') {
       try {
-        const ai = new GoogleGenAI({ apiKey });
         const prompt = `User Query: "${message}"
 Live Join Requests for Captain (${requests.length} total, ${pendingCount} pending):
 ${JSON.stringify(requests, null, 2)}
 
 Provide a structured summary of the pending player requests. Mention applicant names, match titles, skill levels, and notes.`;
 
-        const result = await ai.models.generateContent({
-          model: 'gemini-2.5-flash',
-          contents: [{ role: 'user', parts: [{ text: prompt }] }],
-          config: {
-            systemInstruction: CAPTAIN_SYSTEM_PROMPT,
-            temperature: 0.2,
-            maxOutputTokens: 350,
-          },
-        });
+        const result = await generateAIText({systemPrompt: CAPTAIN_SYSTEM_PROMPT, message: prompt, temperature: 0.2, maxTokens: 350});
 
-        const reply = result.text?.trim();
+        const reply = result.message.trim();
         if (reply) {
           return {
             response: reply,
+          synthesis: {provider: result.provider, usedBackup: result.usedBackup ?? false},
             toolResult: requestResult,
             sources: captainSources.length > 0 ? captainSources : undefined,
           };
@@ -335,30 +326,21 @@ Provide a structured summary of the pending player requests. Mention applicant n
     };
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (apiKey && process.env.NODE_ENV !== 'test') {
+  if (isAIConfigured() && process.env.NODE_ENV !== 'test') {
     try {
-      const ai = new GoogleGenAI({ apiKey });
       const prompt = `User Query: "${message}"
 Live Captain Fixtures (${total} fixtures, ${openSlotsCount} total open slots):
 ${JSON.stringify(matches, null, 2)}
 
 Provide an organized summary of the captain's fixtures and open slots. Mention date/time, venue, sport, and remaining spots.`;
 
-      const result = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        config: {
-          systemInstruction: CAPTAIN_SYSTEM_PROMPT,
-          temperature: 0.2,
-          maxOutputTokens: 350,
-        },
-      });
+      const result = await generateAIText({systemPrompt: CAPTAIN_SYSTEM_PROMPT, message: prompt, temperature: 0.2, maxTokens: 350});
 
-      const reply = result.text?.trim();
+      const reply = result.message.trim();
       if (reply) {
         return {
           response: reply,
+          synthesis: {provider: result.provider, usedBackup: result.usedBackup ?? false},
           toolResult: matchResult,
           sources: captainSources.length > 0 ? captainSources : undefined,
         };

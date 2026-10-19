@@ -1,19 +1,10 @@
-# User Roles & Permissions
+# User Roles and Permissions
 
 ## Supported User Roles
-Maidaan distinguishes between four explicit user roles defined in the authentication and authorization model:
-- PLAYER: Individual athletes seeking local matches, looking to join team squads, or practicing with the AI Coach.
-- TEAM_CAPTAIN: Match organizers who create fixtures, define team requirements, and evaluate player join requests.
-- HUB_OWNER: Facility managers who register and control sports courts, managing availability states across their venues.
-- ADMIN: Platform administrators responsible for governance, reviewing safety incident reports, and auditing hub verifications.
+PLAYER discovers and joins games and uses coaching and chat. TEAM_CAPTAIN creates owned fixtures, manages one primary team and reviews join requests. HUB_OWNER manages their own venue, photos, location pin, courts, availability and booking policy. ADMIN manages accounts, reports and administrative hub verification.
 
 ## Public Onboarding vs Administrative Role
-During initial registration on the mobile app, new users can choose from three public roles:
-- Player (requires sports preferences, skill level, and home neighborhood).
-- Team Captain (requires team name, preferred sports, and primary area).
-- Hub Owner (requires venue name, contact number, court count, and venue location).
-
-The ADMIN role is restricted and cannot be selected during public onboarding. Administrator privileges are granted strictly via secure backend configuration or direct database role assignment.
+Public signup is player-first. After Player Setup, activate Captain or Hub Owner in Profile and submit the corresponding setup form. Existing capabilities stay on the same account. A roster VICE_CAPTAIN label is not a platform TEAM_CAPTAIN permission. ADMIN is granted only by a trusted server command or an existing superuser. Superusers can grant or revoke other superusers, while the last active superuser is protected.
 
 ## Role Switching and Multi-Profile Management
-A user's primary active role is preserved in their profile and session state. While a user may participate in matches as a player, match hosting and squad approval workflows require the TEAM_CAPTAIN role, and facility management requires the HUB_OWNER role. All role actions are validated server-side by authorization middleware.
+Choose an available mode from Profile. Switching back to Player retains the Captain or Hub Owner capability. The authoritative capabilities come from active user_roles rows on the backend. activeMode is presentation state only. A legacy primary profiles.role does not override capabilities. Suspended accounts lose access and listings are hidden until reinstated.

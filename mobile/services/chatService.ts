@@ -109,9 +109,10 @@ export const chatService = {
    * POST /api/chat/rooms/:roomId/messages
    * Send a text message to a room.
    */
-  async sendMessage(roomId: string, body: string): Promise<ChatMessage> {
+  async sendMessage(roomId: string, body: string, clientMessageId?: string): Promise<ChatMessage> {
     const res = await api.post<{ message: ChatMessage }>(`/api/chat/rooms/${roomId}/messages`, {
       body,
+      clientMessageId,
     });
 
     if (res.error || !res.data || !res.data.message) {

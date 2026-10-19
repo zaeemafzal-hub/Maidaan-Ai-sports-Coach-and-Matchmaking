@@ -2,7 +2,7 @@ import { api } from './api';
 import { Sport, SkillLevel } from '../types';
 
 export type TeamMemberRole = 'CAPTAIN' | 'PLAYER' | 'VICE_CAPTAIN';
-export type TeamMemberStatus = 'ACTIVE' | 'INACTIVE';
+export type TeamMemberStatus = 'ACTIVE' | 'INVITED' | 'LEFT' | 'REMOVED';
 
 export interface TeamModel {
   id: string;

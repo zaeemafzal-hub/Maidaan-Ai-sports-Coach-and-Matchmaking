@@ -54,7 +54,7 @@ export const MatchFixtureCard: React.FC<MatchFixtureCardProps> = ({
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`Match fixture: ${title} at ${groundName}, ${date} ${time}, ${slotsOpen} slots open`}
-      className={`w-full p-4 rounded-2xl bg-[#141518] ${
+      className={`w-full p-4 rounded-2xl bg-[#141518]/25 ${
         isFeatured
           ? 'border-2 border-[#E85D26]/40 shadow-md shadow-[#E85D26]/10'
           : 'border border-white/[0.08]'
@@ -155,7 +155,7 @@ export const MatchFixtureCard: React.FC<MatchFixtureCardProps> = ({
           </View>
           <Text
             numberOfLines={1}
-            style={{ color: '#5C616A' }}
+            style={{ color: '#BFC4CC' }}
             className="text-[#5C616A] text-xs font-normal"
           >
             Host:{' '}

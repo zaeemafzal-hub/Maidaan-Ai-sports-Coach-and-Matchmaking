@@ -69,3 +69,30 @@ AI requests in the mobile app allow up to 65 seconds for classification and fail
 
 Run `npm --prefix backend run test:ai` to verify provider requests and failover using
 mocked network responses; the tests do not spend API credits.
+
+## Locations and maps
+
+OpenStreetMap is the default venue map; Google Maps loads only as a backup if it fails. Lahore is
+the currently enabled city. The shared searchable city/area catalogue is in
+`backend/src/config/locations.ts`. See [location and map setup](output/location-map-guide.md)
+and [optional Google Maps configuration](output/google-maps-setup.md).
+
+Apply `output/location-profile-upgrade.sql` in Supabase before using the new
+profile contact/photo and structured venue-location fields. Player profiles
+require a phone number and home address; listed areas are suggestions and the profile photo is optional.
+`npm run test:maps` checks map messages, and the backend suite includes location
+search, profile validation and migration checks.
+
+## App appearance
+
+All routes share the dark/orange theme and approved artwork in
+`mobile/assets/artwork`. `ThemedScreen` provides the screen background;
+`ArtworkScrollView` keeps background images behind scrolling content while
+forwarding the native scroll props and ref. The reusable venue/admin/booking
+`Page` and `Card` components use the same artwork and translucent surfaces.
+Inputs and action buttons retain solid surfaces for readability.
+
+The main navigation is Discover, Venues, AI Coach, Chat and Profile. At wide web
+sizes it becomes a side rail. Welcome uses a transparent sports render with a
+gentle floating motion that respects reduced-motion settings. See
+[the theme guide](output/ui-theme-guide.md) for artwork mapping and verification.

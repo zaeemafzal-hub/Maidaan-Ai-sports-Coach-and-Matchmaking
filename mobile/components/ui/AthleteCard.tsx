@@ -1,6 +1,12 @@
-import React from 'react';
-import { View, Text, Pressable, Image, ImageSourcePropType } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import React from "react";
+import {
+  View,
+  Text,
+  Pressable,
+  Image,
+  ImageSourcePropType,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 interface AthleteCardProps {
   name: string;
@@ -16,14 +22,14 @@ interface AthleteCardProps {
 
 export const AthleteCard: React.FC<AthleteCardProps> = ({
   name,
-  jerseyNumber = '07',
+  jerseyNumber = "07",
   position,
   teamName,
   matchesPlayed,
   rating = 4.9,
   imageSource,
   onPress,
-  className = '',
+  className = "",
 }) => {
   return (
     <Pressable
@@ -31,13 +37,16 @@ export const AthleteCard: React.FC<AthleteCardProps> = ({
       disabled={!onPress}
       accessibilityRole="button"
       accessibilityLabel={`Player: ${name}, Jersey #${jerseyNumber}, ${position}`}
-      className={`w-full p-4 rounded-2xl bg-[#141518] border border-[rgba(255,255,255,0.08)] flex-row items-center justify-between active:bg-[#1B1D22] active:scale-[0.99] transition-all shadow-sm ${className}`}
+      className={`w-full p-4 rounded-2xl bg-[#141518]/25 border border-[rgba(255,255,255,0.08)] flex-row items-center justify-between active:bg-[#1B1D22] active:scale-[0.99] transition-all shadow-sm ${className}`}
     >
       <View className="flex-row items-center flex-1 mr-3">
         {/* Avatar or Jersey Thumbnail */}
         <View className="w-14 h-14 rounded-2xl overflow-hidden bg-[#1B1D22] border border-[rgba(255,255,255,0.08)] items-center justify-center relative mr-3.5">
           {imageSource ? (
-            <Image source={imageSource} className="w-full h-full object-cover" />
+            <Image
+              source={imageSource}
+              className="w-full h-full object-cover"
+            />
           ) : (
             <Ionicons name="person" size={24} color="#AEB6BE" />
           )}
@@ -61,12 +70,12 @@ export const AthleteCard: React.FC<AthleteCardProps> = ({
             numberOfLines={1}
             className="text-[#AEB6BE] text-xs font-normal mt-0.5"
           >
-            {position} {teamName ? `• ${teamName}` : ''}
+            {position} {teamName ? `• ${teamName}` : ""}
           </Text>
 
           <View className="flex-row items-center mt-2">
             <Text className="text-white text-xs font-semibold">
-              {matchesPlayed}{' '}
+              {matchesPlayed}{" "}
               <Text className="text-[#5C616A] font-normal">matches</Text>
             </Text>
             <Text className="text-[#5C616A] text-xs mx-1.5">•</Text>

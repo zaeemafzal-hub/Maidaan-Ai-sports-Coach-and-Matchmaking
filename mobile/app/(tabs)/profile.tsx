@@ -1,37 +1,52 @@
-import React, { useState } from 'react';
+import { ThemedScreen } from "../../components/ui/ThemedScreen";
 import {
-  View,
-  Text,
-  ScrollView,
-  Pressable,
-} from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useAuthStore } from '../../store/useAuthStore';
-import { ArenaBadge } from '../../components/ui/ArenaBadge';
-import { PrimaryButton } from '../../components/ui/PrimaryButton';
-import { AmbientGlowOverlay } from '../../components/ui/AmbientCanvas';
-import { Sport, SkillLevel, Role, AppMode } from '../../types';
+  ArtworkBackground,
+  ArtworkScrollView,
+} from "../../components/ui/Artwork";
+import React, { useState } from "react";
+import { View, Text, Pressable, Image } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { router } from "expo-router";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { useAuthStore } from "../../store/useAuthStore";
+import { ArenaBadge } from "../../components/ui/ArenaBadge";
+import { PrimaryButton } from "../../components/ui/PrimaryButton";
+import { AmbientGlowOverlay } from "../../components/ui/AmbientCanvas";
+import { Sport, SkillLevel, Role, AppMode } from "../../types";
 
 const SPORT_META: Record<
   Sport,
-  { label: string; icon: 'cricket' | 'badminton' | 'tennis' | 'soccer'; color: string }
+  {
+    label: string;
+    icon: "cricket" | "badminton" | "tennis" | "soccer";
+    color: string;
+  }
 > = {
-  cricket: { label: 'Cricket', icon: 'cricket', color: '#F4A261' },
-  badminton: { label: 'Badminton', icon: 'badminton', color: '#7FD1AE' },
-  padel: { label: 'Padel', icon: 'tennis', color: '#64B5F6' },
-  football: { label: 'Football', icon: 'soccer', color: '#22C55E' },
+  cricket: { label: "Cricket", icon: "cricket", color: "#F4A261" },
+  badminton: { label: "Badminton", icon: "badminton", color: "#7FD1AE" },
+  padel: { label: "Padel", icon: "tennis", color: "#64B5F6" },
+  football: { label: "Football", icon: "soccer", color: "#22C55E" },
 };
 
-const SKILL_METAS: Record<SkillLevel, { label: string; tierBadge: string; tag: string }> = {
-  beginner: { label: 'Beginner', tierBadge: 'TIER 1', tag: 'Grassroots Casual' },
-  intermediate: { label: 'Intermediate', tierBadge: 'TIER 2', tag: 'Club Regular' },
-  advanced: { label: 'Advanced', tierBadge: 'TIER 3', tag: 'Premier League' },
+const SKILL_METAS: Record<
+  SkillLevel,
+  { label: string; tierBadge: string; tag: string }
+> = {
+  beginner: {
+    label: "Beginner",
+    tierBadge: "TIER 1",
+    tag: "Grassroots Casual",
+  },
+  intermediate: {
+    label: "Intermediate",
+    tierBadge: "TIER 2",
+    tag: "Club Regular",
+  },
+  advanced: { label: "Advanced", tierBadge: "TIER 3", tag: "Premier League" },
 };
 
-import { PlayerMatchHistoryItem, DEMO_RECENT_MATCHES } from '../../demo/mockHistory';
-import { isProduction } from '../../config/runtime';
+import { DEMO_RECENT_MATCHES } from "../../demo/mockHistory";
+import { isDemo } from "../../config/runtime";
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
@@ -39,104 +54,138 @@ export default function ProfileScreen() {
     currentUser,
     playerProfile,
     hubOwnerProfile,
-    roles = ['PLAYER'],
-    activeMode = 'PLAYER',
+    roles = ["PLAYER"],
+    activeMode = "PLAYER",
     setActiveMode,
     logout,
   } = useAuthStore();
-  const [activeTab, setActiveTab] = useState<'overview' | 'history'>('overview');
+  const [activeTab, setActiveTab] = useState<"overview" | "history">(
+    "overview",
+  );
 
   const handleSignOut = async () => {
     await logout();
-    router.replace('/(auth)/login');
+    router.replace("/(auth)/login");
   };
 
   const handleGoToSetup = () => {
-    router.push('/onboarding/player-setup');
+    router.push("/onboarding/player-setup");
   };
 
   const handleSwitchMode = async (targetMode: AppMode) => {
     await setActiveMode(targetMode);
-    if (targetMode === 'TEAM_CAPTAIN') {
-      router.push('/captain/dashboard');
-    } else if (targetMode === 'HUB_OWNER') {
+    if (targetMode === "TEAM_CAPTAIN") {
+      router.push("/captain/dashboard");
+    } else if (targetMode === "HUB_OWNER") {
       if (!hubOwnerProfile) {
-        router.push('/onboarding/hub-setup');
+        router.push("/onboarding/hub-setup");
       } else {
-        router.push('/hub/dashboard');
+        router.push("/hub/dashboard");
       }
-    } else if (targetMode === 'ADMIN') {
-      router.push('/admin/dashboard');
+    } else if (targetMode === "ADMIN") {
+      router.push("/admin/dashboard");
     } else {
-      router.push('/(tabs)/discover');
+      router.push("/(tabs)/discover");
     }
   };
 
-  const profileName = currentUser?.name || 'Player';
-  const profileEmail = currentUser?.email || '';
-  const profileRole = currentUser?.role || 'PLAYER';
+  const profileName = currentUser?.name || "Player";
+  const profileEmail = currentUser?.email || "";
+  const profileRole = currentUser?.role || "PLAYER";
   const userInitials =
     profileName
-      .split(' ')
+      .split(" ")
       .filter(Boolean)
       .map((n: string) => n[0])
-      .join('')
+      .join("")
       .substring(0, 2)
-      .toUpperCase() || 'P';
+      .toUpperCase() || "P";
 
-  const bookingEntry = <View style={{ margin: 16 }}><PrimaryButton title="My venue bookings" variant="secondary" onPress={()=>router.push('/bookings' as any)}/></View>;
-  const adminEntry = roles.includes('ADMIN') ? (
+  const bookingEntry = (
+    <View style={{ margin: 16 }}>
+      <PrimaryButton
+        title="My venue bookings"
+        variant="secondary"
+        onPress={() => router.push("/bookings" as any)}
+      />
+    </View>
+  );
+  const adminEntry = roles.includes("ADMIN") ? (
     <View style={{ margin: 16 }}>
       <PrimaryButton
         title="Open super-user dashboard"
-        onPress={() => router.push('/admin/dashboard')}
+        onPress={() => router.push("/admin/dashboard")}
       />
     </View>
   ) : null;
   // 1. Missing Profile State
   if (!playerProfile) {
     return (
-      <SafeAreaView className="flex-1 bg-[#0C0D0E]" edges={['top']}>
+      <ThemedScreen className="flex-1 bg-transparent" edges={["top"]}>
         <AmbientGlowOverlay top={-40} right={-30} size={260} opacity={0.12} />
         <View className="px-5 py-3 flex-row items-center justify-between border-b border-white/[0.08]">
-          <Text style={{ color: '#FFFFFF' }} className="text-white text-base font-bold uppercase tracking-tight">
+          <Text
+            style={{ color: "#FFFFFF" }}
+            className="text-white text-base font-bold uppercase tracking-tight"
+          >
             Player Profile
           </Text>
         </View>
 
-        <ScrollView
-          contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 20 }}
+        <ArtworkScrollView
+          kind="profile"
+          contentContainerStyle={{
+            flexGrow: 1,
+            justifyContent: "center",
+            padding: 20,
+          }}
           showsVerticalScrollIndicator={false}
         >
           {bookingEntry}
           {adminEntry}
-          <View className="bg-[#141518] rounded-2xl p-5 border border-white/[0.08] shadow-md mb-6">
+          <View className="bg-[#141518]/25 rounded-2xl p-5 border border-white/[0.08] shadow-md mb-6">
             <View className="flex-row items-center">
               <View className="w-16 h-16 rounded-full bg-[#1B1D22] items-center justify-center border-2 border-[#E85D26]/50">
-                <Text style={{ color: '#E85D26' }} className="text-[#E85D26] text-xl font-bold tracking-wider">
+                <Text
+                  style={{ color: "#E85D26" }}
+                  className="text-[#E85D26] text-xl font-bold tracking-wider"
+                >
                   {userInitials}
                 </Text>
               </View>
               <View className="ml-3.5 flex-1">
-                <Text style={{ color: '#FFFFFF' }} className="text-white text-lg font-bold tracking-tight">
+                <Text
+                  style={{ color: "#FFFFFF" }}
+                  className="text-white text-lg font-bold tracking-tight"
+                >
                   {profileName}
                 </Text>
-                <Text style={{ color: '#A0A5AD' }} className="text-[#A0A5AD] text-xs mt-0.5">
-                  {profileEmail || 'Athlete'}
+                <Text
+                  style={{ color: "#A0A5AD" }}
+                  className="text-[#A0A5AD] text-xs mt-0.5"
+                >
+                  {profileEmail || "Athlete"}
                 </Text>
               </View>
             </View>
           </View>
 
-          <View className="bg-[#141518] rounded-2xl p-6 border border-white/[0.08] items-center">
+          <View className="bg-[#141518]/25 rounded-2xl p-6 border border-white/[0.08] items-center">
             <View className="w-14 h-14 rounded-full bg-[#1B1D22] border border-white/[0.08] items-center justify-center mb-4">
               <Ionicons name="person-outline" size={26} color="#E85D26" />
             </View>
-            <Text style={{ color: '#FFFFFF' }} className="text-white text-xl font-bold tracking-tight text-center">
+            <Text
+              style={{ color: "#FFFFFF" }}
+              className="text-white text-xl font-bold tracking-tight text-center"
+            >
               Profile Setup Incomplete
             </Text>
-            <Text style={{ color: '#A0A5AD' }} className="text-[#A0A5AD] text-xs text-center mt-2 leading-relaxed max-w-[280px]">
-              Complete your player setup to select preferred sports and calibrate matchmaking.
+            <Text
+              style={{ color: "#A0A5AD" }}
+              className="text-[#A0A5AD] text-xs text-center mt-2 leading-relaxed max-w-[280px]"
+            >
+              Complete your player setup to select preferred sports and
+              calibrate matchmaking.
             </Text>
             <Pressable
               onPress={handleGoToSetup}
@@ -144,7 +193,10 @@ export default function ProfileScreen() {
               accessibilityLabel="Complete Player Setup"
               className="w-full min-h-[48px] bg-[#E85D26] rounded-full py-3.5 items-center justify-center active:bg-[#FF723A] shadow-md shadow-[#E85D26]/30 mt-6"
             >
-              <Text style={{ color: '#FFFFFF' }} className="text-white text-xs font-extrabold uppercase tracking-wider">
+              <Text
+                style={{ color: "#FFFFFF" }}
+                className="text-white text-xs font-extrabold uppercase tracking-wider"
+              >
                 Complete Player Setup
               </Text>
             </Pressable>
@@ -155,41 +207,44 @@ export default function ProfileScreen() {
               onPress={handleSignOut}
               accessibilityRole="button"
               accessibilityLabel="Sign out"
-              className="min-h-[48px] flex-row items-center justify-center bg-[#141518] rounded-full py-3.5 border border-[#EF4444]/30 active:bg-[#1B1D22]"
+              className="min-h-[48px] flex-row items-center justify-center bg-[#141518]/25 rounded-full py-3.5 border border-[#EF4444]/30 active:bg-[#1B1D22]"
             >
               <Ionicons name="log-out-outline" size={16} color="#EF4444" />
-              <Text style={{ color: '#EF4444' }} className="text-[#EF4444] text-xs font-bold uppercase tracking-wider ml-2">
+              <Text
+                style={{ color: "#EF4444" }}
+                className="text-[#EF4444] text-xs font-bold uppercase tracking-wider ml-2"
+              >
                 Sign Out of Maidaan
               </Text>
             </Pressable>
           </View>
-        </ScrollView>
-      </SafeAreaView>
+        </ArtworkScrollView>
+      </ThemedScreen>
     );
   }
 
   // 2. Active Profile State
-  const primaryLocation = playerProfile.primaryLocation || 'Lahore';
-  const currentSkill: SkillLevel = playerProfile.skillLevel || 'intermediate';
+  const primaryLocation = playerProfile.primaryLocation || "Lahore";
+  const currentSkill: SkillLevel = playerProfile.skillLevel || "intermediate";
   const preferredSports: Sport[] = playerProfile.preferredSports || [];
   const skillInfo = SKILL_METAS[currentSkill] || SKILL_METAS.intermediate;
 
-  const relevantRecentMatches = isProduction()
+  const relevantRecentMatches = !isDemo()
     ? []
     : DEMO_RECENT_MATCHES.filter((m) => preferredSports.includes(m.sport));
-  const displayMatches = isProduction()
+  const displayMatches = !isDemo()
     ? []
     : relevantRecentMatches.length > 0
-    ? relevantRecentMatches
-    : DEMO_RECENT_MATCHES.slice(0, 3);
+      ? relevantRecentMatches
+      : DEMO_RECENT_MATCHES.slice(0, 3);
 
   const actualMatchesPlayed =
-    typeof playerProfile.matchesPlayed === 'number'
+    typeof playerProfile.matchesPlayed === "number"
       ? playerProfile.matchesPlayed
       : 0;
 
   return (
-    <SafeAreaView className="flex-1 bg-[#0C0D0E]" edges={['top']}>
+    <ThemedScreen className="flex-1 bg-transparent" edges={["top"]}>
       {/* Top Header Row with quick navigation actions */}
       <View className="px-5 py-3 flex-row items-center justify-between border-b border-white/[0.08] z-20">
         <Pressable
@@ -197,7 +252,7 @@ export default function ProfileScreen() {
             if (router.canGoBack()) {
               router.back();
             } else {
-              router.replace('/(tabs)/discover');
+              router.replace("/(tabs)/discover");
             }
           }}
           accessibilityRole="button"
@@ -207,12 +262,15 @@ export default function ProfileScreen() {
           <Ionicons name="chevron-back" size={20} color="#FFFFFF" />
         </Pressable>
 
-        <Text style={{ color: '#FFFFFF' }} className="text-white text-base font-bold tracking-tight uppercase">
+        <Text
+          style={{ color: "#FFFFFF" }}
+          className="text-white text-base font-bold tracking-tight uppercase"
+        >
           Player Profile
         </Text>
 
         <Pressable
-          onPress={() => router.push('/notifications')}
+          onPress={() => router.push("/notifications")}
           accessibilityRole="button"
           accessibilityLabel="Notifications"
           className="w-10 h-10 rounded-full bg-[#1B1D22] border border-white/[0.08] items-center justify-center active:bg-[#22252B]"
@@ -221,7 +279,8 @@ export default function ProfileScreen() {
         </Pressable>
       </View>
 
-      <ScrollView
+      <ArtworkScrollView
+        kind="profile"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           paddingBottom: Math.max(insets.bottom, 16) + 40,
@@ -229,15 +288,28 @@ export default function ProfileScreen() {
         className="flex-1"
       >
         {/* Subtle Ambient Stadium Bloom */}
-        <AmbientGlowOverlay top={20} size={280} opacity={0.14} />
+        <View style={{ height: 170, marginBottom: -30, overflow: "hidden" }}>
+          <ArtworkBackground kind="profile" dim={0.2} />
+        </View>
 
         {/* BENCHMARK PHONE 4 COMPOSITION: Centered Athlete Avatar & Identity */}
         <View className="items-center pt-6 pb-4 px-5">
           {/* Avatar with Solar Orange glowing ring */}
           <View className="w-20 h-20 rounded-full bg-[#1B1D22] border-2 border-[#E85D26]/50 items-center justify-center shadow-lg shadow-[#E85D26]/20 relative mb-3">
-            <Text style={{ color: '#FFFFFF' }} className="text-white text-2xl font-black tracking-wider">
-              {userInitials}
-            </Text>
+            {playerProfile.avatarUrl ? (
+              <Image
+                source={{ uri: playerProfile.avatarUrl }}
+                accessibilityLabel="Profile photo"
+                style={{ width: 76, height: 76, borderRadius: 38 }}
+              />
+            ) : (
+              <Text
+                style={{ color: "#FFFFFF" }}
+                className="text-white text-2xl font-black tracking-wider"
+              >
+                {userInitials}
+              </Text>
+            )}
             <View className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-[#E85D26] border-2 border-[#0C0D0E] items-center justify-center">
               <Ionicons name="checkmark" size={12} color="#FFFFFF" />
             </View>
@@ -245,32 +317,51 @@ export default function ProfileScreen() {
 
           {/* Full Athlete Name */}
           <Text
-            style={{ color: '#FFFFFF' }}
+            style={{ color: "#FFFFFF" }}
             className="text-white text-2xl font-black uppercase tracking-tight text-center"
           >
             {profileName}
           </Text>
 
           {/* Role & Location Badge */}
-          <View className="flex-row items-center mt-1.5 px-3 py-1 rounded-full bg-[#141518] border border-white/[0.08]">
+          <View className="flex-row items-center mt-1.5 px-3 py-1 rounded-full bg-[#141518]/25 border border-white/[0.08]">
             <Ionicons name="location-sharp" size={11} color="#E85D26" />
-            <Text style={{ color: '#A0A5AD' }} className="text-[#A0A5AD] text-xs font-medium ml-1">
-              {primaryLocation} • {profileRole === 'PLAYER' ? 'Player' : profileRole}
+            <Text
+              style={{ color: "#A0A5AD" }}
+              className="text-[#A0A5AD] text-xs font-medium ml-1"
+            >
+              {primaryLocation} •{" "}
+              {profileRole === "PLAYER" ? "Player" : profileRole}
             </Text>
+          </View>
+
+          <Text style={{ color: "#A0A5AD", marginTop: 8 }}>{profileEmail}</Text>
+          <Text style={{ color: "#A0A5AD", marginTop: 4 }}>
+            {playerProfile.phone || "Add your phone number"}
+          </Text>
+          <View style={{ marginTop: 12, width: "100%" }}>
+            <PrimaryButton
+              title="Edit player profile"
+              variant="secondary"
+              onPress={() => router.push("/onboarding/player-setup")}
+            />
           </View>
 
           {/* Active Mode Switcher Pill Bar (Multi-Role Support) */}
           <Text className="text-[#5C616A] text-[10px] font-bold uppercase tracking-wider mt-4 mb-2 text-center">
             ACTIVE MODE
           </Text>
-          <View className="flex-row items-center justify-center flex-wrap" style={{ gap: 8 }}>
+          <View
+            className="flex-row items-center justify-center flex-wrap"
+            style={{ gap: 8 }}
+          >
             {roles.map((r: Role) => {
               const isActive = activeMode === r;
               const roleLabels: Record<Role, string> = {
-                PLAYER: 'Player',
-                TEAM_CAPTAIN: 'Captain',
-                HUB_OWNER: 'Ground Owner',
-                ADMIN: 'Admin',
+                PLAYER: "Player",
+                TEAM_CAPTAIN: "Captain",
+                HUB_OWNER: "Ground Owner",
+                ADMIN: "Admin",
               };
               return (
                 <Pressable
@@ -280,24 +371,24 @@ export default function ProfileScreen() {
                   accessibilityLabel={`Switch to ${roleLabels[r] || r} mode`}
                   className={`px-3.5 py-1.5 rounded-full flex-row items-center border ${
                     isActive
-                      ? 'bg-[#E85D26] border-[#E85D26]'
-                      : 'bg-[#141518] border-white/[0.12] active:bg-[#1B1D22]'
+                      ? "bg-[#E85D26] border-[#E85D26]"
+                      : "bg-[#141518]/25 border-white/[0.12] active:bg-[#1B1D22]"
                   }`}
                 >
                   <View
                     className={`w-1.5 h-1.5 rounded-full mr-1.5 ${
-                      isActive ? 'bg-[#0C0D0E]' : 'bg-[#A0A5AD]'
+                      isActive ? "bg-[#0C0D0E]" : "bg-[#A0A5AD]"
                     }`}
                   />
                   <Text
-                    style={{ color: isActive ? '#0C0D0E' : '#FFFFFF' }}
+                    style={{ color: isActive ? "#0C0D0E" : "#FFFFFF" }}
                     className="text-xs font-bold uppercase tracking-wider"
                   >
                     {roleLabels[r] || r}
                   </Text>
                   {isActive && (
                     <Text
-                      style={{ color: '#0C0D0E' }}
+                      style={{ color: "#0C0D0E" }}
                       className="text-[9px] font-black uppercase tracking-wider ml-1"
                     >
                       (Active)
@@ -311,19 +402,19 @@ export default function ProfileScreen() {
 
         {/* BENCHMARK PHONE 4 STAT FEATURE BLOCK (100% Honest Domain Data) */}
         <View className="px-5 mt-2">
-          <View className="bg-[#141518] rounded-2xl p-5 border border-white/[0.08] shadow-md">
+          <View className="bg-[#141518]/25 rounded-2xl p-5 border border-white/[0.08] shadow-md">
             <View className="flex-row items-center justify-between">
               {/* Primary Circular Metric: Matches Played */}
               <View className="items-center justify-center mr-4">
                 <View className="w-24 h-24 rounded-full border-4 border-[#E85D26] bg-[#101214] items-center justify-center shadow-md shadow-[#E85D26]/30">
                   <Text
-                    style={{ color: '#FFFFFF' }}
+                    style={{ color: "#FFFFFF" }}
                     className="text-white text-3xl font-black tracking-tight"
                   >
                     {actualMatchesPlayed}
                   </Text>
                   <Text
-                    style={{ color: '#5C616A' }}
+                    style={{ color: "#5C616A" }}
                     className="text-[#5C616A] text-[9px] font-bold uppercase tracking-wider -mt-0.5"
                   >
                     Matches
@@ -335,33 +426,55 @@ export default function ProfileScreen() {
               <View className="flex-1 space-y-3">
                 {/* Metric 1: Skill Tier */}
                 <View className="flex-row items-center justify-between pb-2 border-b border-white/[0.06]">
-                  <Text style={{ color: '#5C616A' }} className="text-[#5C616A] text-[11px] font-bold uppercase tracking-wider">
+                  <Text
+                    style={{ color: "#5C616A" }}
+                    className="text-[#5C616A] text-[11px] font-bold uppercase tracking-wider"
+                  >
                     Skill Tier
                   </Text>
                   <View className="flex-row items-center">
-                    <Text style={{ color: '#FFFFFF' }} className="text-white text-xs font-bold mr-1.5">
+                    <Text
+                      style={{ color: "#FFFFFF" }}
+                      className="text-white text-xs font-bold mr-1.5"
+                    >
                       {skillInfo.tierBadge}
                     </Text>
-                    <ArenaBadge label={skillInfo.label.toUpperCase()} variant="accent" size="sm" />
+                    <ArenaBadge
+                      label={skillInfo.label.toUpperCase()}
+                      variant="accent"
+                      size="sm"
+                    />
                   </View>
                 </View>
 
                 {/* Metric 2: Active Disciplines */}
                 <View className="flex-row items-center justify-between pb-2 border-b border-white/[0.06]">
-                  <Text style={{ color: '#5C616A' }} className="text-[#5C616A] text-[11px] font-bold uppercase tracking-wider">
+                  <Text
+                    style={{ color: "#5C616A" }}
+                    className="text-[#5C616A] text-[11px] font-bold uppercase tracking-wider"
+                  >
                     Disciplines
                   </Text>
-                  <Text style={{ color: '#E85D26' }} className="text-[#E85D26] text-xs font-bold">
+                  <Text
+                    style={{ color: "#E85D26" }}
+                    className="text-[#E85D26] text-xs font-bold"
+                  >
                     {preferredSports.length}/4 Active
                   </Text>
                 </View>
 
                 {/* Metric 3: Home Circuit */}
                 <View className="flex-row items-center justify-between">
-                  <Text style={{ color: '#5C616A' }} className="text-[#5C616A] text-[11px] font-bold uppercase tracking-wider">
+                  <Text
+                    style={{ color: "#5C616A" }}
+                    className="text-[#5C616A] text-[11px] font-bold uppercase tracking-wider"
+                  >
                     Circuit
                   </Text>
-                  <Text style={{ color: '#FFFFFF' }} className="text-white text-xs font-medium">
+                  <Text
+                    style={{ color: "#FFFFFF" }}
+                    className="text-white text-xs font-medium"
+                  >
                     Lahore Local
                   </Text>
                 </View>
@@ -373,10 +486,16 @@ export default function ProfileScreen() {
         {/* REGISTERED SPORTS DISCIPLINES */}
         <View className="px-5 mt-5">
           <View className="flex-row items-center justify-between mb-2">
-            <Text style={{ color: '#FFFFFF' }} className="text-white text-xs font-bold uppercase tracking-wider">
+            <Text
+              style={{ color: "#FFFFFF" }}
+              className="text-white text-xs font-bold uppercase tracking-wider"
+            >
               Preferred Sports
             </Text>
-            <Text style={{ color: '#5C616A' }} className="text-[#5C616A] text-xs font-semibold">
+            <Text
+              style={{ color: "#5C616A" }}
+              className="text-[#5C616A] text-xs font-semibold"
+            >
               {preferredSports.length} Selected
             </Text>
           </View>
@@ -385,20 +504,23 @@ export default function ProfileScreen() {
             {preferredSports.map((sport) => {
               const meta = SPORT_META[sport] || {
                 label: sport,
-                icon: 'soccer' as const,
-                color: '#E85D26',
+                icon: "soccer" as const,
+                color: "#E85D26",
               };
               return (
                 <View
                   key={sport}
-                  className="flex-row items-center bg-[#141518] rounded-xl px-3.5 py-2.5 border border-white/[0.08]"
+                  className="flex-row items-center bg-[#141518]/25 rounded-xl px-3.5 py-2.5 border border-white/[0.08]"
                 >
                   <MaterialCommunityIcons
                     name={meta.icon}
                     size={16}
                     color="#E85D26"
                   />
-                  <Text style={{ color: '#FFFFFF' }} className="text-white text-xs font-bold uppercase tracking-wide ml-2">
+                  <Text
+                    style={{ color: "#FFFFFF" }}
+                    className="text-white text-xs font-bold uppercase tracking-wide ml-2"
+                  >
                     {meta.label}
                   </Text>
                 </View>
@@ -411,42 +533,42 @@ export default function ProfileScreen() {
         <View className="px-5 mt-5">
           <View className="flex-row bg-[#101214] p-1 rounded-xl border border-white/[0.06]">
             <Pressable
-              onPress={() => setActiveTab('overview')}
+              onPress={() => setActiveTab("overview")}
               accessibilityRole="tab"
-              accessibilityState={{ selected: activeTab === 'overview' }}
+              accessibilityState={{ selected: activeTab === "overview" }}
               className={`flex-1 py-2 items-center rounded-lg min-h-[44px] justify-center ${
-                activeTab === 'overview'
-                  ? 'bg-[#1B1D22] border border-white/[0.08] shadow-sm'
-                  : 'bg-transparent'
+                activeTab === "overview"
+                  ? "bg-[#1B1D22] border border-white/[0.08] shadow-sm"
+                  : "bg-transparent"
               }`}
             >
               <Text
                 style={{
-                  color: activeTab === 'overview' ? '#E85D26' : '#5C616A',
+                  color: activeTab === "overview" ? "#E85D26" : "#5C616A",
                 }}
                 className={`text-xs font-bold uppercase tracking-wider ${
-                  activeTab === 'overview' ? 'text-[#E85D26]' : 'text-[#5C616A]'
+                  activeTab === "overview" ? "text-[#E85D26]" : "text-[#5C616A]"
                 }`}
               >
                 Tactical Profile
               </Text>
             </Pressable>
             <Pressable
-              onPress={() => setActiveTab('history')}
+              onPress={() => setActiveTab("history")}
               accessibilityRole="tab"
-              accessibilityState={{ selected: activeTab === 'history' }}
+              accessibilityState={{ selected: activeTab === "history" }}
               className={`flex-1 py-2 items-center rounded-lg min-h-[44px] justify-center ${
-                activeTab === 'history'
-                  ? 'bg-[#1B1D22] border border-white/[0.08] shadow-sm'
-                  : 'bg-transparent'
+                activeTab === "history"
+                  ? "bg-[#1B1D22] border border-white/[0.08] shadow-sm"
+                  : "bg-transparent"
               }`}
             >
               <Text
                 style={{
-                  color: activeTab === 'history' ? '#E85D26' : '#5C616A',
+                  color: activeTab === "history" ? "#E85D26" : "#5C616A",
                 }}
                 className={`text-xs font-bold uppercase tracking-wider ${
-                  activeTab === 'history' ? 'text-[#E85D26]' : 'text-[#5C616A]'
+                  activeTab === "history" ? "text-[#E85D26]" : "text-[#5C616A]"
                 }`}
               >
                 Recent Matches
@@ -456,18 +578,28 @@ export default function ProfileScreen() {
         </View>
 
         {/* TAB CONTENT: TACTICAL PROFILE OR RECENT MATCHES */}
-        {activeTab === 'overview' ? (
+        {activeTab === "overview" ? (
           <View className="px-5 mt-4 space-y-3">
-            <View className="bg-[#141518] rounded-2xl p-4 border border-white/[0.08] shadow-sm">
+            <View className="bg-[#141518]/25 rounded-2xl p-4 border border-white/[0.08] shadow-sm">
               <View className="flex-row items-center justify-between mb-2">
-                <Text style={{ color: '#FFFFFF' }} className="text-white text-xs font-bold uppercase tracking-wider">
+                <Text
+                  style={{ color: "#FFFFFF" }}
+                  className="text-white text-xs font-bold uppercase tracking-wider"
+                >
                   Tactical Summary
                 </Text>
-                <ArenaBadge label={skillInfo.label.toUpperCase()} variant="accent" size="sm" />
+                <ArenaBadge
+                  label={skillInfo.label.toUpperCase()}
+                  variant="accent"
+                  size="sm"
+                />
               </View>
-              <Text style={{ color: '#A0A5AD' }} className="text-[#A0A5AD] text-sm leading-relaxed font-normal">
+              <Text
+                style={{ color: "#A0A5AD" }}
+                className="text-[#A0A5AD] text-sm leading-relaxed font-normal"
+              >
                 {playerProfile.bio ||
-                  `Active recreational ${preferredSports.map((s) => SPORT_META[s]?.label || s).join(', ')} player competing across the ${primaryLocation} sporting circuit. Skill tier: ${skillInfo.label}.`}
+                  `Active recreational ${preferredSports.map((s) => SPORT_META[s]?.label || s).join(", ")} player competing across the ${primaryLocation} sporting circuit. Skill tier: ${skillInfo.label}.`}
               </Text>
             </View>
           </View>
@@ -475,134 +607,192 @@ export default function ProfileScreen() {
           /* BENCHMARK PHONE 4 STYLE RECENT MATCHES ROWS */
           <View className="px-5 mt-4">
             <View className="flex-row items-center justify-between mb-2.5">
-              <Text style={{ color: '#FFFFFF' }} className="text-white text-xs font-bold uppercase tracking-wider">
+              <Text
+                style={{ color: "#FFFFFF" }}
+                className="text-white text-xs font-bold uppercase tracking-wider"
+              >
                 Recent Matches
               </Text>
-              <Text style={{ color: '#5C616A' }} className="text-[#5C616A] text-xs font-semibold">
+              <Text
+                style={{ color: "#5C616A" }}
+                className="text-[#5C616A] text-xs font-semibold"
+              >
                 Match History
               </Text>
             </View>
 
             <View style={{ gap: 10 }}>
               {displayMatches.length === 0 ? (
-                <View className="py-8 items-center justify-center bg-[#141518] rounded-2xl border border-white/[0.08] px-4">
+                <View className="py-8 items-center justify-center bg-[#141518]/25 rounded-2xl border border-white/[0.08] px-4">
                   <Ionicons name="football-outline" size={32} color="#5C616A" />
-                  <Text style={{ color: '#FFFFFF' }} className="text-white text-sm font-semibold mt-2">
+                  <Text
+                    style={{ color: "#FFFFFF" }}
+                    className="text-white text-sm font-semibold mt-2"
+                  >
                     No matches played yet
                   </Text>
-                  <Text style={{ color: '#A0A5AD' }} className="text-[#A0A5AD] text-xs text-center mt-1">
-                    Explore open fixtures on the discover circuit to join your first game.
+                  <Text
+                    style={{ color: "#A0A5AD" }}
+                    className="text-[#A0A5AD] text-xs text-center mt-1"
+                  >
+                    Explore open fixtures on the discover circuit to join your
+                    first game.
                   </Text>
                 </View>
               ) : (
                 displayMatches.map((item) => (
-                <View
-                  key={item.id}
-                  className="bg-[#141518] rounded-2xl p-4 border border-white/[0.08] shadow-sm"
-                >
-                  <View className="flex-row items-center justify-between mb-2">
-                    {/* Match Status Badge (Honest domain state: Completed or Scheduled) */}
-                    <View className="flex-row items-center">
-                      <View className="w-6 h-6 rounded-lg items-center justify-center mr-2 bg-[#1B1D22] border border-white/[0.08]">
-                        <Ionicons
-                          name={item.status === 'completed' ? 'checkmark-circle-outline' : 'time-outline'}
-                          size={13}
-                          color={item.status === 'completed' ? '#A0A5AD' : '#E85D26'}
-                        />
+                  <View
+                    key={item.id}
+                    className="bg-[#141518]/25 rounded-2xl p-4 border border-white/[0.08] shadow-sm"
+                  >
+                    <View className="flex-row items-center justify-between mb-2">
+                      {/* Match Status Badge (Honest domain state: Completed or Scheduled) */}
+                      <View className="flex-row items-center">
+                        <View className="w-6 h-6 rounded-lg items-center justify-center mr-2 bg-[#1B1D22] border border-white/[0.08]">
+                          <Ionicons
+                            name={
+                              item.status === "completed"
+                                ? "checkmark-circle-outline"
+                                : "time-outline"
+                            }
+                            size={13}
+                            color={
+                              item.status === "completed"
+                                ? "#A0A5AD"
+                                : "#E85D26"
+                            }
+                          />
+                        </View>
+
+                        <Text
+                          style={{ color: "#A0A5AD" }}
+                          className="text-[#A0A5AD] text-xs font-semibold uppercase tracking-wider"
+                        >
+                          {item.sportLabel} • {item.format}
+                        </Text>
                       </View>
 
-                      <Text style={{ color: '#A0A5AD' }} className="text-[#A0A5AD] text-xs font-semibold uppercase tracking-wider">
-                        {item.sportLabel} • {item.format}
+                      <Text
+                        style={{ color: "#5C616A" }}
+                        className="text-[#5C616A] text-xs font-medium"
+                      >
+                        {item.date}
                       </Text>
                     </View>
 
-                    <Text style={{ color: '#5C616A' }} className="text-[#5C616A] text-xs font-medium">
-                      {item.date}
-                    </Text>
-                  </View>
-
-                  <Text
-                    style={{ color: '#FFFFFF' }}
-                    className="text-white text-base font-bold tracking-tight mb-1"
-                  >
-                    {item.title}
-                  </Text>
-
-                  <View className="flex-row items-center mt-1">
-                    <Ionicons name="location-outline" size={13} color="#5C616A" />
                     <Text
-                      numberOfLines={1}
-                      style={{ color: '#A0A5AD' }}
-                      className="text-[#A0A5AD] text-xs font-normal ml-1 flex-1"
+                      style={{ color: "#FFFFFF" }}
+                      className="text-white text-base font-bold tracking-tight mb-1"
                     >
-                      {item.venueName}
+                      {item.title}
                     </Text>
+
+                    <View className="flex-row items-center mt-1">
+                      <Ionicons
+                        name="location-outline"
+                        size={13}
+                        color="#5C616A"
+                      />
+                      <Text
+                        numberOfLines={1}
+                        style={{ color: "#A0A5AD" }}
+                        className="text-[#A0A5AD] text-xs font-normal ml-1 flex-1"
+                      >
+                        {item.venueName}
+                      </Text>
+                    </View>
                   </View>
-                </View>
-              ))
-            )}
+                ))
+              )}
             </View>
           </View>
         )}
 
         {/* ACCOUNT CAPABILITIES (Unlock Captain or Ground Owner) */}
-        {(!roles.includes('TEAM_CAPTAIN') || !roles.includes('HUB_OWNER')) && (
+        {(!roles.includes("TEAM_CAPTAIN") || !roles.includes("HUB_OWNER")) && (
           <View className="px-5 mt-6">
-            <Text style={{ color: '#FFFFFF' }} className="text-white text-xs font-bold uppercase tracking-wider mb-2.5">
+            <Text
+              style={{ color: "#FFFFFF" }}
+              className="text-white text-xs font-bold uppercase tracking-wider mb-2.5"
+            >
               Account Capabilities
             </Text>
 
             <View style={{ gap: 10 }}>
-              {!roles.includes('TEAM_CAPTAIN') && (
-                <View className="bg-[#141518] rounded-2xl p-4 border border-white/[0.08]">
+              {!roles.includes("TEAM_CAPTAIN") && (
+                <View className="bg-[#141518]/25 rounded-2xl p-4 border border-white/[0.08]">
                   <View className="flex-row items-center">
                     <View className="w-10 h-10 rounded-xl bg-[#E85D26]/15 items-center justify-center border border-[#E85D26]/30">
-                      <Ionicons name="shield-checkmark" size={20} color="#E85D26" />
+                      <Ionicons
+                        name="shield-checkmark"
+                        size={20}
+                        color="#E85D26"
+                      />
                     </View>
                     <View className="ml-3 flex-1">
-                      <Text style={{ color: '#FFFFFF' }} className="text-white text-sm font-bold">
+                      <Text
+                        style={{ color: "#FFFFFF" }}
+                        className="text-white text-sm font-bold"
+                      >
                         Become a Team Captain
                       </Text>
-                      <Text style={{ color: '#A0A5AD' }} className="text-[#A0A5AD] text-xs font-normal mt-0.5 leading-snug">
-                        Create matches, recruit players, and manage squad rosters under your account.
+                      <Text
+                        style={{ color: "#A0A5AD" }}
+                        className="text-[#A0A5AD] text-xs font-normal mt-0.5 leading-snug"
+                      >
+                        Create matches, recruit players, and manage squad
+                        rosters under your account.
                       </Text>
                     </View>
                   </View>
                   <Pressable
-                    onPress={() => router.push('/onboarding/captain-setup')}
+                    onPress={() => router.push("/onboarding/captain-setup")}
                     accessibilityRole="button"
                     accessibilityLabel="Activate Captain Mode"
                     className="mt-3.5 py-2.5 rounded-xl bg-[#1B1D22] border border-[#E85D26]/40 items-center justify-center active:bg-[#22252B]"
                   >
-                    <Text style={{ color: '#E85D26' }} className="text-[#E85D26] text-xs font-bold uppercase tracking-wider">
+                    <Text
+                      style={{ color: "#E85D26" }}
+                      className="text-[#E85D26] text-xs font-bold uppercase tracking-wider"
+                    >
                       Activate Captain Mode
                     </Text>
                   </Pressable>
                 </View>
               )}
 
-              {!roles.includes('HUB_OWNER') && (
-                <View className="bg-[#141518] rounded-2xl p-4 border border-white/[0.08]">
+              {!roles.includes("HUB_OWNER") && (
+                <View className="bg-[#141518]/25 rounded-2xl p-4 border border-white/[0.08]">
                   <View className="flex-row items-center">
                     <View className="w-10 h-10 rounded-xl bg-[#22C55E]/15 items-center justify-center border border-[#22C55E]/30">
                       <Ionicons name="business" size={20} color="#22C55E" />
                     </View>
                     <View className="ml-3 flex-1">
-                      <Text style={{ color: '#FFFFFF' }} className="text-white text-sm font-bold">
+                      <Text
+                        style={{ color: "#FFFFFF" }}
+                        className="text-white text-sm font-bold"
+                      >
                         Register a Sports Venue
                       </Text>
-                      <Text style={{ color: '#A0A5AD' }} className="text-[#A0A5AD] text-xs font-normal mt-0.5 leading-snug">
-                        List your facility courts, host tournaments, and manage venue bookings.
+                      <Text
+                        style={{ color: "#A0A5AD" }}
+                        className="text-[#A0A5AD] text-xs font-normal mt-0.5 leading-snug"
+                      >
+                        List your facility courts, host tournaments, and manage
+                        venue bookings.
                       </Text>
                     </View>
                   </View>
                   <Pressable
-                    onPress={() => router.push('/onboarding/hub-setup')}
+                    onPress={() => router.push("/onboarding/hub-setup")}
                     accessibilityRole="button"
                     accessibilityLabel="Register Venue as Ground Owner"
                     className="mt-3.5 py-2.5 rounded-xl bg-[#1B1D22] border border-[#22C55E]/40 items-center justify-center active:bg-[#22252B]"
                   >
-                    <Text style={{ color: '#22C55E' }} className="text-[#22C55E] text-xs font-bold uppercase tracking-wider">
+                    <Text
+                      style={{ color: "#22C55E" }}
+                      className="text-[#22C55E] text-xs font-bold uppercase tracking-wider"
+                    >
                       Register Sports Venue
                     </Text>
                   </Pressable>
@@ -614,26 +804,39 @@ export default function ProfileScreen() {
 
         {/* QUICK NAVIGATION BRIDGES (44px+ touch targets) */}
         <View className="px-5 mt-6">
-          <Text style={{ color: '#FFFFFF' }} className="text-white text-xs font-bold uppercase tracking-wider mb-2.5">
+          <Text
+            style={{ color: "#FFFFFF" }}
+            className="text-white text-xs font-bold uppercase tracking-wider mb-2.5"
+          >
             Quick Actions
           </Text>
 
           <View style={{ gap: 10 }}>
             <Pressable
-              onPress={() => router.push('/notifications')}
+              onPress={() => router.push("/notifications")}
               accessibilityRole="button"
               accessibilityLabel="Notifications"
-              className="min-h-[50px] flex-row items-center justify-between bg-[#141518] rounded-2xl p-3.5 border border-white/[0.08] active:bg-[#1B1D22]"
+              className="min-h-[50px] flex-row items-center justify-between bg-[#141518]/25 rounded-2xl p-3.5 border border-white/[0.08] active:bg-[#1B1D22]"
             >
               <View className="flex-row items-center">
                 <View className="w-9 h-9 rounded-xl bg-[#1B1D22] items-center justify-center border border-white/[0.08]">
-                  <Ionicons name="notifications-outline" size={18} color="#FFFFFF" />
+                  <Ionicons
+                    name="notifications-outline"
+                    size={18}
+                    color="#FFFFFF"
+                  />
                 </View>
                 <View className="ml-3">
-                  <Text style={{ color: '#FFFFFF' }} className="text-white text-sm font-semibold">
+                  <Text
+                    style={{ color: "#FFFFFF" }}
+                    className="text-white text-sm font-semibold"
+                  >
                     Notifications
                   </Text>
-                  <Text style={{ color: '#5C616A' }} className="text-[#5C616A] text-xs font-normal">
+                  <Text
+                    style={{ color: "#5C616A" }}
+                    className="text-[#5C616A] text-xs font-normal"
+                  >
                     Match invitations and slot confirmations
                   </Text>
                 </View>
@@ -642,20 +845,26 @@ export default function ProfileScreen() {
             </Pressable>
 
             <Pressable
-              onPress={() => router.push('/(tabs)/coach')}
+              onPress={() => router.push("/(tabs)/coach")}
               accessibilityRole="button"
               accessibilityLabel="AI Coach"
-              className="min-h-[50px] flex-row items-center justify-between bg-[#141518] rounded-2xl p-3.5 border border-white/[0.08] active:bg-[#1B1D22]"
+              className="min-h-[50px] flex-row items-center justify-between bg-[#141518]/25 rounded-2xl p-3.5 border border-white/[0.08] active:bg-[#1B1D22]"
             >
               <View className="flex-row items-center">
                 <View className="w-9 h-9 rounded-xl bg-[#E85D26]/15 items-center justify-center border border-[#E85D26]/30">
                   <Ionicons name="fitness" size={18} color="#E85D26" />
                 </View>
                 <View className="ml-3">
-                  <Text style={{ color: '#FFFFFF' }} className="text-white text-sm font-semibold">
+                  <Text
+                    style={{ color: "#FFFFFF" }}
+                    className="text-white text-sm font-semibold"
+                  >
                     AI Coach
                   </Text>
-                  <Text style={{ color: '#5C616A' }} className="text-[#5C616A] text-xs font-normal">
+                  <Text
+                    style={{ color: "#5C616A" }}
+                    className="text-[#5C616A] text-xs font-normal"
+                  >
                     Tactical drills and mechanical breakdowns
                   </Text>
                 </View>
@@ -671,17 +880,20 @@ export default function ProfileScreen() {
             onPress={handleSignOut}
             accessibilityRole="button"
             accessibilityLabel="Sign Out of Maidaan"
-            className="min-h-[48px] flex-row items-center justify-center bg-[#141518] rounded-full py-3.5 border border-[#EF4444]/30 active:bg-[#1B1D22]"
+            className="min-h-[48px] flex-row items-center justify-center bg-[#141518]/25 rounded-full py-3.5 border border-[#EF4444]/30 active:bg-[#1B1D22]"
           >
             <Ionicons name="log-out-outline" size={16} color="#EF4444" />
-            <Text style={{ color: '#EF4444' }} className="text-[#EF4444] text-xs font-bold uppercase tracking-wider ml-2">
+            <Text
+              style={{ color: "#EF4444" }}
+              className="text-[#EF4444] text-xs font-bold uppercase tracking-wider ml-2"
+            >
               Sign Out of Maidaan
             </Text>
           </Pressable>
         </View>
         {bookingEntry}
-          {adminEntry}
-      </ScrollView>
-    </SafeAreaView>
+        {adminEntry}
+      </ArtworkScrollView>
+    </ThemedScreen>
   );
 }

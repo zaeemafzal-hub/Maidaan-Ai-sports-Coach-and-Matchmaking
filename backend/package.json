@@ -5,12 +5,13 @@
   "main": "src/server.ts",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc",
+    "build": "tsc && node scripts/copyKnowledge.mjs",
     "start": "node dist/server.js",
     "seed:demo": "tsx scripts/seedDemo.ts",
     "admin:grant": "tsx scripts/grantSuperuser.ts",
     "test:ai": "tsx --test tests/aiProviders.test.ts",
-    "test": "npm run test:ai && tsx --test tests/reliability.test.ts tests/authRegistration.test.ts tests/venueAdmin.test.ts tests/bookingPolicy.test.ts tests/bookingApi.test.ts tests/bookingSql.test.ts && tsx tests/agent.test.ts && tsx tests/multiRoleAuth.test.ts && tsx tests/captainTeam.test.ts && tsx tests/hubOwner.test.ts && tsx tests/adminControl.test.ts && tsx tests/dataIsolation.test.ts && tsx tests/chatRealtime.test.ts"
+    "test": "npm run test:ai && tsx --test tests/reliability.test.ts tests/authRegistration.test.ts tests/venueAdmin.test.ts tests/bookingPolicy.test.ts tests/bookingApi.test.ts tests/bookingSql.test.ts tests/locationProfiles.test.ts && tsx tests/agent.test.ts && tsx tests/multiRoleAuth.test.ts && tsx tests/captainTeam.test.ts && tsx tests/hubOwner.test.ts && tsx tests/adminControl.test.ts && tsx tests/dataIsolation.test.ts && tsx tests/chatRealtime.test.ts && npm run test:f0",
+    "test:f0": "tsx --test tests/f0.test.ts tests/f0Sql.test.ts"
   },
   "dependencies": {
     "@google/genai": "^2.29.0",

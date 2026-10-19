@@ -1,6 +1,12 @@
-import React, { useRef, useEffect } from 'react';
-import { View, TextInput, Pressable, ActivityIndicator, Text } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useRef, useEffect } from "react";
+import {
+  View,
+  TextInput,
+  Pressable,
+  ActivityIndicator,
+  Text,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 interface ChatComposerProps {
   value: string;
@@ -20,7 +26,7 @@ export const ChatComposer: React.FC<ChatComposerProps> = ({
   onTypingStart,
   onTypingStop,
   sending = false,
-  placeholder = 'Type a message...',
+  placeholder = "Type a message...",
   maxLength = 500,
 }) => {
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -69,10 +75,13 @@ export const ChatComposer: React.FC<ChatComposerProps> = ({
   const isNearLimit = value.length >= maxLength - 50;
 
   return (
-    <View className="p-3 bg-[#141518] border-t border-white/[0.08]">
+    <View className="p-3 bg-[#141518]/25 border-t border-white/[0.08]">
       {isNearLimit && (
         <View className="pb-1.5 px-2 flex-row justify-end">
-          <Text style={{ color: '#A0A5AD' }} className="text-[#A0A5AD] text-[10px] font-semibold">
+          <Text
+            style={{ color: "#A0A5AD" }}
+            className="text-[#A0A5AD] text-[10px] font-semibold"
+          >
             {value.length} / {maxLength}
           </Text>
         </View>
@@ -87,7 +96,7 @@ export const ChatComposer: React.FC<ChatComposerProps> = ({
             multiline
             maxLength={maxLength}
             editable={!sending}
-            style={{ color: '#FFFFFF' }}
+            style={{ color: "#FFFFFF" }}
             className="flex-1 text-white text-sm p-0 max-h-24"
             accessibilityLabel={placeholder}
           />
@@ -108,8 +117,8 @@ export const ChatComposer: React.FC<ChatComposerProps> = ({
           accessibilityLabel="Send message"
           className={`w-11 h-11 rounded-xl items-center justify-center transition-all ${
             canSend
-              ? 'bg-[#E85D26] active:scale-95'
-              : 'bg-[#1B1D22] border border-white/[0.08] opacity-50'
+              ? "bg-[#E85D26] active:scale-95"
+              : "bg-[#1B1D22] border border-white/[0.08] opacity-50"
           }`}
         >
           {sending ? (
@@ -118,7 +127,7 @@ export const ChatComposer: React.FC<ChatComposerProps> = ({
             <Ionicons
               name="send"
               size={18}
-              color={canSend ? '#0C0D0E' : '#5C616A'}
+              color={canSend ? "#0C0D0E" : "#5C616A"}
             />
           )}
         </Pressable>

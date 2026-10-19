@@ -1,51 +1,45 @@
-import React, { useState, useEffect } from 'react';
+import { ThemedScreen } from "../../components/ui/ThemedScreen";
+import { ArtworkScrollView } from "../../components/ui/Artwork";
+import { ARTWORK } from "../../constants/artwork";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
   Pressable,
-  ScrollView,
-  Modal,
   Image,
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { router, useLocalSearchParams } from 'expo-router';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useAuthStore } from '../../store/useAuthStore';
-import { Sport } from '../../types';
-import { profileService } from '../../services/profileService';
-import { SportCard } from '../../components/ui/SportCard';
-import { ArenaHeader } from '../../components/ui/ArenaHeader';
-import { PrimaryButton } from '../../components/ui/PrimaryButton';
-import { FormInput } from '../../components/ui/FormInput';
-import { IMAGES } from '../../constants/images';
+} from "react-native";
+
+import { router, useLocalSearchParams } from "expo-router";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { useAuthStore } from "../../store/useAuthStore";
+import { Sport } from "../../types";
+import { profileService } from "../../services/profileService";
+import { SportCard } from "../../components/ui/SportCard";
+import { ArenaHeader } from "../../components/ui/ArenaHeader";
+import { PrimaryButton } from "../../components/ui/PrimaryButton";
+import { FormInput } from "../../components/ui/FormInput";
+
+import { LocationFields } from "../../components/locations/LocationFields";
 
 interface SportConfig {
   sport: Sport;
   label: string;
-  iconName: 'cricket' | 'badminton' | 'tennis' | 'soccer';
+  iconName: "cricket" | "badminton" | "tennis" | "soccer";
 }
 
 const ALL_SPORTS: SportConfig[] = [
-  { sport: 'cricket', label: 'Cricket', iconName: 'cricket' },
-  { sport: 'badminton', label: 'Badminton', iconName: 'badminton' },
-  { sport: 'padel', label: 'Padel', iconName: 'tennis' },
-  { sport: 'football', label: 'Football', iconName: 'soccer' },
-];
-
-const PRESET_AREAS = [
-  'Gulberg, Lahore',
-  'DHA Phase 5, Lahore',
-  'Model Town, Lahore',
-  'Johar Town, Lahore',
-  'Cantt, Lahore',
+  { sport: "cricket", label: "Cricket", iconName: "cricket" },
+  { sport: "badminton", label: "Badminton", iconName: "badminton" },
+  { sport: "padel", label: "Padel", iconName: "tennis" },
+  { sport: "football", label: "Football", iconName: "soccer" },
 ];
 
 export default function HubSetupScreen() {
   const { mode } = useLocalSearchParams<{ mode?: string }>();
-  const isEditMode = mode === 'edit';
+  const isEditMode = mode === "edit";
 
   const {
     currentUser,
@@ -62,35 +56,46 @@ export default function HubSetupScreen() {
     if (!isInitialized || isLoading) return;
 
     if (!currentUser) {
-      router.replace('/(auth)/login');
+      router.replace("/(auth)/login");
       return;
     }
   }, [isInitialized, isLoading, currentUser]);
 
   // Approved Form Fields (Preloaded from existing profile in edit mode)
-  const [hubName, setHubName] = useState(hubOwnerProfile?.hubName || '');
-  const [contact, setContact] = useState(hubOwnerProfile?.contactNumber || '');
+  const [hubName, setHubName] = useState(hubOwnerProfile?.hubName || "");
+  const [contact, setContact] = useState(hubOwnerProfile?.contactNumber || "");
   const [selectedSports, setSelectedSports] = useState<Sport[]>(
-    hubOwnerProfile?.sports?.length ? hubOwnerProfile.sports : ['football', 'cricket']
+    hubOwnerProfile?.sports?.length
+      ? hubOwnerProfile.sports
+      : ["football", "cricket"],
   );
-  const [area, setArea] = useState(hubOwnerProfile?.location || 'Gulberg, Lahore');
-  const [courtsCount, setCourtsCount] = useState(hubOwnerProfile?.courtsCount ?? 2);
+  const [area, setArea] = useState(
+    hubOwnerProfile?.location || "Gulberg, Lahore",
+  );
+  const [cityId, setCityId] = useState(hubOwnerProfile?.cityId || "lahore");
+  const [areaId, setAreaId] = useState(hubOwnerProfile?.areaId || "");
+  const [courtsCount, setCourtsCount] = useState(
+    hubOwnerProfile?.courtsCount ?? 2,
+  );
 
   // Sync state if hubOwnerProfile updates in edit mode
   useEffect(() => {
     if (isEditMode && hubOwnerProfile) {
       if (hubOwnerProfile.hubName) setHubName(hubOwnerProfile.hubName);
-      if (hubOwnerProfile.contactNumber) setContact(hubOwnerProfile.contactNumber);
-      if (hubOwnerProfile.sports?.length) setSelectedSports(hubOwnerProfile.sports);
+      if (hubOwnerProfile.contactNumber)
+        setContact(hubOwnerProfile.contactNumber);
+      if (hubOwnerProfile.sports?.length)
+        setSelectedSports(hubOwnerProfile.sports);
       if (hubOwnerProfile.location) setArea(hubOwnerProfile.location);
-      if (typeof hubOwnerProfile.courtsCount === 'number') {
+      if (hubOwnerProfile.cityId) setCityId(hubOwnerProfile.cityId);
+      if (hubOwnerProfile.areaId) setAreaId(hubOwnerProfile.areaId);
+      if (typeof hubOwnerProfile.courtsCount === "number") {
         setCourtsCount(hubOwnerProfile.courtsCount);
       }
     }
   }, [isEditMode, hubOwnerProfile]);
 
   // UI State
-  const [isAreaModalVisible, setIsAreaModalVisible] = useState(false);
   const [editNotice, setEditNotice] = useState<string | null>(null);
   const [hubNameError, setHubNameError] = useState<string | undefined>();
   const [contactError, setContactError] = useState<string | undefined>();
@@ -123,16 +128,20 @@ export default function HubSetupScreen() {
   };
 
   const validate = (): boolean => {
+    if (!areaId) {
+      setGeneralError("Select a city and venue area.");
+      return false;
+    }
     let isValid = true;
     const trimmedName = hubName.trim();
     const trimmedContact = contact.trim();
 
     // Hub Name validation
     if (!trimmedName) {
-      setHubNameError('Hub name is required');
+      setHubNameError("Hub name is required");
       isValid = false;
     } else if (trimmedName.length < 2) {
-      setHubNameError('Hub name must be at least 2 characters');
+      setHubNameError("Hub name must be at least 2 characters");
       isValid = false;
     } else {
       setHubNameError(undefined);
@@ -140,10 +149,10 @@ export default function HubSetupScreen() {
 
     // Contact validation
     if (!trimmedContact) {
-      setContactError('Contact phone number is required');
+      setContactError("Contact phone number is required");
       isValid = false;
     } else if (trimmedContact.length < 7) {
-      setContactError('Please enter a valid contact phone number');
+      setContactError("Please enter a valid contact phone number");
       isValid = false;
     } else {
       setContactError(undefined);
@@ -151,7 +160,7 @@ export default function HubSetupScreen() {
 
     // Sports validation (Multi-select, min 1)
     if (selectedSports.length === 0) {
-      setSportsError('Please select at least one supported sport');
+      setSportsError("Please select at least one supported sport");
       isValid = false;
     } else {
       setSportsError(null);
@@ -172,6 +181,8 @@ export default function HubSetupScreen() {
       const result = await profileService.saveHubOwnerProfile({
         hubName: hubName.trim(),
         location: area,
+        cityId,
+        areaId,
         courtsCount,
         contactNumber: contact.trim(),
         sports: selectedSports,
@@ -180,65 +191,74 @@ export default function HubSetupScreen() {
       setHubOwnerProfile(result.profile);
       setOnboardingCompleted(true);
       await loadProfile();
-      await setActiveMode('HUB_OWNER');
+      await setActiveMode("HUB_OWNER");
 
-      router.replace('/hub/dashboard');
+      router.replace("/hub/dashboard");
     } catch (err: any) {
-      setGeneralError(err?.message || 'Failed to save hub setup. Please try again.');
+      setGeneralError(
+        err?.message || "Failed to save hub setup. Please try again.",
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleEditPress = () => {
-    setEditNotice('Venue details and court schedules can be managed anytime from your Hub Dashboard.');
+    setEditNotice(
+      "Venue details and court schedules can be managed anytime from your Hub Dashboard.",
+    );
     setTimeout(() => setEditNotice(null), 3500);
   };
 
   if (!isInitialized || isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-[#0C0D0E] items-center justify-center">
+      <ThemedScreen className="flex-1 bg-[#0C0D0E] items-center justify-center">
         <ActivityIndicator size="large" color="#E85D26" />
         <Text className="text-[#A0A5AD] text-xs font-semibold tracking-wider mt-3">
           Loading session...
         </Text>
-      </SafeAreaView>
+      </ThemedScreen>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-[#0C0D0E]" edges={['top', 'bottom']}>
+    <ThemedScreen className="flex-1 bg-transparent" edges={["top", "bottom"]}>
       {/* Modern Header */}
       <ArenaHeader
-        title={isEditMode ? 'Edit Venue' : 'Hub Setup'}
-        subtitle={isEditMode ? 'Update facility configuration' : 'Register your sports venue'}
+        title={isEditMode ? "Edit Venue" : "Hub Setup"}
+        subtitle={
+          isEditMode
+            ? "Update facility configuration"
+            : "Register your sports venue"
+        }
         showBack
         fallbackRoute="/hub/dashboard"
         onBack={() => {
           if (isEditMode) {
-            router.replace('/hub/dashboard');
+            router.replace("/hub/dashboard");
           } else if (router.canGoBack()) {
             router.back();
           } else {
-            router.replace('/hub/dashboard');
+            router.replace("/hub/dashboard");
           }
         }}
       />
 
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
         className="flex-1"
       >
-        <ScrollView
+        <ArtworkScrollView
+          kind="form"
           contentContainerStyle={{ flexGrow: 1 }}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
           className="flex-1"
         >
           {/* Sports Ground Photography Hero Section */}
-          <View className="relative w-full h-44 bg-[#141518] overflow-hidden border-b border-white/[0.08]">
+          <View className="relative w-full h-44 bg-[#141518]/25 overflow-hidden border-b border-white/[0.08]">
             <Image
-              source={IMAGES.arenaGround}
+              source={ARTWORK.form}
               className="w-full h-full"
               resizeMode="cover"
             />
@@ -250,22 +270,24 @@ export default function HubSetupScreen() {
             <View className="absolute bottom-3 left-5 right-5 z-10">
               <View className="flex-row items-center mb-1">
                 <Text className="text-[#E85D26] text-[10px] font-black uppercase tracking-widest">
-                  {isEditMode ? 'FACILITY MANAGEMENT' : 'HUB ONBOARDING'}
+                  {isEditMode ? "FACILITY MANAGEMENT" : "HUB ONBOARDING"}
                 </Text>
                 <Text className="text-[#5C616A] text-[10px] font-bold mx-1.5">
                   ·
                 </Text>
                 <Text className="text-[#A0A5AD] text-[10px] font-bold uppercase tracking-wider">
-                  {isEditMode ? 'EDIT DETAILS' : 'VENUE REGISTRATION'}
+                  {isEditMode ? "EDIT DETAILS" : "VENUE REGISTRATION"}
                 </Text>
               </View>
               <Text className="text-[#FFFFFF] text-xl font-black uppercase tracking-tight">
-                {isEditMode ? 'Update Venue Details' : 'Register Your Sports Hub'}
+                {isEditMode
+                  ? "Update Venue Details"
+                  : "Register Your Sports Hub"}
               </Text>
               <Text className="text-[#A0A5AD] text-[11px] font-medium mt-0.5 tracking-tight">
                 {isEditMode
-                  ? 'Update your facility location, contact coordinator desk, and active sports.'
-                  : 'Enter your venue details and available playing areas to register on the platform.'}
+                  ? "Update your facility location, contact coordinator desk, and active sports."
+                  : "Enter your venue details and available playing areas to register on the platform."}
               </Text>
             </View>
           </View>
@@ -274,8 +296,12 @@ export default function HubSetupScreen() {
           <View className="px-5 py-4">
             {/* Notice Toast if triggered */}
             {editNotice && (
-              <View className="mb-4 p-3 rounded-xl bg-[#141518] border border-[#E85D26]/30 flex-row items-center shadow-xs">
-                <Ionicons name="information-circle-sharp" size={18} color="#E85D26" />
+              <View className="mb-4 p-3 rounded-xl bg-[#141518]/25 border border-[#E85D26]/30 flex-row items-center shadow-xs">
+                <Ionicons
+                  name="information-circle-sharp"
+                  size={18}
+                  color="#E85D26"
+                />
                 <Text className="text-[#E85D26] text-xs font-semibold ml-2 flex-1">
                   {editNotice}
                 </Text>
@@ -283,12 +309,16 @@ export default function HubSetupScreen() {
             )}
 
             {/* Section 1: Hub Credential Card */}
-            <View className="bg-[#141518] border border-white/[0.08] rounded-2xl p-3.5 mb-5 shadow-sm">
+            <View className="bg-[#141518]/25 border border-white/[0.08] rounded-2xl p-3.5 mb-5 shadow-sm">
               <View className="flex-row items-center justify-between">
                 <View className="flex-row items-center flex-1 mr-3">
                   {/* Venue Icon Well */}
                   <View className="w-12 h-12 rounded-xl bg-[#1B1D22] border border-white/[0.08] items-center justify-center mr-3 relative">
-                    <MaterialCommunityIcons name="domain" size={24} color="#E85D26" />
+                    <MaterialCommunityIcons
+                      name="domain"
+                      size={24}
+                      color="#E85D26"
+                    />
                     <View className="absolute -bottom-1 -right-1 px-1 py-0.2 bg-[#E85D26] rounded-xs">
                       <Text className="text-[#0C0D0E] text-[8px] font-black tracking-tighter">
                         HUB
@@ -302,7 +332,7 @@ export default function HubSetupScreen() {
                       numberOfLines={1}
                       className="text-[#FFFFFF] text-sm font-bold uppercase tracking-tight"
                     >
-                      {hubName.trim() || 'Sports Hub Venue'}
+                      {hubName.trim() || "Sports Hub Venue"}
                     </Text>
                     <View className="flex-row items-center mt-0.5">
                       <Text className="text-[#E85D26] text-[11px] font-bold uppercase tracking-wide">
@@ -312,7 +342,9 @@ export default function HubSetupScreen() {
                         ·
                       </Text>
                       <Text className="text-[#A0A5AD] text-[10px] font-medium tracking-tight">
-                        {isEditMode ? 'Venue Configuration' : 'Venue Registration'}
+                        {isEditMode
+                          ? "Venue Configuration"
+                          : "Venue Registration"}
                       </Text>
                     </View>
                   </View>
@@ -403,7 +435,11 @@ export default function HubSetupScreen() {
               {/* Sports Validation Error */}
               {sportsError && (
                 <View className="mt-2.5 p-2 rounded-xl bg-[#F4A261]/10 border border-[#F4A261]/30 flex-row items-center">
-                  <Ionicons name="alert-circle-outline" size={15} color="#F4A261" />
+                  <Ionicons
+                    name="alert-circle-outline"
+                    size={15}
+                    color="#F4A261"
+                  />
                   <Text className="text-[#F4A261] text-xs font-semibold ml-1.5 flex-1">
                     {sportsError}
                   </Text>
@@ -411,44 +447,20 @@ export default function HubSetupScreen() {
               )}
             </View>
 
-            {/* Section 5: Location */}
-            <View className="mb-5">
-              <View className="flex-row items-center justify-between mb-1.5">
-                <Text className="text-[#FFFFFF] text-xs font-bold tracking-wider uppercase">
-                  VENUE LOCATION
-                </Text>
-                <Text className="text-[#5C616A] text-[10px] font-bold uppercase tracking-wide">
-                  AREA
-                </Text>
-              </View>
-
-              <View className="bg-[#141518] border border-white/[0.08] rounded-xl p-3.5 flex-row items-center justify-between shadow-xs">
-                <View className="flex-row items-center flex-1 mr-3">
-                  <View className="w-10 h-10 rounded-lg bg-[#E85D26]/10 border border-[#E85D26]/25 items-center justify-center mr-3">
-                    <Ionicons name="location-sharp" size={20} color="#E85D26" />
-                  </View>
-
-                  <View className="flex-1">
-                    <Text className="text-[#FFFFFF] text-sm font-bold uppercase tracking-tight">
-                      {area}
-                    </Text>
-                    <Text className="text-[#A0A5AD] text-[11px] font-medium mt-0.5">
-                      Ground location for player discovery and matchmaking
-                    </Text>
-                  </View>
-                </View>
-
-                <Pressable
-                  onPress={() => setIsAreaModalVisible(true)}
-                  accessibilityRole="button"
-                  accessibilityLabel="Change venue area"
-                  className="py-1.5 px-3 rounded-lg bg-[#1B1D22] border border-white/[0.08] active:scale-95"
-                >
-                  <Text className="text-[#E85D26] text-[10px] font-bold tracking-wider uppercase">
-                    CHANGE
-                  </Text>
-                </Pressable>
-              </View>
+            <View style={{ gap: 12, marginBottom: 20 }}>
+              <LocationFields
+                cityId={cityId}
+                areaId={areaId}
+                onChange={(city, selected) => {
+                  setCityId(city);
+                  setAreaId(selected);
+                }}
+              />
+              <FormInput
+                label="Venue street address"
+                value={area}
+                onChangeText={setArea}
+              />
             </View>
 
             {/* Section 6: Number of Courts / Playing Areas */}
@@ -462,17 +474,23 @@ export default function HubSetupScreen() {
                 </Text>
               </View>
               <Text className="text-[#A0A5AD] text-[11px] font-medium mb-2.5">
-                Total number of pitches, courts, or nets available at your facility.
+                Total number of pitches, courts, or nets available at your
+                facility.
               </Text>
 
-              <View className="bg-[#141518] border border-white/[0.08] rounded-xl p-3.5 flex-row items-center justify-between shadow-xs">
+              <View className="bg-[#141518]/25 border border-white/[0.08] rounded-xl p-3.5 flex-row items-center justify-between shadow-xs">
                 <View className="flex-row items-center flex-1">
                   <View className="w-10 h-10 rounded-lg bg-[#1B1D22] border border-white/[0.08] items-center justify-center mr-3">
-                    <MaterialCommunityIcons name="stadium-variant" size={20} color="#E85D26" />
+                    <MaterialCommunityIcons
+                      name="stadium-variant"
+                      size={20}
+                      color="#E85D26"
+                    />
                   </View>
                   <View>
                     <Text className="text-[#FFFFFF] text-base font-bold uppercase tracking-tight">
-                      {courtsCount} {courtsCount === 1 ? 'COURT / PITCH' : 'COURTS / PITCHES'}
+                      {courtsCount}{" "}
+                      {courtsCount === 1 ? "COURT / PITCH" : "COURTS / PITCHES"}
                     </Text>
                     <Text className="text-[#A0A5AD] text-[10px] font-medium">
                       Manageable anytime in Hub Courts
@@ -489,8 +507,8 @@ export default function HubSetupScreen() {
                     accessibilityLabel="Decrease court count"
                     className={`w-10 h-10 rounded-xl items-center justify-center border border-white/[0.08] active:scale-95 ${
                       courtsCount <= 1
-                        ? 'bg-[#1B1D22]/40 opacity-40'
-                        : 'bg-[#1B1D22]'
+                        ? "bg-[#1B1D22]/40 opacity-40"
+                        : "bg-[#1B1D22]"
                     }`}
                   >
                     <Ionicons name="remove" size={18} color="#FFFFFF" />
@@ -509,8 +527,8 @@ export default function HubSetupScreen() {
                     accessibilityLabel="Increase court count"
                     className={`w-10 h-10 rounded-xl items-center justify-center border border-white/[0.08] active:scale-95 ${
                       courtsCount >= 50
-                        ? 'bg-[#1B1D22]/40 opacity-40'
-                        : 'bg-[#1B1D22]'
+                        ? "bg-[#1B1D22]/40 opacity-40"
+                        : "bg-[#1B1D22]"
                     }`}
                   >
                     <Ionicons name="add" size={18} color="#FFFFFF" />
@@ -520,16 +538,22 @@ export default function HubSetupScreen() {
             </View>
 
             {/* Section 7: Admin Verification Notice */}
-            <View className="mb-6 p-4 rounded-xl bg-[#141518] border border-white/[0.08]">
+            <View className="mb-6 p-4 rounded-xl bg-[#141518]/25 border border-white/[0.08]">
               <View className="flex-row items-center mb-1.5">
                 <Ionicons
-                  name={hubOwnerProfile?.isVerified ? 'shield-checkmark' : 'shield-outline'}
+                  name={
+                    hubOwnerProfile?.isVerified
+                      ? "shield-checkmark"
+                      : "shield-outline"
+                  }
                   size={15}
-                  color={hubOwnerProfile?.isVerified ? '#E85D26' : '#F4A261'}
+                  color={hubOwnerProfile?.isVerified ? "#E85D26" : "#F4A261"}
                 />
                 <Text
                   className={`text-[10px] font-black uppercase tracking-widest ml-1.5 ${
-                    hubOwnerProfile?.isVerified ? 'text-[#E85D26]' : 'text-[#F4A261]'
+                    hubOwnerProfile?.isVerified
+                      ? "text-[#E85D26]"
+                      : "text-[#F4A261]"
                   }`}
                 >
                   ADMIN VERIFICATION
@@ -538,23 +562,23 @@ export default function HubSetupScreen() {
 
               <Text className="text-[#FFFFFF] text-xs font-bold uppercase tracking-tight">
                 {hubOwnerProfile?.isVerified
-                  ? 'Official Verified Facility'
-                  : 'Pending Review After Registration'}
+                  ? "Official Verified Facility"
+                  : "Pending Review After Registration"}
               </Text>
               <Text className="text-[#A0A5AD] text-[11px] font-medium mt-1 leading-relaxed">
                 {hubOwnerProfile?.isVerified
-                  ? 'Your sports hub is verified by platform administrators. Facility specifications meet standard requirements.'
-                  : 'Your sports hub will be reviewed by platform administrators before receiving verified status. You can manage court inventory immediately.'}
+                  ? "Your sports hub is verified by platform administrators. Facility specifications meet standard requirements."
+                  : "Your sports hub will be reviewed by platform administrators before receiving verified status. You can manage court inventory immediately."}
               </Text>
 
               <View className="mt-2.5 pt-2 border-t border-white/[0.08] flex-row items-center justify-between">
                 <Text className="text-[#5C616A] text-[10px] font-bold uppercase tracking-wider">
                   {hubOwnerProfile?.isVerified
-                    ? 'STATUS: VERIFIED'
-                    : 'STATUS: UNVERIFIED (PENDING)'}
+                    ? "STATUS: VERIFIED"
+                    : "STATUS: UNVERIFIED (PENDING)"}
                 </Text>
                 <Text className="text-[#A0A5AD] text-[10px] font-medium">
-                  {hubOwnerProfile?.isVerified ? 'Approved' : 'Under Review'}
+                  {hubOwnerProfile?.isVerified ? "Approved" : "Under Review"}
                 </Text>
               </View>
             </View>
@@ -562,7 +586,11 @@ export default function HubSetupScreen() {
             {/* General Error */}
             {generalError && (
               <View className="mb-4 p-3 rounded-xl bg-[#F4A261]/10 border border-[#F4A261]/30 flex-row items-center">
-                <Ionicons name="alert-circle-outline" size={16} color="#F4A261" />
+                <Ionicons
+                  name="alert-circle-outline"
+                  size={16}
+                  color="#F4A261"
+                />
                 <Text className="text-[#F4A261] text-xs font-semibold ml-2 flex-1">
                   {generalError}
                 </Text>
@@ -572,7 +600,9 @@ export default function HubSetupScreen() {
             {/* Primary CTA */}
             <View className="pt-1 pb-6">
               <PrimaryButton
-                title={isEditMode ? 'SAVE PROFILE CHANGES' : 'COMPLETE HUB SETUP'}
+                title={
+                  isEditMode ? "SAVE PROFILE CHANGES" : "COMPLETE HUB SETUP"
+                }
                 onPress={handleFinishSetup}
                 loading={isSubmitting}
                 variant="primary"
@@ -580,93 +610,19 @@ export default function HubSetupScreen() {
               />
 
               <View className="flex-row items-center justify-center mt-3">
-                <Ionicons name="shield-checkmark-sharp" size={13} color="#E85D26" />
+                <Ionicons
+                  name="shield-checkmark-sharp"
+                  size={13}
+                  color="#E85D26"
+                />
                 <Text className="text-[#5C616A] text-[10px] font-semibold tracking-wider ml-1.5">
                   Verified venue listing · Administrative governance
                 </Text>
               </View>
             </View>
           </View>
-        </ScrollView>
+        </ArtworkScrollView>
       </KeyboardAvoidingView>
-
-      {/* Area Selector Modal */}
-      <Modal
-        visible={isAreaModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setIsAreaModalVisible(false)}
-      >
-        <Pressable
-          onPress={() => setIsAreaModalVisible(false)}
-          className="flex-1 bg-black/75 justify-center items-center px-5"
-        >
-          <Pressable
-            onPress={(e) => e.stopPropagation()}
-            className="w-full max-w-sm rounded-2xl bg-[#141518] border border-white/[0.08] p-5 shadow-2xl"
-          >
-            {/* Modal Header */}
-            <View className="flex-row items-center justify-between mb-4 pb-3 border-b border-white/[0.08]">
-              <View>
-                <Text className="text-[#E85D26] text-[10px] font-black uppercase tracking-widest">
-                  LOCATION
-                </Text>
-                <Text className="text-[#FFFFFF] text-base font-bold uppercase tracking-tight mt-0.5">
-                  Select Venue Area
-                </Text>
-              </View>
-              <Pressable
-                onPress={() => setIsAreaModalVisible(false)}
-                className="w-8 h-8 rounded-lg bg-[#1B1D22] items-center justify-center border border-white/[0.08] active:scale-95"
-                accessibilityLabel="Close area modal"
-              >
-                <Ionicons name="close" size={18} color="#FFFFFF" />
-              </Pressable>
-            </View>
-
-            {/* List of Preset Areas */}
-            <View className="space-y-2">
-              {PRESET_AREAS.map((item) => {
-                const isSelected = area === item;
-                return (
-                  <Pressable
-                    key={item}
-                    onPress={() => {
-                      setArea(item);
-                      setIsAreaModalVisible(false);
-                    }}
-                    className={`w-full p-3 rounded-xl border flex-row items-center justify-between my-1 active:scale-[0.99] ${
-                      isSelected
-                        ? 'bg-[#1B1D22] border-[#E85D26]'
-                        : 'bg-[#0C0D0E] border-white/[0.08]'
-                    }`}
-                  >
-                    <View className="flex-row items-center flex-1">
-                      <Ionicons
-                        name="location-sharp"
-                        size={16}
-                        color={isSelected ? '#E85D26' : '#5C616A'}
-                      />
-                      <Text
-                        className={`text-xs font-bold uppercase tracking-tight ml-2.5 ${
-                          isSelected ? 'text-[#E85D26]' : 'text-[#FFFFFF]'
-                        }`}
-                      >
-                        {item}
-                      </Text>
-                    </View>
-                    {isSelected && (
-                      <View className="w-5 h-5 rounded-full bg-[#E85D26] items-center justify-center">
-                        <Ionicons name="checkmark" size={13} color="#0C0D0E" />
-                      </View>
-                    )}
-                  </Pressable>
-                );
-              })}
-            </View>
-          </Pressable>
-        </Pressable>
-      </Modal>
-    </SafeAreaView>
+    </ThemedScreen>
   );
 }

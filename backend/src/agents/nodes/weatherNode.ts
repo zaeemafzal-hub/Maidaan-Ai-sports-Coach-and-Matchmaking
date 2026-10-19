@@ -1,7 +1,7 @@
 import { AgentState, AgentUpdate } from '../state.js';
 import { getWeatherTool } from '../tools/getWeatherTool.js';
 import { WEATHER_SYSTEM_PROMPT } from '../prompts/weather.js';
-import { GoogleGenAI } from '@google/genai';
+import { generateAIText, isAIConfigured } from '../../ai/providerFactory.js';
 import { sharedRAGEngine } from '../../rag/ragEngine.js';
 
 export async function weatherNode(state: AgentState): Promise<AgentUpdate> {
@@ -40,10 +40,8 @@ export async function weatherNode(state: AgentState): Promise<AgentUpdate> {
     }
 
     // 3. Format human-friendly explanation with LLM if available
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (apiKey && process.env.NODE_ENV !== 'test') {
+    if (isAIConfigured() && process.env.NODE_ENV !== 'test') {
       try {
-        const ai = new GoogleGenAI({ apiKey });
         const prompt = `User Query: "${message}"
 Deterministic Weather Telemetry:
 - Location: ${location}
@@ -56,20 +54,13 @@ Deterministic Weather Telemetry:
 
 Explain this weather condition clearly to the player. Respect the official recommendation (${recommendation}) without changing it.`;
 
-        const result = await ai.models.generateContent({
-          model: 'gemini-2.5-flash',
-          contents: [{ role: 'user', parts: [{ text: prompt }] }],
-          config: {
-            systemInstruction: WEATHER_SYSTEM_PROMPT,
-            temperature: 0.2,
-            maxOutputTokens: 300,
-          },
-        });
+        const result = await generateAIText({systemPrompt: WEATHER_SYSTEM_PROMPT, message: prompt, temperature: 0.2, maxTokens: 300});
 
-        const reply = result.text?.trim();
+        const reply = result.message.trim();
         if (reply) {
           return {
             response: reply,
+          synthesis: {provider: result.provider, usedBackup: result.usedBackup ?? false},
             sources: weatherSources,
             toolResult: {
               tool: 'getWeatherForecastTool',

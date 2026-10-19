@@ -168,6 +168,7 @@ export type AgentToolResult =
 // ---------------------------------------------------------------------------
 
 export interface AgentChatResponse {
+  synthesis?: {provider: string; usedBackup: boolean};
   intent: AgentIntent;
   message: string;
   toolUsed?: AgentToolName;

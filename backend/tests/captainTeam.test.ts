@@ -325,7 +325,7 @@ async function runCaptainTeamTests() {
         body: {
           sport: 'cricket',
           title: 'Sunday Tape Ball Clash',
-          date: new Date().toISOString().split('T')[0],
+          date: new Date(Date.now() + 86400000).toISOString().split('T')[0],
           startTime: '19:00',
           venueName: 'Gulberg Nets',
           area: 'Gulberg, Lahore',
@@ -356,7 +356,7 @@ async function runCaptainTeamTests() {
         body: {
           sport: 'cricket',
           title: 'Unauthorized Team Spoof',
-          date: new Date().toISOString().split('T')[0],
+          date: new Date(Date.now() + 86400000).toISOString().split('T')[0],
           startTime: '20:00',
           venueName: 'Gulberg Nets',
           area: 'Gulberg, Lahore',

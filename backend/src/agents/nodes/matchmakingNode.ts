@@ -1,7 +1,7 @@
 import { AgentState, AgentUpdate } from '../state.js';
 import { searchMatchesTool } from '../tools/searchMatchesTool.js';
 import { MATCHMAKING_SYSTEM_PROMPT } from '../prompts/matchmaking.js';
-import { GoogleGenAI } from '@google/genai';
+import { generateAIText, isAIConfigured } from '../../ai/providerFactory.js';
 import { sharedRAGEngine } from '../../rag/ragEngine.js';
 
 export async function matchmakingNode(state: AgentState): Promise<AgentUpdate> {
@@ -54,30 +54,21 @@ export async function matchmakingNode(state: AgentState): Promise<AgentUpdate> {
   }
 
   // 3. If matches found, synthesize response using Gemini if available, or deterministic summary
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (apiKey && process.env.NODE_ENV !== 'test') {
+  if (isAIConfigured() && process.env.NODE_ENV !== 'test') {
     try {
-      const ai = new GoogleGenAI({ apiKey });
       const prompt = `User Request: "${message}"
 Live Database Matches Found (${totalFound}):
 ${JSON.stringify(matches, null, 2)}
 
 Provide an encouraging athletic summary of the best options found. Mention their sport, date/time, venue/area, open slots, and entry contribution. Remind the player they can view and join these fixtures directly in the Discover tab.`;
 
-      const result = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        config: {
-          systemInstruction: MATCHMAKING_SYSTEM_PROMPT,
-          temperature: 0.3,
-          maxOutputTokens: 400,
-        },
-      });
+      const result = await generateAIText({systemPrompt: MATCHMAKING_SYSTEM_PROMPT, message: prompt, temperature: 0.3, maxTokens: 400});
 
-      const reply = result.text?.trim();
+      const reply = result.message.trim();
       if (reply) {
         return {
           response: reply,
+          synthesis: {provider: result.provider, usedBackup: result.usedBackup ?? false},
           sources: joinSources.length > 0 ? joinSources : undefined,
           toolResult: searchResult,
         };

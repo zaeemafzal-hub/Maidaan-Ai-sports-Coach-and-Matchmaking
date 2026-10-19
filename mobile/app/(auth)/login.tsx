@@ -1,27 +1,27 @@
-import React, { useState } from 'react';
+import { ArtworkScrollView as ThemedScroll } from "../../components/ui/Artwork";
+import { ThemedScreen } from "../../components/ui/ThemedScreen";
+import React, { useState } from "react";
 import {
   View,
   Text,
   Pressable,
-  ScrollView,
   KeyboardAvoidingView,
   Platform,
   Image,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { authService } from '../../services/authService';
-import { FormInput } from '../../components/ui/FormInput';
-import { PrimaryButton } from '../../components/ui/PrimaryButton';
-import { ArenaHeader } from '../../components/ui/ArenaHeader';
-import { IMAGES } from '../../constants/images';
-import { completeSignIn } from '../../services/completeSignIn';
+} from "react-native";
+
+import { router } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { authService } from "../../services/authService";
+import { FormInput } from "../../components/ui/FormInput";
+import { PrimaryButton } from "../../components/ui/PrimaryButton";
+import { ArenaHeader } from "../../components/ui/ArenaHeader";
+import { IMAGES } from "../../constants/images";
+import { completeSignIn } from "../../services/completeSignIn";
 
 export default function LoginScreen() {
-
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
   const [errors, setErrors] = useState<{
@@ -37,15 +37,15 @@ export default function LoginScreen() {
     const trimmedEmail = email.trim();
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!trimmedEmail) {
-      nextErrors.email = 'Email address is required';
+      nextErrors.email = "Email address is required";
     } else if (!emailRegex.test(trimmedEmail)) {
-      nextErrors.email = 'Please enter a valid email address';
+      nextErrors.email = "Please enter a valid email address";
     }
 
     if (!password) {
-      nextErrors.password = 'Password is required';
+      nextErrors.password = "Password is required";
     } else if (password.length < 6) {
-      nextErrors.password = 'Password must be at least 6 characters';
+      nextErrors.password = "Password must be at least 6 characters";
     }
 
     setErrors(nextErrors);
@@ -64,7 +64,7 @@ export default function LoginScreen() {
       await authService.login({ email, password });
       router.replace(await completeSignIn());
     } catch (err: any) {
-      setErrors({ general: err?.message || 'Invalid email or password.' });
+      setErrors({ general: err?.message || "Invalid email or password." });
     } finally {
       setIsSubmitting(false);
     }
@@ -78,41 +78,45 @@ export default function LoginScreen() {
       const result = await authService.signInWithGoogle();
       if (result.success) router.replace(await completeSignIn());
     } catch (err: any) {
-      setErrors({ general: err?.message || 'Google sign in failed.' });
+      setErrors({ general: err?.message || "Google sign in failed." });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleAppleLogin = () => {
-    if (Platform.OS !== 'ios') {
+    if (Platform.OS !== "ios") {
       setErrors({
-        general: 'Apple Sign-In is only available on iOS devices.',
+        general: "Apple Sign-In is only available on iOS devices.",
       });
       return;
     }
     setErrors({
-      general: 'Apple Sign-In requires an Apple Developer membership and configuration.',
+      general:
+        "Apple Sign-In requires an Apple Developer membership and configuration.",
     });
   };
 
   const handleForgotPassword = () => {
-    router.push('/(auth)/forgot-password');
+    router.push("/(auth)/forgot-password");
   };
 
   const handleRegister = () => {
-    router.push('/(auth)/create-account');
+    router.push("/(auth)/create-account");
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#0C0D0E]" edges={['top', 'bottom']}>
+    <ThemedScreen className="flex-1 bg-transparent" edges={["top", "bottom"]}>
       <ArenaHeader
         title="Sign In"
         subtitle="Account Access"
         showBack
         fallbackRoute="/(auth)/welcome"
         rightAction={
-          <Pressable onPress={handleRegister} className="py-1.5 px-3 rounded-full bg-[#E85D26]/15 border border-[#E85D26]/30">
+          <Pressable
+            onPress={handleRegister}
+            className="py-1.5 px-3 rounded-full bg-[#E85D26]/15 border border-[#E85D26]/30"
+          >
             <Text className="text-[#E85D26] text-xs font-bold uppercase tracking-wider">
               Register
             </Text>
@@ -121,10 +125,11 @@ export default function LoginScreen() {
       />
 
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
         className="flex-1"
       >
-        <ScrollView
+        <ThemedScroll
+          kind="form"
           contentContainerStyle={{ flexGrow: 1 }}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
@@ -169,7 +174,8 @@ export default function LoginScreen() {
                 value={email}
                 onChangeText={(text) => {
                   setEmail(text);
-                  if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }));
+                  if (errors.email)
+                    setErrors((prev) => ({ ...prev, email: undefined }));
                 }}
                 placeholder="athlete@maidaan.pk"
                 keyboardType="email-address"
@@ -183,7 +189,8 @@ export default function LoginScreen() {
                 value={password}
                 onChangeText={(text) => {
                   setPassword(text);
-                  if (errors.password) setErrors((prev) => ({ ...prev, password: undefined }));
+                  if (errors.password)
+                    setErrors((prev) => ({ ...prev, password: undefined }));
                 }}
                 placeholder="Enter your password"
                 secureTextEntry={!showPassword}
@@ -193,11 +200,13 @@ export default function LoginScreen() {
                   <Pressable
                     onPress={() => setShowPassword(!showPassword)}
                     accessibilityRole="button"
-                    accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+                    accessibilityLabel={
+                      showPassword ? "Hide password" : "Show password"
+                    }
                     className="p-1"
                   >
                     <Ionicons
-                      name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                      name={showPassword ? "eye-off-outline" : "eye-outline"}
                       size={20}
                       color="#A0A5AD"
                     />
@@ -246,7 +255,7 @@ export default function LoginScreen() {
                 accessibilityRole="button"
                 accessibilityLabel="Continue with Google"
                 disabled={isSubmitting}
-                className="w-full min-h-[50px] py-3.5 px-4 rounded-[16px] border border-[rgba(255,255,255,0.08)] bg-[#141518] flex-row items-center justify-center active:bg-[#1B1D22]"
+                className="w-full min-h-[50px] py-3.5 px-4 rounded-[16px] border border-[rgba(255,255,255,0.08)] bg-[#141518]/25 flex-row items-center justify-center active:bg-[#1B1D22]"
               >
                 <Ionicons name="logo-google" size={18} color="#FFFFFF" />
                 <Text className="text-white text-sm font-semibold ml-2.5">
@@ -259,7 +268,7 @@ export default function LoginScreen() {
                 accessibilityRole="button"
                 accessibilityLabel="Continue with Apple"
                 disabled={isSubmitting}
-                className="w-full min-h-[50px] py-3.5 px-4 rounded-[16px] border border-[rgba(255,255,255,0.08)] bg-[#141518] flex-row items-center justify-center active:bg-[#1B1D22] mt-2.5 opacity-80"
+                className="w-full min-h-[50px] py-3.5 px-4 rounded-[16px] border border-[rgba(255,255,255,0.08)] bg-[#141518]/25 flex-row items-center justify-center active:bg-[#1B1D22] mt-2.5 opacity-80"
               >
                 <Ionicons name="logo-apple" size={18} color="#FFFFFF" />
                 <Text className="text-white text-sm font-semibold ml-2.5">
@@ -276,15 +285,15 @@ export default function LoginScreen() {
               accessibilityLabel="New player? Register"
             >
               <Text className="text-[#5C616A] text-sm font-medium">
-                New to Maidaan?{' '}
+                New to Maidaan?{" "}
                 <Text className="text-[#E85D26] font-bold">
                   Create an Account
                 </Text>
               </Text>
             </Pressable>
           </View>
-        </ScrollView>
+        </ThemedScroll>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </ThemedScreen>
   );
 }

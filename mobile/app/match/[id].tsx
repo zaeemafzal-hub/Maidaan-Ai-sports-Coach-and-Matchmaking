@@ -1,62 +1,65 @@
-import React, { useState } from 'react';
+import { ArtworkScrollView as ThemedScroll } from "../../components/ui/Artwork";
+import { ThemedScreen } from "../../components/ui/ThemedScreen";
+import React, { useState } from "react";
 import {
   View,
   Text,
-  ScrollView,
   Pressable,
   Image,
   ActivityIndicator,
   StyleSheet,
-} from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useLocalSearchParams, router } from 'expo-router';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { IMAGES } from '../../constants/images';
-import { MatchSlotItem } from '../../constants/matches';
-import { useAuthStore } from '../../store/useAuthStore';
-import { Sport } from '../../types';
-import { weatherService, WeatherOutlook } from '../../services/weatherService';
-import { WeatherOutlookCard } from '../../components/ui/WeatherOutlookCard';
-import { SpotProgressRing } from '../../components/ui/SpotProgressRing';
-import { matchService } from '../../services/matchService';
-import { joinRequestService } from '../../services/joinRequestService';
-import { chatService } from '../../services/chatService';
-import { AmbientGlowOverlay } from '../../components/ui/AmbientCanvas';
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useLocalSearchParams, router } from "expo-router";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { IMAGES } from "../../constants/images";
+import { MatchSlotItem } from "../../constants/matches";
+import { useAuthStore } from "../../store/useAuthStore";
+import { Sport } from "../../types";
+import { weatherService, WeatherOutlook } from "../../services/weatherService";
+import { WeatherOutlookCard } from "../../components/ui/WeatherOutlookCard";
+import { SpotProgressRing } from "../../components/ui/SpotProgressRing";
+import { matchService } from "../../services/matchService";
+import { joinRequestService } from "../../services/joinRequestService";
+import { chatService } from "../../services/chatService";
+import { AmbientGlowOverlay } from "../../components/ui/AmbientCanvas";
 
 const getSportPhoto = (sport: Sport) => {
   switch (sport) {
-    case 'football':
+    case "football":
       return IMAGES.arenaMatch;
-    case 'cricket':
+    case "cricket":
       return IMAGES.arenaGround;
-    case 'padel':
+    case "padel":
       return IMAGES.arenaTeam;
-    case 'badminton':
+    case "badminton":
       return IMAGES.arenaOnboard;
     default:
       return IMAGES.arenaMatch;
   }
 };
 
-const getSportIcon = (sport: Sport): 'cricket' | 'badminton' | 'tennis' | 'soccer' => {
+const getSportIcon = (
+  sport: Sport,
+): "cricket" | "badminton" | "tennis" | "soccer" => {
   switch (sport) {
-    case 'cricket':
-      return 'cricket';
-    case 'badminton':
-      return 'badminton';
-    case 'padel':
-      return 'tennis';
-    case 'football':
+    case "cricket":
+      return "cricket";
+    case "badminton":
+      return "badminton";
+    case "padel":
+      return "tennis";
+    case "football":
     default:
-      return 'soccer';
+      return "soccer";
   }
 };
 
 export default function MatchDetailsScreen() {
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { currentUser, selectedRole } = useAuthStore();
-  const currentRole = currentUser?.role || selectedRole || 'PLAYER';
+  const { currentUser, roles, activeMode } = useAuthStore();
+  const currentRole = roles.includes(activeMode) ? activeMode : "PLAYER";
 
   const [match, setMatch] = useState<MatchSlotItem | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -70,7 +73,7 @@ export default function MatchDetailsScreen() {
   const isMountedRef = React.useRef(true);
 
   const loadMatch = React.useCallback(async () => {
-    if (!id || typeof id !== 'string' || !id.trim()) {
+    if (!id || typeof id !== "string" || !id.trim()) {
       if (isMountedRef.current) {
         setIsLoading(false);
         setIsNotFound(true);
@@ -98,8 +101,10 @@ export default function MatchDetailsScreen() {
       }
     } catch (err: any) {
       if (isMountedRef.current) {
-        console.warn('[MatchDetailsScreen] Error loading fixture:', err);
-        setError('Unable to load match fixture details. Please check your connection.');
+        console.warn("[MatchDetailsScreen] Error loading fixture:", err);
+        setError(
+          "Unable to load match fixture details. Please check your connection.",
+        );
         setMatch(null);
         setIsNotFound(false);
       }
@@ -154,7 +159,7 @@ export default function MatchDetailsScreen() {
     if (router.canGoBack()) {
       router.back();
     } else {
-      router.replace('/(tabs)/discover');
+      router.replace("/(tabs)/discover");
     }
   };
 
@@ -168,16 +173,17 @@ export default function MatchDetailsScreen() {
       const request = await joinRequestService.createJoinRequest(match.id);
 
       router.push({
-        pathname: '/match/request-sent',
+        pathname: "/match/request-sent",
         params: {
           matchId: match.id,
           requestId: request.id,
         },
       });
     } catch (err: any) {
-      console.warn('[MatchDetailsScreen] Request slot error:', err);
+      console.warn("[MatchDetailsScreen] Request slot error:", err);
       setSubmitError(
-        err?.message || 'Unable to submit join request. Please verify your connection.'
+        err?.message ||
+          "Unable to submit join request. Please verify your connection.",
       );
     } finally {
       setIsSubmitting(false);
@@ -186,25 +192,40 @@ export default function MatchDetailsScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-[#0C0D0E] items-center justify-center p-6" edges={['top', 'bottom']}>
+      <ThemedScreen
+        className="flex-1 bg-[#0C0D0E] items-center justify-center p-6"
+        edges={["top", "bottom"]}
+      >
         <ActivityIndicator size="large" color="#E85D26" />
-        <Text style={{ color: '#A0A5AD' }} className="text-[#A0A5AD] text-xs font-semibold uppercase tracking-wider mt-4">
+        <Text
+          style={{ color: "#A0A5AD" }}
+          className="text-[#A0A5AD] text-xs font-semibold uppercase tracking-wider mt-4"
+        >
           Loading Match Details...
         </Text>
-      </SafeAreaView>
+      </ThemedScreen>
     );
   }
 
   if (error) {
     return (
-      <SafeAreaView className="flex-1 bg-[#0C0D0E] items-center justify-center p-6" edges={['top', 'bottom']}>
+      <ThemedScreen
+        className="flex-1 bg-[#0C0D0E] items-center justify-center p-6"
+        edges={["top", "bottom"]}
+      >
         <View className="w-16 h-16 rounded-2xl bg-[#EF4444]/15 border border-[#EF4444]/30 items-center justify-center mb-4">
           <Ionicons name="cloud-offline-outline" size={32} color="#EF4444" />
         </View>
-        <Text style={{ color: '#FFFFFF' }} className="text-white text-xl font-bold tracking-tight text-center">
+        <Text
+          style={{ color: "#FFFFFF" }}
+          className="text-white text-xl font-bold tracking-tight text-center"
+        >
           Failed to Load Match
         </Text>
-        <Text style={{ color: '#5C616A' }} className="text-[#5C616A] text-sm text-center mt-1.5 max-w-[280px]">
+        <Text
+          style={{ color: "#5C616A" }}
+          className="text-[#5C616A] text-sm text-center mt-1.5 max-w-[280px]"
+        >
           {error}
         </Text>
         <View className="flex-row space-x-3 mt-6">
@@ -213,60 +234,79 @@ export default function MatchDetailsScreen() {
             accessibilityRole="button"
             className="px-6 py-3 rounded-full bg-[#E85D26] active:scale-[0.98] mr-2"
           >
-            <Text style={{ color: '#FFFFFF' }} className="text-white text-xs font-bold uppercase tracking-wider">
+            <Text
+              style={{ color: "#FFFFFF" }}
+              className="text-white text-xs font-bold uppercase tracking-wider"
+            >
               Retry
             </Text>
           </Pressable>
           <Pressable
-            onPress={() => router.replace('/(tabs)/discover')}
+            onPress={() => router.replace("/(tabs)/discover")}
             accessibilityRole="button"
-            className="px-6 py-3 rounded-full bg-[#141518] border border-white/[0.08] active:scale-[0.98]"
+            className="px-6 py-3 rounded-full bg-[#141518]/25 border border-white/[0.08] active:scale-[0.98]"
           >
-            <Text style={{ color: '#FFFFFF' }} className="text-white text-xs font-bold uppercase tracking-wider">
+            <Text
+              style={{ color: "#FFFFFF" }}
+              className="text-white text-xs font-bold uppercase tracking-wider"
+            >
               Back to Discover
             </Text>
           </Pressable>
         </View>
-      </SafeAreaView>
+      </ThemedScreen>
     );
   }
 
   if (isNotFound || !match) {
     return (
-      <SafeAreaView className="flex-1 bg-[#0C0D0E] items-center justify-center p-6" edges={['top', 'bottom']}>
-        <View className="w-16 h-16 rounded-2xl bg-[#141518] border border-white/[0.08] items-center justify-center mb-4">
+      <ThemedScreen
+        className="flex-1 bg-[#0C0D0E] items-center justify-center p-6"
+        edges={["top", "bottom"]}
+      >
+        <View className="w-16 h-16 rounded-2xl bg-[#141518]/25 border border-white/[0.08] items-center justify-center mb-4">
           <Ionicons name="alert-circle-outline" size={32} color="#A0A5AD" />
         </View>
-        <Text style={{ color: '#FFFFFF' }} className="text-white text-xl font-bold tracking-tight text-center">
+        <Text
+          style={{ color: "#FFFFFF" }}
+          className="text-white text-xl font-bold tracking-tight text-center"
+        >
           Match Not Found
         </Text>
-        <Text style={{ color: '#5C616A' }} className="text-[#5C616A] text-sm text-center mt-1.5 max-w-[280px]">
+        <Text
+          style={{ color: "#5C616A" }}
+          className="text-[#5C616A] text-sm text-center mt-1.5 max-w-[280px]"
+        >
           This match is unavailable or may have been removed from the schedule.
         </Text>
         <Pressable
-          onPress={() => router.replace('/(tabs)/discover')}
+          onPress={() => router.replace("/(tabs)/discover")}
           accessibilityRole="button"
           className="mt-6 px-6 py-3 rounded-full bg-[#E85D26] active:scale-[0.98]"
         >
-          <Text style={{ color: '#FFFFFF' }} className="text-white text-xs font-bold uppercase tracking-wider">
+          <Text
+            style={{ color: "#FFFFFF" }}
+            className="text-white text-xs font-bold uppercase tracking-wider"
+          >
             Back to Discover
           </Text>
         </Pressable>
-      </SafeAreaView>
+      </ThemedScreen>
     );
   }
 
   const isCaptainOfMatch = Boolean(
-    currentUser?.id && match.captainId && currentUser.id === match.captainId
+    currentUser?.id && match.captainId && currentUser.id === match.captainId,
   );
   const isMatchFull = match.slotsOpen === 0;
   const heroPhoto = getSportPhoto(match.sport);
   const filledSlots = match.totalSlots - match.slotsOpen;
 
   return (
-    <SafeAreaView className="flex-1 bg-[#0C0D0E]" edges={['top']}>
+    <ThemedScreen className="flex-1 bg-transparent" edges={["top"]}>
       {/* Scrollable Content Area */}
-      <ScrollView
+      <ThemedScroll
+        kind="venues"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           paddingBottom: Math.max(insets.bottom, 16) + 125,
@@ -306,7 +346,7 @@ export default function MatchDetailsScreen() {
                 style={{ marginRight: 5 }}
               />
               <Text
-                style={{ color: '#FFFFFF' }}
+                style={{ color: "#FFFFFF" }}
                 className="text-white text-xs font-bold uppercase tracking-wider"
               >
                 {match.sportLabel}
@@ -317,14 +357,14 @@ export default function MatchDetailsScreen() {
           {/* Hero Bottom Fixture Title & Location */}
           <View className="absolute bottom-4 left-5 right-5 z-10">
             <Text
-              style={{ color: '#E85D26' }}
+              style={{ color: "#E85D26" }}
               className="text-[#E85D26] text-[10px] font-black uppercase tracking-widest mb-1"
             >
               CONFIRMED FIXTURE • {match.groundName}
             </Text>
             <Text
               numberOfLines={2}
-              style={{ color: '#FFFFFF' }}
+              style={{ color: "#FFFFFF" }}
               className="text-white text-2xl font-black tracking-tight uppercase"
             >
               {match.title}
@@ -333,16 +373,21 @@ export default function MatchDetailsScreen() {
             <View className="flex-row items-center mt-2 pt-2 border-t border-white/[0.08]">
               <Ionicons name="time-outline" size={13} color="#A0A5AD" />
               <Text
-                style={{ color: '#A0A5AD' }}
+                style={{ color: "#A0A5AD" }}
                 className="text-[#A0A5AD] text-xs font-medium ml-1.5"
               >
                 {match.date} • {match.time}
               </Text>
-              <Text style={{ color: '#5C616A' }} className="text-[#5C616A] text-xs mx-2">•</Text>
+              <Text
+                style={{ color: "#5C616A" }}
+                className="text-[#5C616A] text-xs mx-2"
+              >
+                •
+              </Text>
               <Ionicons name="location-outline" size={13} color="#A0A5AD" />
               <Text
                 numberOfLines={1}
-                style={{ color: '#A0A5AD' }}
+                style={{ color: "#A0A5AD" }}
                 className="text-[#A0A5AD] text-xs font-medium ml-1 flex-1"
               >
                 {match.area}
@@ -369,12 +414,12 @@ export default function MatchDetailsScreen() {
           </View>
 
           <Text
-            style={{ color: '#A0A5AD' }}
+            style={{ color: "#A0A5AD" }}
             className="text-[#A0A5AD] text-xs font-medium mt-3"
           >
             {match.slotsOpen > 0
               ? `${match.slotsOpen} open spots remaining for this fixture`
-              : 'All spots currently filled'}
+              : "All spots currently filled"}
           </Text>
         </View>
 
@@ -389,7 +434,7 @@ export default function MatchDetailsScreen() {
           />
 
           {/* Fixture Host / Organizer Card (Matching Benchmark Phone 2) */}
-          <View className="bg-[#141518] border border-white/[0.08] rounded-2xl p-4 flex-row items-center justify-between shadow-sm">
+          <View className="bg-[#141518]/25 border border-white/[0.08] rounded-2xl p-4 flex-row items-center justify-between shadow-sm">
             <View className="flex-row items-center flex-1 mr-3">
               <View className="w-12 h-12 rounded-full bg-[#1B1D22] border border-[#E85D26]/40 items-center justify-center mr-3.5 shadow-sm">
                 <Ionicons name="person" size={20} color="#E85D26" />
@@ -397,29 +442,29 @@ export default function MatchDetailsScreen() {
 
               <View className="flex-1">
                 <Text
-                  style={{ color: '#5C616A' }}
+                  style={{ color: "#5C616A" }}
                   className="text-[#5C616A] text-[10px] font-bold uppercase tracking-wider"
                 >
                   Host by
                 </Text>
                 <Text
-                  style={{ color: '#FFFFFF' }}
+                  style={{ color: "#FFFFFF" }}
                   className="text-white text-base font-bold tracking-tight"
                 >
-                  {match.captainName || 'Alex K.'}
+                  {match.captainName || "Alex K."}
                 </Text>
                 <Text
-                  style={{ color: '#A0A5AD' }}
+                  style={{ color: "#A0A5AD" }}
                   className="text-[#A0A5AD] text-xs font-normal"
                 >
-                  {match.teamName || 'Squad Coordinator'}
+                  {match.teamName || "Squad Coordinator"}
                 </Text>
               </View>
             </View>
 
             <View className="px-3 py-1 rounded-full bg-[#1B1D22] border border-white/[0.12]">
               <Text
-                style={{ color: '#E85D26' }}
+                style={{ color: "#E85D26" }}
                 className="text-[#E85D26] text-xs font-bold uppercase tracking-wider"
               >
                 Host
@@ -429,65 +474,65 @@ export default function MatchDetailsScreen() {
 
           {/* Tactical Metadata Grid: Format, Skill Level, Fee */}
           <View className="flex-row space-x-2">
-            <View className="flex-1 bg-[#141518] border border-white/[0.08] rounded-2xl p-3.5 mr-2">
+            <View className="flex-1 bg-[#141518]/25 border border-white/[0.08] rounded-2xl p-3.5 mr-2">
               <Text
-                style={{ color: '#5C616A' }}
+                style={{ color: "#5C616A" }}
                 className="text-[#5C616A] text-[10px] font-bold uppercase tracking-wider"
               >
                 Format
               </Text>
               <Text
                 numberOfLines={1}
-                style={{ color: '#FFFFFF' }}
+                style={{ color: "#FFFFFF" }}
                 className="text-white text-sm font-bold uppercase mt-1"
               >
                 {match.format || match.sportLabel}
               </Text>
               <Text
-                style={{ color: '#5C616A' }}
+                style={{ color: "#5C616A" }}
                 className="text-[#5C616A] text-[11px] font-normal mt-0.5"
               >
-                {match.duration || '90 Mins'}
+                {match.duration || "90 Mins"}
               </Text>
             </View>
 
-            <View className="flex-1 bg-[#141518] border border-white/[0.08] rounded-2xl p-3.5 mr-2">
+            <View className="flex-1 bg-[#141518]/25 border border-white/[0.08] rounded-2xl p-3.5 mr-2">
               <Text
-                style={{ color: '#5C616A' }}
+                style={{ color: "#5C616A" }}
                 className="text-[#5C616A] text-[10px] font-bold uppercase tracking-wider"
               >
                 Skill Tier
               </Text>
               <Text
-                style={{ color: '#E85D26' }}
+                style={{ color: "#E85D26" }}
                 className="text-[#E85D26] text-sm font-bold uppercase mt-1"
               >
                 {match.skillLevel}
               </Text>
               <Text
-                style={{ color: '#5C616A' }}
+                style={{ color: "#5C616A" }}
                 className="text-[#5C616A] text-[11px] font-normal mt-0.5"
               >
                 Competitive
               </Text>
             </View>
 
-            <View className="flex-1 bg-[#141518] border border-white/[0.08] rounded-2xl p-3.5">
+            <View className="flex-1 bg-[#141518]/25 border border-white/[0.08] rounded-2xl p-3.5">
               <Text
-                style={{ color: '#5C616A' }}
+                style={{ color: "#5C616A" }}
                 className="text-[#5C616A] text-[10px] font-bold uppercase tracking-wider"
               >
                 Match Fee
               </Text>
               <Text
                 numberOfLines={1}
-                style={{ color: '#FFFFFF' }}
+                style={{ color: "#FFFFFF" }}
                 className="text-white text-sm font-bold mt-1"
               >
-                {match.feePerPlayer || 'Free'}
+                {match.feePerPlayer || "Free"}
               </Text>
               <Text
-                style={{ color: '#5C616A' }}
+                style={{ color: "#5C616A" }}
                 className="text-[#5C616A] text-[11px] font-normal mt-0.5"
               >
                 Per Player
@@ -496,16 +541,16 @@ export default function MatchDetailsScreen() {
           </View>
 
           {/* Squad Roster Chips */}
-          <View className="bg-[#141518] border border-white/[0.08] rounded-2xl p-4 shadow-sm">
+          <View className="bg-[#141518]/25 border border-white/[0.08] rounded-2xl p-4 shadow-sm">
             <View className="flex-row items-center justify-between mb-3">
               <Text
-                style={{ color: '#FFFFFF' }}
+                style={{ color: "#FFFFFF" }}
                 className="text-white text-sm font-bold uppercase tracking-wider"
               >
                 Squad Roster ({filledSlots} / {match.totalSlots})
               </Text>
               <Text
-                style={{ color: '#E85D26' }}
+                style={{ color: "#E85D26" }}
                 className="text-[#E85D26] text-xs font-bold uppercase tracking-wider"
               >
                 {match.slotsOpen} Open
@@ -513,48 +558,55 @@ export default function MatchDetailsScreen() {
             </View>
 
             <View className="flex-row flex-wrap gap-2">
-              {match.confirmedPlayers && match.confirmedPlayers.length > 0 ? (
-                match.confirmedPlayers.map((player) => (
-                  <View
-                    key={player.id}
-                    className={`flex-row items-center px-3 py-1.5 rounded-xl border mr-2 mb-2 ${
-                      player.isCaptain
-                        ? 'bg-[#1B1D22] border-[#E85D26]/40'
-                        : 'bg-[#141518] border-white/[0.08]'
-                    }`}
-                  >
-                    <Ionicons
-                      name={player.isCaptain ? 'star' : 'person'}
-                      size={12}
-                      color={player.isCaptain ? '#E85D26' : '#A0A5AD'}
-                      style={{ marginRight: 5 }}
-                    />
-                    <Text
-                      style={{ color: player.isCaptain ? '#FFFFFF' : '#A0A5AD' }}
-                      className="text-xs font-semibold"
+              {match.confirmedPlayers && match.confirmedPlayers.length > 0
+                ? match.confirmedPlayers.map((player) => (
+                    <View
+                      key={player.id}
+                      className={`flex-row items-center px-3 py-1.5 rounded-xl border mr-2 mb-2 ${
+                        player.isCaptain
+                          ? "bg-[#1B1D22] border-[#E85D26]/40"
+                          : "bg-[#141518]/25 border-white/[0.08]"
+                      }`}
                     >
-                      {player.name}
-                    </Text>
-                    {player.isCaptain && (
+                      <Ionicons
+                        name={player.isCaptain ? "star" : "person"}
+                        size={12}
+                        color={player.isCaptain ? "#E85D26" : "#A0A5AD"}
+                        style={{ marginRight: 5 }}
+                      />
                       <Text
-                        style={{ color: '#E85D26' }}
-                        className="text-[#E85D26] text-[10px] font-bold uppercase ml-1"
+                        style={{
+                          color: player.isCaptain ? "#FFFFFF" : "#A0A5AD",
+                        }}
+                        className="text-xs font-semibold"
                       >
-                        (C)
+                        {player.name}
                       </Text>
-                    )}
-                  </View>
-                ))
-              ) : null}
+                      {player.isCaptain && (
+                        <Text
+                          style={{ color: "#E85D26" }}
+                          className="text-[#E85D26] text-[10px] font-bold uppercase ml-1"
+                        >
+                          (C)
+                        </Text>
+                      )}
+                    </View>
+                  ))
+                : null}
 
               {Array.from({ length: match.slotsOpen }).map((_, idx) => (
                 <View
                   key={`open-slot-${idx}`}
                   className="flex-row items-center px-3 py-1.5 rounded-xl border border-dashed border-[#E85D26]/40 bg-[#E85D26]/10 mr-2 mb-2"
                 >
-                  <Ionicons name="add-circle" size={13} color="#E85D26" style={{ marginRight: 4 }} />
+                  <Ionicons
+                    name="add-circle"
+                    size={13}
+                    color="#E85D26"
+                    style={{ marginRight: 4 }}
+                  />
                   <Text
-                    style={{ color: '#E85D26' }}
+                    style={{ color: "#E85D26" }}
                     className="text-[#E85D26] text-xs font-bold uppercase tracking-wider"
                   >
                     Open Slot
@@ -565,24 +617,30 @@ export default function MatchDetailsScreen() {
           </View>
 
           {/* Fixture Notes */}
-          <View className="bg-[#141518] border border-white/[0.08] rounded-2xl p-4 shadow-sm">
+          <View className="bg-[#141518]/25 border border-white/[0.08] rounded-2xl p-4 shadow-sm">
             <Text
-              style={{ color: '#FFFFFF' }}
+              style={{ color: "#FFFFFF" }}
               className="text-white text-sm font-bold uppercase tracking-wider mb-2"
             >
               Fixture Notes
             </Text>
             <Text
-              style={{ color: '#A0A5AD' }}
+              style={{ color: "#A0A5AD" }}
               className="text-[#A0A5AD] text-sm font-normal leading-relaxed"
             >
-              {match.description || 'Standard competitive recreational match on local Lahore circuit.'}
+              {match.description ||
+                "Standard competitive recreational match on local Lahore circuit."}
             </Text>
             {match.venueNotes && (
               <View className="mt-3 pt-3 border-t border-white/[0.08] flex-row items-start">
-                <Ionicons name="pin" size={14} color="#E85D26" style={{ marginTop: 2 }} />
+                <Ionicons
+                  name="pin"
+                  size={14}
+                  color="#E85D26"
+                  style={{ marginTop: 2 }}
+                />
                 <Text
-                  style={{ color: '#5C616A' }}
+                  style={{ color: "#5C616A" }}
                   className="text-[#5C616A] text-xs font-normal ml-2 flex-1 leading-5"
                 >
                   {match.venueNotes}
@@ -591,7 +649,7 @@ export default function MatchDetailsScreen() {
             )}
           </View>
         </View>
-      </ScrollView>
+      </ThemedScroll>
 
       {/* Docked Solar Orange Glowing CTA Bar (Phone 2 Benchmark) */}
       <View
@@ -604,7 +662,7 @@ export default function MatchDetailsScreen() {
           <View className="items-center py-2">
             <View className="w-full bg-[#1B1D22] border border-white/[0.08] py-3.5 rounded-full items-center justify-center">
               <Text
-                style={{ color: '#5C616A' }}
+                style={{ color: "#5C616A" }}
                 className="text-[#5C616A] text-sm font-bold uppercase tracking-wider"
               >
                 Match Full — No Slots Open
@@ -618,41 +676,41 @@ export default function MatchDetailsScreen() {
                 try {
                   const room = await chatService.openMatchGroupRoom(match.id);
                   router.push({
-                    pathname: '/chat/[id]',
+                    pathname: "/chat/[id]",
                     params: { id: room.id, type: room.type },
                   });
                 } catch (err: any) {
-                  setSubmitError(err?.message || 'Could not open squad chat.');
+                  setSubmitError(err?.message || "Could not open squad chat.");
                 }
               }}
               accessibilityRole="button"
               className="flex-1 bg-[#E85D26] py-3.5 rounded-full items-center justify-center active:scale-[0.98] mr-2"
             >
               <Text
-                style={{ color: '#0C0D0E' }}
+                style={{ color: "#0C0D0E" }}
                 className="text-[#0C0D0E] text-sm font-black uppercase tracking-wider"
               >
                 Squad Chat
               </Text>
             </Pressable>
             <Pressable
-              onPress={() => router.push('/captain/dashboard')}
+              onPress={() => router.push("/captain/dashboard")}
               accessibilityRole="button"
               className="flex-1 bg-[#1B1D22] border-2 border-white/20 py-3.5 rounded-full items-center justify-center active:scale-[0.98]"
             >
               <Text
-                style={{ color: '#FFFFFF' }}
+                style={{ color: "#FFFFFF" }}
                 className="text-white text-sm font-bold uppercase tracking-wider"
               >
                 Dashboard
               </Text>
             </Pressable>
           </View>
-        ) : currentRole !== 'PLAYER' ? (
+        ) : currentRole !== "PLAYER" ? (
           <View className="items-center py-1">
-            <View className="w-full bg-[#141518] border border-white/[0.08] py-3.5 rounded-full items-center justify-center">
+            <View className="w-full bg-[#141518]/25 border border-white/[0.08] py-3.5 rounded-full items-center justify-center">
               <Text
-                style={{ color: '#5C616A' }}
+                style={{ color: "#5C616A" }}
                 className="text-[#5C616A] text-xs font-semibold uppercase tracking-wider"
               >
                 Player account required to request a slot
@@ -664,7 +722,7 @@ export default function MatchDetailsScreen() {
             {submitError && (
               <View className="mb-2 p-3 bg-[#EF4444]/15 border border-[#EF4444]/30 rounded-xl">
                 <Text
-                  style={{ color: '#EF4444' }}
+                  style={{ color: "#EF4444" }}
                   className="text-[#EF4444] text-xs font-medium text-center"
                 >
                   {submitError}
@@ -678,14 +736,14 @@ export default function MatchDetailsScreen() {
               accessibilityRole="button"
               accessibilityLabel="Request to join match"
               className={`w-full min-h-[56px] py-4 px-6 rounded-full bg-[#E85D26] items-center justify-center flex-row shadow-lg shadow-[#E85D26]/35 active:bg-[#FF723A] active:scale-[0.98] ${
-                isSubmitting ? 'opacity-80' : ''
+                isSubmitting ? "opacity-80" : ""
               }`}
             >
               {isSubmitting ? (
                 <View className="flex-row items-center">
                   <ActivityIndicator size="small" color="#FFFFFF" />
                   <Text
-                    style={{ color: '#FFFFFF' }}
+                    style={{ color: "#FFFFFF" }}
                     className="text-white text-sm font-extrabold uppercase tracking-wider ml-2"
                   >
                     Sending Request...
@@ -694,7 +752,7 @@ export default function MatchDetailsScreen() {
               ) : (
                 <View className="flex-row items-center">
                   <Text
-                    style={{ color: '#FFFFFF' }}
+                    style={{ color: "#FFFFFF" }}
                     className="text-white text-base font-extrabold uppercase tracking-wider mr-1.5"
                   >
                     Request to Join
@@ -706,22 +764,22 @@ export default function MatchDetailsScreen() {
           </View>
         )}
       </View>
-    </SafeAreaView>
+    </ThemedScreen>
   );
 }
 
 const styles = StyleSheet.create({
   heroTopVignette: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(12, 13, 14, 0.76)',
+    backgroundColor: "rgba(12, 13, 14, 0.76)",
   },
   heroBottomFade: {
-    position: 'absolute',
+    position: "absolute",
     left: 0,
     right: 0,
     bottom: 0,
     height: 160,
-    backgroundColor: '#0C0D0E',
+    backgroundColor: "transparent",
     opacity: 0.98,
   },
 });

@@ -1,6 +1,12 @@
-import React from 'react';
-import { View, Text, Pressable, Image, ImageSourcePropType } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import React from "react";
+import {
+  View,
+  Text,
+  Pressable,
+  Image,
+  ImageSourcePropType,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 interface GroundVenueCardProps {
   name: string;
@@ -18,14 +24,14 @@ interface GroundVenueCardProps {
 export const GroundVenueCard: React.FC<GroundVenueCardProps> = ({
   name,
   location,
-  distance = '1.2 km',
+  distance = "1.2 km",
   courtsCount,
   imageSource,
   sports,
-  facilities = ['Floodlights', 'Parking'],
+  facilities = ["Floodlights", "Parking"],
   isVerified = true,
   onPress,
-  className = '',
+  className = "",
 }) => {
   return (
     <Pressable
@@ -33,7 +39,7 @@ export const GroundVenueCard: React.FC<GroundVenueCardProps> = ({
       disabled={!onPress}
       accessibilityRole="button"
       accessibilityLabel={`Hub: ${name} at ${location}`}
-      className={`w-full rounded-2xl overflow-hidden bg-[#141518] border border-[rgba(255,255,255,0.08)] shadow-sm active:scale-[0.99] active:bg-[#1B1D22] transition-all ${className}`}
+      className={`w-full rounded-2xl overflow-hidden bg-[#141518]/25 border border-[rgba(255,255,255,0.08)] shadow-sm active:scale-[0.99] active:bg-[#1B1D22] transition-all ${className}`}
     >
       {/* Venue Photography Container */}
       <View className="h-44 w-full relative bg-[#0C0D0E]">
@@ -74,13 +80,15 @@ export const GroundVenueCard: React.FC<GroundVenueCardProps> = ({
         <View className="absolute bottom-3 left-3 right-3 flex-row items-center justify-between">
           <View className="bg-[#0C0D0E]/90 px-3 py-1 rounded-full flex-row items-center border border-[rgba(255,255,255,0.12)]">
             <Ionicons name="location-sharp" size={12} color="#E85D26" />
-            <Text className="text-[#AEB6BE] text-xs font-medium ml-1">{distance}</Text>
+            <Text className="text-[#AEB6BE] text-xs font-medium ml-1">
+              {distance}
+            </Text>
           </View>
 
           {courtsCount !== undefined && (
             <View className="bg-[#0C0D0E]/90 px-3 py-1 rounded-full border border-[rgba(255,255,255,0.12)]">
               <Text className="text-white text-xs font-bold uppercase">
-                {courtsCount} {courtsCount === 1 ? 'Court' : 'Courts'}
+                {courtsCount} {courtsCount === 1 ? "Court" : "Courts"}
               </Text>
             </View>
           )}

@@ -8,13 +8,14 @@ const SAFE_HOST = "https://sandbox.api.getsafepay.com";
 export function availableGateways() {
   return {
     sandbox: true,
-    safepay: Boolean(
+    disabled: process.env.PAYMENT_MODE === "disabled",
+    safepay: process.env.PAYMENT_MODE !== "disabled" && Boolean(
       process.env.SAFEPAY_PUBLIC_KEY &&
       process.env.SAFEPAY_SECRET_KEY &&
       process.env.SAFEPAY_WEBHOOK_SECRET &&
       publicUrl(),
     ),
-    jazzcash: Boolean(
+    jazzcash: process.env.PAYMENT_MODE !== "disabled" && Boolean(
       process.env.JAZZCASH_MERCHANT_ID &&
       process.env.JAZZCASH_PASSWORD &&
       process.env.JAZZCASH_INTEGRITY_SALT &&
@@ -53,6 +54,7 @@ function safeClient() {
 }
 export function requireGateway(provider: string) {
   const available = availableGateways();
+  if (available.disabled) throw new VenueError(503, 'Venue checkout is disabled for this pilot. Contact the venue directly.');
   if (!["safepay", "jazzcash"].includes(provider))
     throw new VenueError(400, "Choose Safepay or JazzCash.");
   if (!available[provider as "safepay" | "jazzcash"])

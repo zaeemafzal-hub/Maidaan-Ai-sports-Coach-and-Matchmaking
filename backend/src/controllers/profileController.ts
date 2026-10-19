@@ -1,9 +1,20 @@
-import { Request, Response } from 'express';
-import { SupabaseRepo, Sport, SkillLevel, Role } from '../models/supabaseRepo.js';
+import { Request, Response } from "express";
+import {
+  SupabaseRepo,
+  Sport,
+  SkillLevel,
+  Role,
+} from "../models/supabaseRepo.js";
+import { serviceLocation, areaForAddress } from "../config/locations.js";
+import { supabaseAdmin } from "../lib/supabase.js";
 
-const VALID_SPORTS: Sport[] = ['cricket', 'badminton', 'padel', 'football'];
-const VALID_SKILL_LEVELS: SkillLevel[] = ['beginner', 'intermediate', 'advanced'];
-const ALLOWED_PUBLIC_ROLES: Role[] = ['PLAYER', 'TEAM_CAPTAIN', 'HUB_OWNER'];
+const VALID_SPORTS: Sport[] = ["cricket", "badminton", "padel", "football"];
+const VALID_SKILL_LEVELS: SkillLevel[] = [
+  "beginner",
+  "intermediate",
+  "advanced",
+];
+const ALLOWED_PUBLIC_ROLES: Role[] = ["PLAYER", "TEAM_CAPTAIN", "HUB_OWNER"];
 
 export const ProfileController = {
   /**
@@ -13,7 +24,7 @@ export const ProfileController = {
   async initProfile(req: Request, res: Response): Promise<void> {
     try {
       if (!req.auth || !req.auth.userId) {
-        res.status(401).json({ error: 'Authentication required.' });
+        res.status(401).json({ error: "Authentication required." });
         return;
       }
 
@@ -22,26 +33,28 @@ export const ProfileController = {
       const email = req.auth.email;
 
       // 1. Validate name
-      if (!name || typeof name !== 'string' || name.trim().length < 2) {
+      if (!name || typeof name !== "string" || name.trim().length < 2) {
         res.status(400).json({
-          error: 'Full name is required and must be at least 2 characters.',
+          error: "Full name is required and must be at least 2 characters.",
         });
         return;
       }
 
       // 2. Validate role: default to PLAYER for new accounts
-      const assignedRole: Role = role && typeof role === 'string' ? (role as Role) : 'PLAYER';
+      const assignedRole: Role =
+        role && typeof role === "string" ? (role as Role) : "PLAYER";
 
-      if (assignedRole === 'ADMIN') {
+      if (assignedRole === "ADMIN") {
         res.status(403).json({
-          error: 'Administrator accounts cannot be created via public registration.',
+          error:
+            "Administrator accounts cannot be created via public registration.",
         });
         return;
       }
 
       if (!ALLOWED_PUBLIC_ROLES.includes(assignedRole)) {
         res.status(400).json({
-          error: `Invalid role selected. Must be one of: ${ALLOWED_PUBLIC_ROLES.join(', ')}.`,
+          error: `Invalid role selected. Must be one of: ${ALLOWED_PUBLIC_ROLES.join(", ")}.`,
         });
         return;
       }
@@ -75,8 +88,8 @@ export const ProfileController = {
         roles,
       });
     } catch (error) {
-      console.error('[ProfileController.initProfile] Error:', error);
-      res.status(500).json({ error: 'Failed to initialize user profile.' });
+      console.error("[ProfileController.initProfile] Error:", error);
+      res.status(500).json({ error: "Failed to initialize user profile." });
     }
   },
 
@@ -88,7 +101,7 @@ export const ProfileController = {
   async getMyProfile(req: Request, res: Response): Promise<void> {
     try {
       if (!req.auth || !req.auth.userId) {
-        res.status(401).json({ error: 'Authentication required.' });
+        res.status(401).json({ error: "Authentication required." });
         return;
       }
 
@@ -96,7 +109,7 @@ export const ProfileController = {
       const profile = await SupabaseRepo.getProfile(userId);
 
       if (!profile) {
-        res.status(404).json({ error: 'User profile not found.' });
+        res.status(404).json({ error: "User profile not found." });
         return;
       }
 
@@ -116,6 +129,10 @@ export const ProfileController = {
             skillLevel: pRecord.skill_level,
             primaryLocation: pRecord.primary_location,
             matchesPlayed: pRecord.matches_played,
+            phone: pRecord.phone || "",
+            cityId: pRecord.city_id || "",
+            areaId: pRecord.area_id || "",
+            avatarUrl: pRecord.avatar_url || "",
           }
         : null;
 
@@ -138,6 +155,8 @@ export const ProfileController = {
             contactNumber: hRecord.contact_number,
             sports: hRecord.sports,
             isVerified: hRecord.is_verified,
+            cityId: hRecord.city_id || "",
+            areaId: hRecord.area_id || "",
           }
         : null;
 
@@ -147,13 +166,17 @@ export const ProfileController = {
           name: profile.name,
           email: profile.email,
           role: profile.role, // legacy compatibility
-          roles,              // authoritative multi-role array
+          roles, // authoritative multi-role array
           onboardingCompleted: profile.onboarding_completed,
           createdAt: profile.created_at,
         },
         roles,
         onboarding: {
-          player: Boolean(playerProfile),
+          player: Boolean(
+            playerProfile?.phone &&
+            playerProfile.primaryLocation?.trim() &&
+            serviceLocation(playerProfile.cityId).city,
+          ),
           captain: Boolean(captainProfile),
           hubOwner: Boolean(hubOwnerProfile),
         },
@@ -162,8 +185,8 @@ export const ProfileController = {
         hubOwnerProfile,
       });
     } catch (error) {
-      console.error('[ProfileController.getMyProfile] Error:', error);
-      res.status(500).json({ error: 'Failed to retrieve profile.' });
+      console.error("[ProfileController.getMyProfile] Error:", error);
+      res.status(500).json({ error: "Failed to retrieve profile." });
     }
   },
 
@@ -175,25 +198,69 @@ export const ProfileController = {
   async updatePlayerProfile(req: Request, res: Response): Promise<void> {
     try {
       if (!req.auth || !req.auth.userId) {
-        res.status(401).json({ error: 'Authentication required.' });
+        res.status(401).json({ error: "Authentication required." });
         return;
       }
 
       const userId = req.auth.userId;
       const { preferredSports, skillLevel, primaryLocation } = req.body;
+      const { cityId, areaId, avatarUrl = "" } = req.body;
+      const { city, area } = serviceLocation(cityId, areaId);
+      let phone =
+        typeof req.body.phone === "string"
+          ? req.body.phone.replace(/[\s()-]/g, "")
+          : "";
+      if (/^03\d{9}$/.test(phone)) phone = "+92" + phone.slice(1);
+      if (!/^\+[1-9]\d{7,14}$/.test(phone) || !city || (areaId && !area)) {
+        res.status(400).json({
+          error: "A valid phone number and an available city are required.",
+        });
+        return;
+      }
+      const identity = await SupabaseRepo.getProfile(userId);
+      if (!identity?.name?.trim() || !identity.email) {
+        res
+          .status(400)
+          .json({ error: "Complete your account name and email first." });
+        return;
+      }
+      const avatarPrefix = supabaseAdmin.storage
+        .from("profile-photos")
+        .getPublicUrl(`${userId}/`).data.publicUrl;
+      let ownPhoto = avatarUrl === "";
+      try {
+        ownPhoto =
+          ownPhoto ||
+          (typeof avatarUrl === "string" &&
+            new URL(avatarUrl).href.startsWith(avatarPrefix) &&
+            !new URL(avatarUrl).search &&
+            !new URL(avatarUrl).hash);
+      } catch {}
+      if (
+        typeof avatarUrl !== "string" ||
+        avatarUrl.length > 1000 ||
+        !ownPhoto
+      ) {
+        res
+          .status(400)
+          .json({ error: "Upload your own profile photo or remove it." });
+        return;
+      }
 
       // 1. Validate preferred sports
       if (!Array.isArray(preferredSports) || preferredSports.length === 0) {
         res.status(400).json({
-          error: 'Please select at least one preferred sport.',
+          error: "Please select at least one preferred sport.",
         });
         return;
       }
 
-      const invalidSport = preferredSports.find((s) => !VALID_SPORTS.includes(s));
+      const invalidSport = preferredSports.find(
+        (s) => !VALID_SPORTS.includes(s),
+      );
       if (invalidSport) {
         res.status(400).json({
-          error: `Invalid sport "${invalidSport}". Allowed sports: ${VALID_SPORTS.join(', ')}.`,
+          error: `Invalid sport "${invalidSport}". Allowed sports: ${VALID_SPORTS.join(", ")}.`,
         });
         return;
       }
@@ -201,15 +268,20 @@ export const ProfileController = {
       // 2. Validate skill level
       if (!skillLevel || !VALID_SKILL_LEVELS.includes(skillLevel)) {
         res.status(400).json({
-          error: `Skill level must be one of: ${VALID_SKILL_LEVELS.join(', ')}.`,
+          error: `Skill level must be one of: ${VALID_SKILL_LEVELS.join(", ")}.`,
         });
         return;
       }
 
       // 3. Validate primary location
-      if (!primaryLocation || typeof primaryLocation !== 'string' || primaryLocation.trim().length < 2) {
+      if (
+        !primaryLocation ||
+        typeof primaryLocation !== "string" ||
+        primaryLocation.trim().length < 2 ||
+        primaryLocation.trim().length > 500
+      ) {
         res.status(400).json({
-          error: 'Primary location/area is required.',
+          error: "Enter a home address between 2 and 500 characters.",
         });
         return;
       }
@@ -220,10 +292,17 @@ export const ProfileController = {
         preferredSports: preferredSports as Sport[],
         skillLevel: skillLevel as SkillLevel,
         primaryLocation: primaryLocation.trim(),
+        phone,
+        cityId,
+        areaId: areaForAddress(cityId, primaryLocation)?.id || "",
+        avatarUrl,
       });
 
       // 5. Mark onboarding complete in public.profiles
-      const updatedProfile = await SupabaseRepo.setOnboardingCompleted(userId, true);
+      const updatedProfile = await SupabaseRepo.setOnboardingCompleted(
+        userId,
+        true,
+      );
 
       res.status(200).json({
         success: true,
@@ -233,6 +312,10 @@ export const ProfileController = {
           skillLevel: record.skill_level,
           primaryLocation: record.primary_location,
           matchesPlayed: record.matches_played,
+          phone: record.phone || "",
+          cityId: record.city_id || "",
+          areaId: record.area_id || "",
+          avatarUrl: record.avatar_url || "",
         },
         user: updatedProfile
           ? {
@@ -245,8 +328,8 @@ export const ProfileController = {
           : undefined,
       });
     } catch (error) {
-      console.error('[ProfileController.updatePlayerProfile] Error:', error);
-      res.status(500).json({ error: 'Failed to save player profile.' });
+      console.error("[ProfileController.updatePlayerProfile] Error:", error);
+      res.status(500).json({ error: "Failed to save player profile." });
     }
   },
 
@@ -258,7 +341,7 @@ export const ProfileController = {
   async updateCaptainProfile(req: Request, res: Response): Promise<void> {
     try {
       if (!req.auth || !req.auth.userId) {
-        res.status(401).json({ error: 'Authentication required.' });
+        res.status(401).json({ error: "Authentication required." });
         return;
       }
 
@@ -266,9 +349,13 @@ export const ProfileController = {
       const { teamName, sports, skillLevel, primaryLocation } = req.body;
 
       // 1. Validate team name
-      if (!teamName || typeof teamName !== 'string' || teamName.trim().length < 2) {
+      if (
+        !teamName ||
+        typeof teamName !== "string" ||
+        teamName.trim().length < 2
+      ) {
         res.status(400).json({
-          error: 'Team name is required and must be at least 2 characters.',
+          error: "Team name is required and must be at least 2 characters.",
         });
         return;
       }
@@ -276,7 +363,7 @@ export const ProfileController = {
       // 2. Validate sports
       if (!Array.isArray(sports) || sports.length === 0) {
         res.status(400).json({
-          error: 'At least one sport must be selected for the captain profile.',
+          error: "At least one sport must be selected for the captain profile.",
         });
         return;
       }
@@ -284,19 +371,22 @@ export const ProfileController = {
       const invalidSport = sports.find((s) => !VALID_SPORTS.includes(s));
       if (invalidSport) {
         res.status(400).json({
-          error: `Invalid sport "${invalidSport}". Allowed sports: ${VALID_SPORTS.join(', ')}.`,
+          error: `Invalid sport "${invalidSport}". Allowed sports: ${VALID_SPORTS.join(", ")}.`,
         });
         return;
       }
 
       // 3. Skill level validation
-      const resolvedSkill = skillLevel && VALID_SKILL_LEVELS.includes(skillLevel) ? skillLevel : 'intermediate';
+      const resolvedSkill =
+        skillLevel && VALID_SKILL_LEVELS.includes(skillLevel)
+          ? skillLevel
+          : "intermediate";
 
       // 4. Primary location
       const resolvedLocation =
-        typeof primaryLocation === 'string' && primaryLocation.trim()
+        typeof primaryLocation === "string" && primaryLocation.trim()
           ? primaryLocation.trim()
-          : 'Lahore';
+          : "Lahore";
 
       // 5. Save captain profile
       const record = await SupabaseRepo.upsertCaptainProfile({
@@ -308,7 +398,10 @@ export const ProfileController = {
       });
 
       // 6. Mark onboarding complete in public.profiles
-      const updatedProfile = await SupabaseRepo.setOnboardingCompleted(userId, true);
+      const updatedProfile = await SupabaseRepo.setOnboardingCompleted(
+        userId,
+        true,
+      );
 
       res.status(200).json({
         success: true,
@@ -330,8 +423,8 @@ export const ProfileController = {
           : undefined,
       });
     } catch (error) {
-      console.error('[ProfileController.updateCaptainProfile] Error:', error);
-      res.status(500).json({ error: 'Failed to save captain profile.' });
+      console.error("[ProfileController.updateCaptainProfile] Error:", error);
+      res.status(500).json({ error: "Failed to save captain profile." });
     }
   },
 
@@ -344,25 +437,47 @@ export const ProfileController = {
   async updateHubOwnerProfile(req: Request, res: Response): Promise<void> {
     try {
       if (!req.auth || !req.auth.userId) {
-        res.status(401).json({ error: 'Authentication required.' });
+        res.status(401).json({ error: "Authentication required." });
         return;
       }
 
       const userId = req.auth.userId;
-      const { hubName, location, courtsCount, courtCount, contactNumber, sports } = req.body;
+      const {
+        hubName,
+        location,
+        courtsCount,
+        courtCount,
+        contactNumber,
+        sports,
+      } = req.body;
+      const { cityId, areaId } = req.body;
+      if (cityId !== undefined && !serviceLocation(cityId, areaId).area) {
+        res
+          .status(400)
+          .json({ error: "Select an available city and venue area." });
+        return;
+      }
 
       // 1. Validate hub name
-      if (!hubName || typeof hubName !== 'string' || hubName.trim().length < 2) {
+      if (
+        !hubName ||
+        typeof hubName !== "string" ||
+        hubName.trim().length < 2
+      ) {
         res.status(400).json({
-          error: 'Hub name is required and must be at least 2 characters.',
+          error: "Hub name is required and must be at least 2 characters.",
         });
         return;
       }
 
       // 2. Validate location
-      if (!location || typeof location !== 'string' || location.trim().length < 2) {
+      if (
+        !location ||
+        typeof location !== "string" ||
+        location.trim().length < 2
+      ) {
         res.status(400).json({
-          error: 'Hub location is required.',
+          error: "Hub location is required.",
         });
         return;
       }
@@ -371,15 +486,19 @@ export const ProfileController = {
       const count = Number(courtCount ?? courtsCount);
       if (isNaN(count) || count < 1) {
         res.status(400).json({
-          error: 'Hub must declare at least 1 playing court or pitch.',
+          error: "Hub must declare at least 1 playing court or pitch.",
         });
         return;
       }
 
       // 4. Validate contact number
-      if (!contactNumber || typeof contactNumber !== 'string' || contactNumber.trim().length < 7) {
+      if (
+        !contactNumber ||
+        typeof contactNumber !== "string" ||
+        contactNumber.trim().length < 7
+      ) {
         res.status(400).json({
-          error: 'A valid contact phone number is required.',
+          error: "A valid contact phone number is required.",
         });
         return;
       }
@@ -389,7 +508,7 @@ export const ProfileController = {
         const invalidSport = sports.find((s) => !VALID_SPORTS.includes(s));
         if (invalidSport) {
           res.status(400).json({
-            error: `Invalid sport "${invalidSport}". Allowed sports: ${VALID_SPORTS.join(', ')}.`,
+            error: `Invalid sport "${invalidSport}". Allowed sports: ${VALID_SPORTS.join(", ")}.`,
           });
           return;
         }
@@ -403,10 +522,15 @@ export const ProfileController = {
         courtCount: count,
         contactNumber: contactNumber.trim(),
         sports: Array.isArray(sports) ? (sports as Sport[]) : [],
+        cityId,
+        areaId,
       });
 
       // 7. Mark onboarding complete in public.profiles
-      const updatedProfile = await SupabaseRepo.setOnboardingCompleted(userId, true);
+      const updatedProfile = await SupabaseRepo.setOnboardingCompleted(
+        userId,
+        true,
+      );
 
       res.status(200).json({
         success: true,
@@ -418,6 +542,8 @@ export const ProfileController = {
           contactNumber: record.contact_number,
           sports: record.sports,
           isVerified: record.is_verified,
+          cityId: record.city_id || "",
+          areaId: record.area_id || "",
         },
         user: updatedProfile
           ? {
@@ -430,8 +556,8 @@ export const ProfileController = {
           : undefined,
       });
     } catch (error) {
-      console.error('[ProfileController.updateHubOwnerProfile] Error:', error);
-      res.status(500).json({ error: 'Failed to save hub owner profile.' });
+      console.error("[ProfileController.updateHubOwnerProfile] Error:", error);
+      res.status(500).json({ error: "Failed to save hub owner profile." });
     }
   },
 };

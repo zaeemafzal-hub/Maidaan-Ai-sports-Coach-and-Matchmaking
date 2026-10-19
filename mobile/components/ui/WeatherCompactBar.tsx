@@ -17,7 +17,7 @@ export const WeatherCompactBar: React.FC<WeatherCompactBarProps> = ({
   if (loading) {
     return (
       <View
-        className={`flex-row items-center justify-between bg-[#141518] border border-[rgba(255,255,255,0.08)] px-3.5 py-2 rounded-xl ${className}`}
+        className={`flex-row items-center justify-between bg-[#141518]/25 border border-[rgba(255,255,255,0.08)] px-3.5 py-2 rounded-xl ${className}`}
       >
         <View className="flex-row items-center">
           <ActivityIndicator size="small" color="#E85D26" />
@@ -32,7 +32,7 @@ export const WeatherCompactBar: React.FC<WeatherCompactBarProps> = ({
   if (!weather) {
     return (
       <View
-        className={`flex-row items-center justify-between bg-[#141518] border border-[rgba(255,255,255,0.08)] px-3.5 py-2 rounded-xl ${className}`}
+        className={`flex-row items-center justify-between bg-[#141518]/25 border border-[rgba(255,255,255,0.08)] px-3.5 py-2 rounded-xl ${className}`}
       >
         <View className="flex-row items-center">
           <Ionicons name="cloud-offline-outline" size={14} color="#5C616A" />
@@ -80,7 +80,7 @@ export const WeatherCompactBar: React.FC<WeatherCompactBarProps> = ({
     <View
       accessibilityRole="summary"
       accessibilityLabel={`Weather in ${weather.location}: ${weather.temperatureC} degrees Celsius, ${weather.condition}, ${weather.rainProbability}% rain chance. ${badgeLabel}.`}
-      className={`flex-row items-center justify-between bg-[#141518] border border-[rgba(255,255,255,0.08)] px-3.5 py-2 rounded-xl shadow-xs ${className}`}
+      className={`flex-row items-center justify-between bg-[#141518]/25 border border-[rgba(255,255,255,0.08)] px-3.5 py-2 rounded-xl shadow-xs ${className}`}
     >
       {/* Left: Weather Metrics */}
       <View className="flex-row items-center flex-1 mr-2">

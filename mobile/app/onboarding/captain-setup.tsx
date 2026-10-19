@@ -1,38 +1,39 @@
-import React, { useState, useEffect } from 'react';
+import { ArtworkScrollView as ThemedScroll } from "../../components/ui/Artwork";
+import { ThemedScreen } from "../../components/ui/ThemedScreen";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
   Pressable,
-  ScrollView,
   Modal,
   Image,
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useAuthStore } from '../../store/useAuthStore';
-import { Sport, SkillLevel, CaptainProfile } from '../../types';
-import { profileService } from '../../services/profileService';
-import { SportCard } from '../../components/ui/SportCard';
-import { ArenaHeader } from '../../components/ui/ArenaHeader';
-import { PrimaryButton } from '../../components/ui/PrimaryButton';
-import { FormInput } from '../../components/ui/FormInput';
-import { IMAGES } from '../../constants/images';
+} from "react-native";
+
+import { router } from "expo-router";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { useAuthStore } from "../../store/useAuthStore";
+import { Sport, SkillLevel } from "../../types";
+import { profileService } from "../../services/profileService";
+import { SportCard } from "../../components/ui/SportCard";
+import { ArenaHeader } from "../../components/ui/ArenaHeader";
+import { PrimaryButton } from "../../components/ui/PrimaryButton";
+import { FormInput } from "../../components/ui/FormInput";
+import { IMAGES } from "../../constants/images";
 
 interface SportConfig {
   sport: Sport;
   label: string;
-  iconName: 'cricket' | 'badminton' | 'tennis' | 'soccer';
+  iconName: "cricket" | "badminton" | "tennis" | "soccer";
 }
 
 const ALL_SPORTS: SportConfig[] = [
-  { sport: 'cricket', label: 'Cricket', iconName: 'cricket' },
-  { sport: 'badminton', label: 'Badminton', iconName: 'badminton' },
-  { sport: 'padel', label: 'Padel', iconName: 'tennis' },
-  { sport: 'football', label: 'Football', iconName: 'soccer' },
+  { sport: "cricket", label: "Cricket", iconName: "cricket" },
+  { sport: "badminton", label: "Badminton", iconName: "badminton" },
+  { sport: "padel", label: "Padel", iconName: "tennis" },
+  { sport: "football", label: "Football", iconName: "soccer" },
 ];
 
 interface SkillTierConfig {
@@ -44,31 +45,31 @@ interface SkillTierConfig {
 
 const SKILL_TIERS: SkillTierConfig[] = [
   {
-    key: 'beginner',
-    label: 'Beginner',
-    tagline: 'Grassroots & friendly casual fixtures',
-    badge: 'TIER 1',
+    key: "beginner",
+    label: "Beginner",
+    tagline: "Grassroots & friendly casual fixtures",
+    badge: "TIER 1",
   },
   {
-    key: 'intermediate',
-    label: 'Intermediate',
-    tagline: 'Club regular & structured competitive play',
-    badge: 'TIER 2',
+    key: "intermediate",
+    label: "Intermediate",
+    tagline: "Club regular & structured competitive play",
+    badge: "TIER 2",
   },
   {
-    key: 'advanced',
-    label: 'Advanced',
-    tagline: 'Premier tournament & league pace',
-    badge: 'TIER 3',
+    key: "advanced",
+    label: "Advanced",
+    tagline: "Premier tournament & league pace",
+    badge: "TIER 3",
   },
 ];
 
 const PRESET_AREAS = [
-  'Gulberg, Lahore',
-  'DHA Phase 5, Lahore',
-  'Model Town, Lahore',
-  'Johar Town, Lahore',
-  'Cantt, Lahore',
+  "Gulberg, Lahore",
+  "DHA Phase 5, Lahore",
+  "Model Town, Lahore",
+  "Johar Town, Lahore",
+  "Cantt, Lahore",
 ];
 
 export default function CaptainSetupScreen() {
@@ -86,16 +87,16 @@ export default function CaptainSetupScreen() {
     if (!isInitialized || isLoading) return;
 
     if (!currentUser) {
-      router.replace('/(auth)/login');
+      router.replace("/(auth)/login");
       return;
     }
   }, [isInitialized, isLoading, currentUser]);
 
   // Approved Form Fields
-  const [teamName, setTeamName] = useState('');
-  const [primarySport, setPrimarySport] = useState<Sport>('football');
-  const [skillLevel, setSkillLevel] = useState<SkillLevel>('intermediate');
-  const [area, setArea] = useState('Gulberg, Lahore');
+  const [teamName, setTeamName] = useState("");
+  const [primarySport, setPrimarySport] = useState<Sport>("football");
+  const [skillLevel, setSkillLevel] = useState<SkillLevel>("intermediate");
+  const [area, setArea] = useState("Gulberg, Lahore");
 
   // UI State
   const [isAreaModalVisible, setIsAreaModalVisible] = useState(false);
@@ -109,17 +110,17 @@ export default function CaptainSetupScreen() {
     const trimmed = teamName.trim();
 
     if (!trimmed) {
-      setTeamNameError('Team name is required');
+      setTeamNameError("Team name is required");
       isValid = false;
     } else if (trimmed.length < 2) {
-      setTeamNameError('Team name must be at least 2 characters');
+      setTeamNameError("Team name must be at least 2 characters");
       isValid = false;
     } else {
       setTeamNameError(undefined);
     }
 
     if (!primarySport) {
-      setGeneralError('Please select a primary sport');
+      setGeneralError("Please select a primary sport");
       isValid = false;
     }
 
@@ -145,34 +146,38 @@ export default function CaptainSetupScreen() {
       setCaptainProfile(result.profile);
       setOnboardingCompleted(true);
       await loadProfile();
-      await setActiveMode('TEAM_CAPTAIN');
+      await setActiveMode("TEAM_CAPTAIN");
 
-      router.replace('/captain/dashboard');
+      router.replace("/captain/dashboard");
     } catch (err: any) {
-      setGeneralError(err?.message || 'Failed to complete captain setup. Please try again.');
+      setGeneralError(
+        err?.message || "Failed to complete captain setup. Please try again.",
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleEditPress = () => {
-    setEditNotice('Team details and home ground can be updated anytime from your Captain Dashboard.');
+    setEditNotice(
+      "Team details and home ground can be updated anytime from your Captain Dashboard.",
+    );
     setTimeout(() => setEditNotice(null), 3500);
   };
 
   if (!isInitialized || isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-[#0C0D0E] items-center justify-center">
+      <ThemedScreen className="flex-1 bg-[#0C0D0E] items-center justify-center">
         <ActivityIndicator size="large" color="#E85D26" />
         <Text className="text-[#A0A5AD] text-xs font-semibold tracking-wider mt-3">
           Loading session...
         </Text>
-      </SafeAreaView>
+      </ThemedScreen>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-[#0C0D0E]" edges={['top', 'bottom']}>
+    <ThemedScreen className="flex-1 bg-transparent" edges={["top", "bottom"]}>
       {/* Modern Header */}
       <ArenaHeader
         title="Captain Setup"
@@ -182,17 +187,18 @@ export default function CaptainSetupScreen() {
       />
 
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
         className="flex-1"
       >
-        <ScrollView
+        <ThemedScroll
+          kind="form"
           contentContainerStyle={{ flexGrow: 1 }}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
           className="flex-1"
         >
           {/* Sports Photography Hero Section */}
-          <View className="relative w-full h-44 bg-[#141518] overflow-hidden border-b border-white/[0.08]">
+          <View className="relative w-full h-44 bg-[#141518]/25 overflow-hidden border-b border-white/[0.08]">
             <Image
               source={IMAGES.arenaTeam}
               className="w-full h-full"
@@ -219,7 +225,8 @@ export default function CaptainSetupScreen() {
                 Set Up Your Squad
               </Text>
               <Text className="text-[#A0A5AD] text-[11px] font-medium mt-0.5 tracking-tight">
-                Establish your team identity and competitive tier to organize matches.
+                Establish your team identity and competitive tier to organize
+                matches.
               </Text>
             </View>
           </View>
@@ -228,8 +235,12 @@ export default function CaptainSetupScreen() {
           <View className="px-5 py-4">
             {/* Edit Notice Toast if triggered */}
             {editNotice && (
-              <View className="mb-4 p-3 rounded-xl bg-[#141518] border border-[#E85D26]/30 flex-row items-center shadow-xs">
-                <Ionicons name="information-circle-sharp" size={18} color="#E85D26" />
+              <View className="mb-4 p-3 rounded-xl bg-[#141518]/25 border border-[#E85D26]/30 flex-row items-center shadow-xs">
+                <Ionicons
+                  name="information-circle-sharp"
+                  size={18}
+                  color="#E85D26"
+                />
                 <Text className="text-[#E85D26] text-xs font-semibold ml-2 flex-1">
                   {editNotice}
                 </Text>
@@ -237,12 +248,16 @@ export default function CaptainSetupScreen() {
             )}
 
             {/* Section 1: Captain Credential Card */}
-            <View className="bg-[#141518] border border-white/[0.08] rounded-2xl p-3.5 mb-5 shadow-sm">
+            <View className="bg-[#141518]/25 border border-white/[0.08] rounded-2xl p-3.5 mb-5 shadow-sm">
               <View className="flex-row items-center justify-between">
                 <View className="flex-row items-center flex-1 mr-3">
                   {/* Captain Shield Badge */}
                   <View className="w-12 h-12 rounded-xl bg-[#1B1D22] border border-white/[0.08] items-center justify-center mr-3 relative">
-                    <MaterialCommunityIcons name="shield-star" size={24} color="#E85D26" />
+                    <MaterialCommunityIcons
+                      name="shield-star"
+                      size={24}
+                      color="#E85D26"
+                    />
                     <View className="absolute -bottom-1 -right-1 px-1 py-0.2 bg-[#E85D26] rounded-xs">
                       <Text className="text-[#0C0D0E] text-[8px] font-black tracking-tighter">
                         CPT
@@ -256,7 +271,7 @@ export default function CaptainSetupScreen() {
                       numberOfLines={1}
                       className="text-[#FFFFFF] text-sm font-bold uppercase tracking-tight"
                     >
-                      {teamName.trim() || currentUser?.name || 'Squad Captain'}
+                      {teamName.trim() || currentUser?.name || "Squad Captain"}
                     </Text>
                     <View className="flex-row items-center mt-0.5">
                       <Text className="text-[#E85D26] text-[11px] font-bold uppercase tracking-wide">
@@ -364,8 +379,8 @@ export default function CaptainSetupScreen() {
                       accessibilityLabel={`${tier.label} competitive tier`}
                       className={`w-full p-3.5 rounded-xl border flex-row items-center justify-between my-1 active:scale-[0.99] ${
                         isSelected
-                          ? 'bg-[#1B1D22] border-[#E85D26] shadow-sm'
-                          : 'bg-[#141518] border-white/[0.08]'
+                          ? "bg-[#1B1D22] border-[#E85D26] shadow-sm"
+                          : "bg-[#141518]/25 border-white/[0.08]"
                       }`}
                     >
                       <View className="flex-row items-center flex-1 mr-3">
@@ -373,13 +388,13 @@ export default function CaptainSetupScreen() {
                         <View
                           className={`w-10 h-10 rounded-lg items-center justify-center mr-3 border ${
                             isSelected
-                              ? 'bg-[#E85D26]/15 border-[#E85D26]/40'
-                              : 'bg-[#1B1D22] border-white/[0.08]'
+                              ? "bg-[#E85D26]/15 border-[#E85D26]/40"
+                              : "bg-[#1B1D22] border-white/[0.08]"
                           }`}
                         >
                           <Text
                             className={`text-[10px] font-black uppercase ${
-                              isSelected ? 'text-[#E85D26]' : 'text-[#5C616A]'
+                              isSelected ? "text-[#E85D26]" : "text-[#5C616A]"
                             }`}
                           >
                             {tier.badge}
@@ -390,7 +405,7 @@ export default function CaptainSetupScreen() {
                         <View className="flex-1">
                           <Text
                             className={`text-sm font-bold uppercase tracking-tight ${
-                              isSelected ? 'text-[#FFFFFF]' : 'text-[#A0A5AD]'
+                              isSelected ? "text-[#FFFFFF]" : "text-[#A0A5AD]"
                             }`}
                           >
                             {tier.label}
@@ -405,8 +420,8 @@ export default function CaptainSetupScreen() {
                       <View
                         className={`w-5 h-5 rounded-full border items-center justify-center ${
                           isSelected
-                            ? 'border-[#E85D26] bg-[#E85D26]'
-                            : 'border-white/20 bg-[#1B1D22]'
+                            ? "border-[#E85D26] bg-[#E85D26]"
+                            : "border-white/20 bg-[#1B1D22]"
                         }`}
                       >
                         {isSelected && (
@@ -430,7 +445,7 @@ export default function CaptainSetupScreen() {
                 </Text>
               </View>
 
-              <View className="bg-[#141518] border border-white/[0.08] rounded-xl p-3.5 flex-row items-center justify-between shadow-xs">
+              <View className="bg-[#141518]/25 border border-white/[0.08] rounded-xl p-3.5 flex-row items-center justify-between shadow-xs">
                 <View className="flex-row items-center flex-1 mr-3">
                   <View className="w-10 h-10 rounded-lg bg-[#E85D26]/10 border border-[#E85D26]/25 items-center justify-center mr-3">
                     <Ionicons name="location-sharp" size={20} color="#E85D26" />
@@ -462,7 +477,11 @@ export default function CaptainSetupScreen() {
             {/* General Validation Error */}
             {generalError && (
               <View className="mb-4 p-3 rounded-xl bg-[#F4A261]/10 border border-[#F4A261]/30 flex-row items-center">
-                <Ionicons name="alert-circle-outline" size={16} color="#F4A261" />
+                <Ionicons
+                  name="alert-circle-outline"
+                  size={16}
+                  color="#F4A261"
+                />
                 <Text className="text-[#F4A261] text-xs font-semibold ml-2 flex-1">
                   {generalError}
                 </Text>
@@ -480,14 +499,18 @@ export default function CaptainSetupScreen() {
               />
 
               <View className="flex-row items-center justify-center mt-3">
-                <Ionicons name="shield-checkmark-sharp" size={13} color="#E85D26" />
+                <Ionicons
+                  name="shield-checkmark-sharp"
+                  size={13}
+                  color="#E85D26"
+                />
                 <Text className="text-[#5C616A] text-[10px] font-semibold tracking-wider ml-1.5">
                   Verified match hosting · Real-time squad recruitment
                 </Text>
               </View>
             </View>
           </View>
-        </ScrollView>
+        </ThemedScroll>
       </KeyboardAvoidingView>
 
       {/* Area Selector Modal */}
@@ -503,7 +526,7 @@ export default function CaptainSetupScreen() {
         >
           <Pressable
             onPress={(e) => e.stopPropagation()}
-            className="w-full max-w-sm rounded-2xl bg-[#141518] border border-white/[0.08] p-5 shadow-2xl"
+            className="w-full max-w-sm rounded-2xl bg-[#141518]/25 border border-white/[0.08] p-5 shadow-2xl"
           >
             {/* Modal Header */}
             <View className="flex-row items-center justify-between mb-4 pb-3 border-b border-white/[0.08]">
@@ -537,19 +560,19 @@ export default function CaptainSetupScreen() {
                     }}
                     className={`w-full p-3 rounded-xl border flex-row items-center justify-between my-1 active:scale-[0.99] ${
                       isSelected
-                        ? 'bg-[#1B1D22] border-[#E85D26]'
-                        : 'bg-[#0C0D0E] border-white/[0.08]'
+                        ? "bg-[#1B1D22] border-[#E85D26]"
+                        : "bg-[#0C0D0E] border-white/[0.08]"
                     }`}
                   >
                     <View className="flex-row items-center flex-1">
                       <Ionicons
                         name="location-sharp"
                         size={16}
-                        color={isSelected ? '#E85D26' : '#5C616A'}
+                        color={isSelected ? "#E85D26" : "#5C616A"}
                       />
                       <Text
                         className={`text-xs font-bold uppercase tracking-tight ml-2.5 ${
-                          isSelected ? 'text-[#E85D26]' : 'text-[#FFFFFF]'
+                          isSelected ? "text-[#E85D26]" : "text-[#FFFFFF]"
                         }`}
                       >
                         {item}
@@ -567,6 +590,6 @@ export default function CaptainSetupScreen() {
           </Pressable>
         </Pressable>
       </Modal>
-    </SafeAreaView>
+    </ThemedScreen>
   );
 }

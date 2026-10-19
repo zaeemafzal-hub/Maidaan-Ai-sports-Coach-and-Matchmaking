@@ -22,7 +22,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
 }) => {
   return (
     <View
-      className={`w-full p-8 rounded-2xl bg-[#141518] border border-[rgba(255,255,255,0.08)] items-center justify-center text-center ${className}`}
+      className={`w-full p-8 rounded-2xl bg-[#141518]/25 border border-[rgba(255,255,255,0.08)] items-center justify-center text-center ${className}`}
     >
       {/* Icon Container */}
       <View className="w-16 h-16 rounded-2xl bg-[#1B1D22] border border-[rgba(255,255,255,0.08)] items-center justify-center mb-4">

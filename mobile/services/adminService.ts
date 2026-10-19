@@ -1,4 +1,5 @@
 import { api, ApiResponse } from './api';
+import { normalizeHubVerification } from '../utils/hubVerification';
 import {
   HubVerificationRequest,
   HubVerificationStatus,
@@ -63,7 +64,8 @@ export const adminService = {
     if (filters?.status) {
       endpoint += `?status=${encodeURIComponent(filters.status)}`;
     }
-    return api.get<{ requests: HubVerificationRequest[] }>(endpoint);
+    const result = await api.get<{ requests: HubVerificationRequest[] }>(endpoint);
+    return result.data ? {...result, data: {requests: result.data.requests.map(normalizeHubVerification)}} : result;
   },
 
   /**
@@ -73,9 +75,10 @@ export const adminService = {
   async getHubVerificationById(
     id: string
   ): Promise<ApiResponse<{ request: HubVerificationRequest }>> {
-    return api.get<{ request: HubVerificationRequest }>(
+    const result = await api.get<{ request: HubVerificationRequest }>(
       `/api/admin/hub-verifications/${id}`
     );
+    return result.data ? {...result, data: {request: normalizeHubVerification(result.data.request)}} : result;
   },
 
   /**
@@ -87,10 +90,11 @@ export const adminService = {
     action: 'APPROVE' | 'REJECT',
     adminNote?: string
   ): Promise<ApiResponse<{ request: HubVerificationRequest }>> {
-    return api.patch<{ request: HubVerificationRequest }>(
+    const result = await api.patch<{ request: HubVerificationRequest }>(
       `/api/admin/hub-verifications/${id}`,
       { action, adminNote: adminNote ? adminNote.trim() : undefined }
     );
+    return result.data ? {...result, data: {request: normalizeHubVerification(result.data.request)}} : result;
   },
 
   /**

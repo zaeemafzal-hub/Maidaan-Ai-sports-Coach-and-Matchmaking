@@ -1,23 +1,24 @@
-import React, { useState } from 'react';
+import { ArtworkScrollView as ThemedScroll } from "../../components/ui/Artwork";
+import { ThemedScreen } from "../../components/ui/ThemedScreen";
+import React, { useState } from "react";
 import {
   View,
   Text,
   Pressable,
-  ScrollView,
   KeyboardAvoidingView,
   Platform,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { FormInput } from '../../components/ui/FormInput';
-import { PrimaryButton } from '../../components/ui/PrimaryButton';
-import { ArenaHeader } from '../../components/ui/ArenaHeader';
-import { authService } from '../../services/authService';
+} from "react-native";
+
+import { router } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { FormInput } from "../../components/ui/FormInput";
+import { PrimaryButton } from "../../components/ui/PrimaryButton";
+import { ArenaHeader } from "../../components/ui/ArenaHeader";
+import { authService } from "../../services/authService";
 
 export default function ResetPasswordScreen() {
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | undefined>();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -25,17 +26,17 @@ export default function ResetPasswordScreen() {
 
   const validate = (): boolean => {
     if (!newPassword) {
-      setError('New password is required');
+      setError("New password is required");
       return false;
     }
 
     if (newPassword.length < 8) {
-      setError('Password must be at least 8 characters long');
+      setError("Password must be at least 8 characters long");
       return false;
     }
 
     if (newPassword !== confirmPassword) {
-      setError('Passwords do not match');
+      setError("Passwords do not match");
       return false;
     }
 
@@ -55,18 +56,21 @@ export default function ResetPasswordScreen() {
       await authService.updatePassword(newPassword);
       setIsSuccess(true);
     } catch (err: any) {
-      setError(err?.message || 'Failed to update password. Please try again or request a new reset link.');
+      setError(
+        err?.message ||
+          "Failed to update password. Please try again or request a new reset link.",
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleBackToLogin = () => {
-    router.replace('/(auth)/login');
+    router.replace("/(auth)/login");
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#0C0D0E]" edges={['top', 'bottom']}>
+    <ThemedScreen className="flex-1 bg-transparent" edges={["top", "bottom"]}>
       <ArenaHeader
         title="New Password"
         subtitle="Security Update"
@@ -75,10 +79,11 @@ export default function ResetPasswordScreen() {
       />
 
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
         className="flex-1"
       >
-        <ScrollView
+        <ThemedScroll
+          kind="form"
           contentContainerStyle={{ flexGrow: 1 }}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
@@ -86,9 +91,13 @@ export default function ResetPasswordScreen() {
         >
           {isSuccess ? (
             /* Success confirmation card */
-            <View className="p-6 rounded-2xl bg-[#141518] border border-white/[0.08] shadow-md my-auto">
+            <View className="p-6 rounded-2xl bg-[#141518]/25 border border-white/[0.08] shadow-md my-auto">
               <View className="w-14 h-14 rounded-2xl bg-[#22C55E]/15 border border-[#22C55E]/30 items-center justify-center mb-4">
-                <Ionicons name="checkmark-circle-outline" size={28} color="#22C55E" />
+                <Ionicons
+                  name="checkmark-circle-outline"
+                  size={28}
+                  color="#22C55E"
+                />
               </View>
 
               <Text className="text-white text-2xl font-bold tracking-tight">
@@ -96,7 +105,8 @@ export default function ResetPasswordScreen() {
               </Text>
 
               <Text className="text-[#A0A5AD] text-sm mt-2 leading-relaxed">
-                Your password has been successfully updated. You can now use your new password to sign into Maidaan.
+                Your password has been successfully updated. You can now use
+                your new password to sign into Maidaan.
               </Text>
 
               <View className="mt-6">
@@ -117,7 +127,8 @@ export default function ResetPasswordScreen() {
                   Create New Password
                 </Text>
                 <Text className="text-[#A0A5AD] text-sm mt-2 leading-relaxed">
-                  Enter your new password below. It must be at least 8 characters long.
+                  Enter your new password below. It must be at least 8
+                  characters long.
                 </Text>
               </View>
 
@@ -144,11 +155,13 @@ export default function ResetPasswordScreen() {
                     <Pressable
                       onPress={() => setShowPassword(!showPassword)}
                       accessibilityRole="button"
-                      accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+                      accessibilityLabel={
+                        showPassword ? "Hide password" : "Show password"
+                      }
                       className="p-1"
                     >
                       <Ionicons
-                        name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                        name={showPassword ? "eye-off-outline" : "eye-outline"}
                         size={20}
                         color="#A0A5AD"
                       />
@@ -192,8 +205,8 @@ export default function ResetPasswordScreen() {
               </View>
             </View>
           )}
-        </ScrollView>
+        </ThemedScroll>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </ThemedScreen>
   );
 }

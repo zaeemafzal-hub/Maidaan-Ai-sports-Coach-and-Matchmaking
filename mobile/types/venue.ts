@@ -33,6 +33,10 @@ export interface VenueSlot {
   cancellationRefund: "FULL" | "KEEP_ADVANCE";
 }
 export interface Venue {
+  cityId?: string;
+  areaId?: string;
+  cityName?: string;
+  areaLabel?: string;
   id: string;
   name: string;
   location: string;

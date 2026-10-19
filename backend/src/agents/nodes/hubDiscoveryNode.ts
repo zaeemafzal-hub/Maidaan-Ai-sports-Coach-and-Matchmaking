@@ -1,7 +1,7 @@
 import { AgentState, AgentUpdate } from '../state.js';
 import { searchHubsTool } from '../tools/searchHubsTool.js';
 import { HUB_DISCOVERY_SYSTEM_PROMPT } from '../prompts/hubDiscovery.js';
-import { GoogleGenAI } from '@google/genai';
+import { generateAIText, isAIConfigured } from '../../ai/providerFactory.js';
 import { sharedRAGEngine } from '../../rag/ragEngine.js';
 
 export async function hubDiscoveryNode(state: AgentState): Promise<AgentUpdate> {
@@ -52,30 +52,21 @@ export async function hubDiscoveryNode(state: AgentState): Promise<AgentUpdate> 
   }
 
   // 4. Synthesize with Gemini if available in non-test mode
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (apiKey && process.env.NODE_ENV !== 'test') {
+  if (isAIConfigured() && process.env.NODE_ENV !== 'test') {
     try {
-      const ai = new GoogleGenAI({ apiKey });
       const prompt = `User Query: "${message}"
 Live Database Hubs Found (${totalFound}):
 ${JSON.stringify(hubs, null, 2)}
 
 Provide a clear, athletic summary of these sports hubs. Mention their venue name, location, courts count, and verified status. Remind the user they can view venue details on the Discover map.`;
 
-      const result = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        config: {
-          systemInstruction: HUB_DISCOVERY_SYSTEM_PROMPT,
-          temperature: 0.2,
-          maxOutputTokens: 350,
-        },
-      });
+      const result = await generateAIText({systemPrompt: HUB_DISCOVERY_SYSTEM_PROMPT, message: prompt, temperature: 0.2, maxTokens: 350});
 
-      const reply = result.text?.trim();
+      const reply = result.message.trim();
       if (reply) {
         return {
           response: reply,
+          synthesis: {provider: result.provider, usedBackup: result.usedBackup ?? false},
           sources: hubSources.length > 0 ? hubSources : undefined,
           toolResult: hubResult,
         };

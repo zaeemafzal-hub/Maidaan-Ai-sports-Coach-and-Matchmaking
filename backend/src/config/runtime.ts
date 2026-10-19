@@ -6,12 +6,13 @@ export type AppDataMode = 'production' | 'development' | 'demo' | 'test';
 /**
  * Resolves current authoritative application data mode.
  * Priority:
- * 1. NODE_ENV === 'test' -> strictly 'test'
- * 2. APP_DATA_MODE ('production' | 'development' | 'demo' | 'test')
- * 3. NODE_ENV === 'production' -> 'production'
+ * 1. NODE_ENV === 'production' -> strictly 'production' (cannot downgrade via APP_DATA_MODE)
+ * 2. NODE_ENV === 'test' -> strictly 'test'
+ * 3. APP_DATA_MODE ('production' | 'development' | 'demo' | 'test')
  * 4. Default -> 'development'
  */
 export function getAppDataMode(): AppDataMode {
+  if (process.env.NODE_ENV === 'production') return 'production';
   if (process.env.NODE_ENV === 'test') {
     return 'test';
   }
@@ -21,9 +22,7 @@ export function getAppDataMode(): AppDataMode {
     return rawMode as AppDataMode;
   }
 
-  if (process.env.NODE_ENV === 'production') {
-    return 'production';
-  }
+  if (rawMode) throw new Error('Invalid APP_DATA_MODE. Use development, demo, test or production.');
 
   return 'development';
 }

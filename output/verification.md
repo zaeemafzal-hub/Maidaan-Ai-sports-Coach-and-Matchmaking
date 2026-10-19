@@ -136,3 +136,79 @@ Live database checks also passed for full/advance quotes, idempotent holds, hidi
 All 17 booking policy/API/PostgreSQL checks passed, including forged events, replay handling, ownership, full/partial/no-refund rules, late payments and browser-role execution restrictions. Existing backend regression tests passed earlier in this implementation; final TypeScript lint and build passed. The final return-page change adds an explicit web-bookings link while preserving Expo Go's close-browser-and-refresh flow.
 
 Remaining limits: physical Expo Go payment checkout has not yet been confirmed by the user. JazzCash integration remains disabled because sandbox merchant access/credentials are unavailable; no completed JazzCash transaction is claimed. Refund amounts and tracking are implemented, but initiating a refund requires the administrator to use the original gateway dashboard and then record its completed reference; no automatic refund transfer or real gateway refund was verified. The Cloudflare URL is temporary and requires its proxy/tunnel processes to remain running. See booking-guide.md and payment-sandbox-setup.md.
+
+## Lahore area search, profiles and map providers — 2026-10-17
+
+The user selected OpenStreetMap as the primary provider while retaining Google Maps as an optional choice. Discover's decorative map was replaced with the shared venue directory/map. The enabled-city catalogue currently exposes only Lahore and its major areas; city IDs, area IDs, aliases, centers and coverage bounds are configured centrally in backend/src/config/locations.ts for later expansion. Area typing, exact area selection, venue name/address and sport filters combine against registered Maidaan venues. No Google Places requests are used for typing or search.
+
+OpenStreetMap uses Leaflet 1.9.4, visible attribution and normal viewport tile requests/caching. A shared public map page is embedded through an iframe on web and the SDK-compatible WebView in Expo Go. CDN assets have integrity hashes. Venue titles are rendered as text; bridge messages only select registered venue IDs or valid coordinate pairs. The optional Google provider uses SDK-compatible react-native-maps on Android and the JavaScript API on web. The web Google key remains unconfigured; no completed Google map load or billing setup is claimed. The iOS optional native map uses its default Apple provider.
+
+Browser checks at 390px passed for live area typing and exact selection, real OSM tile/venue-pin rendering, pin navigation, switching providers, player phone/area save and profile display, and owner entrance-pin selection/save. The check found that off-screen map animation delayed marker centering; data-driven centering now runs without animation. A settled screenshot shows the Lahore map and orange venue pin with attribution. Browser accounts/data were local memory fixtures and did not alter real records.
+
+The user applied location-profile-upgrade.sql. Live Supabase verification passed for authenticated profile image upload/retrieval, phone normalization, saved city/area/photo fields, player onboarding completeness, hub setup, exact venue pin persistence and city/area venue search. Its disposable user, hub and image were removed. Existing players missing phone/selected area must complete these required details. Photos are optional. Name and email remain the existing authenticated account identity.
+
+The backend regression suite passed; focused location/venue checks (22), hub-owner checks (20), and the map bridge test passed. TypeScript lint/build and the final Android bundle including both map components passed. The dependency audit reports 36 SDK/transitive advisories (14 moderate, 22 high); broad SDK downgrades suggested by npm were not applied. The user subsequently confirmed that the OpenStreetMap map loads correctly in Expo Go. See location-map-guide.md and optional google-maps-setup.md.
+
+## Map fallback, dark appearance and flexible home addresses
+
+Removed the provider selector. Only OpenStreetMap mounts initially; a page/library failure, completely failed tile batch or initial 20-second timeout triggers the backup. Browser verification simulated a trusted iframe error and confirmed that the primary iframe unmounts before the Google component appears. The web Google key remains absent, so this verifies fallback routing and its configuration notice, not a successful Google map load.
+
+Dark styling applies only to the OSM raster tile pane, preserving orange markers and readable attribution/controls. A 390px browser screenshot was visually inspected. Normal map navigation and venue-pin routing passed. These latest visual/fallback changes have been verified on web; the earlier phone confirmation predates them.
+
+Player home address now accepts free text (2–500 characters) while retaining optional catalogue suggestions and the enabled-city requirement. The exact trimmed address is saved; complete known area names/aliases assign the most specific area ID. Unmatched addresses save with an empty area ID and count as completed onboarding. This is text classification, not geocoding or boundary verification. Regression checks cover unknown addresses, known addresses, partial-name false positives, blank/oversized addresses and onboarding. All nine location/profile checks, map bridge checks, TypeScript lint and backend build passed. The browser saved an unlisted address through the API and verified it on the profile. The browser's accounts and records were memory-only fixtures, and the fixture server was stopped after testing. No additional SQL migration is required.
+
+## Shared artwork and screen theme — 2026-10-18
+
+Implemented the user-approved dark/orange design in the actual Expo application.
+Welcome uses a generated transparent sports scene with gentle, focus-aware
+floating motion and reduced-motion support. Discover has a compact full-image
+hero and more spacing; venue exploration now has a separate Venues tab. Wide
+web layouts use a side rail. The four supplied images are bundled locally and
+shared across forms, profiles, captain tools, match views, AI coaching, chat,
+concierge, venue management, bookings, notifications and administration. Cards
+are translucent; inputs and action/composer/save bars remain readable. Venue
+editing groups the original fields and has one persistent save action, with
+two columns at wide sizes. Saved venue/profile photos still use real URLs.
+
+Shared screen and scroll wrappers retain native scroll refs, refresh controls,
+keyboard props and safe-area edges. Existing auth, data loading, role guards,
+validation, booking/payment policy and action handlers were preserved. The
+browser check exposed pre-existing hook-order crashes during asynchronous
+profile/status loading in captain dashboard, join requests, admin hub/report
+reviews and match confirmation. Workspace mounting or unconditional hook
+placement now keeps hook order stable while retaining access/workflow rules.
+Notifications filters wrap on small phones; decorative screen artwork is
+contained so role-selection glow cannot cause horizontal page overflow.
+
+Browser checks used a disposable API on 127.0.0.1:5002 in explicit test mode,
+with in-memory player/captain/owner/admin records and fake local auth sessions.
+No Supabase data was written. Completed player interactions covered sport
+filtering, navigation to Venues, area typing/exact selection, actual OSM tiles
+and pin-to-hub navigation, free-address save and profile persistence. Owner
+venue name save and the availability link passed; only one save control exists.
+An accepted local join request and direct chat room exercised the loaded match
+confirmation, request status and direct-chat detail views.
+
+Responsive route checks passed at 320, 390, 430 and 1440 px for auth/recovery/
+role selection, AI Coach, voice, concierge, chat inbox/detail, notifications,
+bookings list, match details/statuses, captain desk/team/scheduling/requests/
+setup, hub dashboard/courts/verification/profile/setup and admin dashboard/
+accounts/account detail/hub verification/report review. These checks detected
+no horizontal document overflow, nested HTML buttons or runtime hook errors
+after the fixes. Screenshots were captured under output/playwright (ignored).
+Discover/profile/venue form phone and desktop screenshots were also inspected.
+
+Final TypeScript lint passed for mobile and backend. All 21 focused auth,
+NativeWind navigation-warning, speech-module and map-bridge regressions passed.
+Android and web production exports passed from the exact final source with
+`npx expo export --platform android --platform web --output-dir .expo/ui-theme-final --max-workers 2`.
+The resulting web bundle is 3.4 MB and the Android Hermes bundle is 5.7 MB.
+Tailwind reports an existing ambiguous orange-shadow
+utility warning; it did not prevent either platform export.
+
+This verifies UI/layout and the local workflows described above. It does not
+claim a new live AI request, real payment transaction, gateway refund or Google
+OAuth round trip. Physical Expo Go visual interaction for this latest theme
+still requires reloading the app on the user's phone. No database migration or
+new native dependency is required. See ui-theme-guide.md for component/asset
+mapping.

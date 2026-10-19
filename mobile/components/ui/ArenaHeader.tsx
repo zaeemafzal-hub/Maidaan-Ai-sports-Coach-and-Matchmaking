@@ -1,7 +1,7 @@
-import React from 'react';
-import { View, Text, Pressable } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import React from "react";
+import { View, Text, Pressable } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 
 interface ArenaHeaderProps {
   title?: string;
@@ -10,14 +10,14 @@ interface ArenaHeaderProps {
   onBack?: () => void;
   fallbackRoute?: string;
   rightAction?: React.ReactNode;
-  theme?: 'dark' | 'light';
+  theme?: "dark" | "light";
   locationBadge?: string;
   compact?: boolean;
   transparent?: boolean;
 }
 
 export const ArenaHeader: React.FC<ArenaHeaderProps> = ({
-  title = 'MAIDAAN',
+  title = "MAIDAAN",
   subtitle,
   showBack = false,
   onBack,
@@ -28,7 +28,10 @@ export const ArenaHeader: React.FC<ArenaHeaderProps> = ({
   transparent = false,
 }) => {
   const handleBack = () => {
-    if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
+    if (
+      typeof document !== "undefined" &&
+      document.activeElement instanceof HTMLElement
+    ) {
       document.activeElement.blur();
     }
     if (onBack) {
@@ -40,14 +43,14 @@ export const ArenaHeader: React.FC<ArenaHeaderProps> = ({
     } else if (fallbackRoute) {
       router.replace(fallbackRoute as any);
     } else {
-      router.replace('/(auth)/welcome');
+      router.replace("/(auth)/welcome");
     }
   };
 
   return (
     <View
-      className={`w-full px-5 ${compact ? 'py-2.5' : 'py-3.5'} flex-row items-center justify-between ${
-        transparent ? 'bg-transparent' : 'bg-[#0C0D0E]'
+      className={`w-full px-5 ${compact ? "py-2.5" : "py-3.5"} flex-row items-center justify-between ${
+        transparent ? "bg-transparent" : "bg-[#0C0D0E]/75"
       } border-b border-[rgba(255,255,255,0.08)] z-10`}
     >
       {/* Left Back or Branding */}
@@ -59,32 +62,24 @@ export const ArenaHeader: React.FC<ArenaHeaderProps> = ({
             accessibilityLabel="Go back"
             className="w-10 h-10 rounded-xl items-center justify-center mr-3 bg-[#1B1D22] border border-[rgba(255,255,255,0.08)] active:bg-[#22252B] active:scale-95"
           >
-            <Ionicons
-              name="chevron-back"
-              size={20}
-              color="#FFFFFF"
-            />
+            <Ionicons name="chevron-back" size={20} color="#FFFFFF" />
           </Pressable>
         ) : null}
 
         <View className="flex-1">
           <Text
             numberOfLines={1}
-            style={{ color: '#FFFFFF' }}
+            style={{ color: "#FFFFFF" }}
             className="text-base font-bold tracking-tight uppercase text-white"
           >
             {title}
           </Text>
           {locationBadge ? (
             <View className="flex-row items-center mt-0.5">
-              <Ionicons
-                name="location-sharp"
-                size={11}
-                color="#E85D26"
-              />
+              <Ionicons name="location-sharp" size={11} color="#E85D26" />
               <Text
                 numberOfLines={1}
-                style={{ color: '#A0A5AD' }}
+                style={{ color: "#A0A5AD" }}
                 className="text-xs font-medium ml-1 text-[#A0A5AD]"
               >
                 {locationBadge}
@@ -93,7 +88,7 @@ export const ArenaHeader: React.FC<ArenaHeaderProps> = ({
           ) : subtitle ? (
             <Text
               numberOfLines={1}
-              style={{ color: '#A0A5AD' }}
+              style={{ color: "#A0A5AD" }}
               className="text-xs font-medium text-[#A0A5AD] mt-0.5"
             >
               {subtitle}
@@ -104,9 +99,7 @@ export const ArenaHeader: React.FC<ArenaHeaderProps> = ({
 
       {/* Right Custom Action */}
       {rightAction && (
-        <View className="flex-row items-center justify-end">
-          {rightAction}
-        </View>
+        <View className="flex-row items-center justify-end">{rightAction}</View>
       )}
     </View>
   );

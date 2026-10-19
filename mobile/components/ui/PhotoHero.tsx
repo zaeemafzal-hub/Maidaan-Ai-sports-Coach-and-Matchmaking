@@ -1,12 +1,19 @@
-import React from 'react';
-import { View, Text, Image, ImageSourcePropType, StyleSheet } from 'react-native';
+import React from "react";
+import {
+  View,
+  Text,
+  Image,
+  ImageSourcePropType,
+  StyleSheet,
+  useWindowDimensions,
+} from "react-native";
 
 interface PhotoHeroProps {
   imageSource: ImageSourcePropType;
   title: string;
   subtitle?: string;
   badgeText?: string;
-  badgeVariant?: 'brand' | 'rust' | 'olive' | 'stone' | 'suitable' | 'caution';
+  badgeVariant?: "brand" | "rust" | "olive" | "stone" | "suitable" | "caution";
   height?: number;
   children?: React.ReactNode;
   className?: string;
@@ -21,14 +28,15 @@ export const PhotoHero: React.FC<PhotoHeroProps> = ({
   title,
   subtitle,
   badgeText,
-  badgeVariant = 'brand',
-  height = 240,
+  badgeVariant = "brand",
+  height,
   children,
-  className = '',
+  className = "",
 }) => {
+  const wide = useWindowDimensions().width >= 900;
   return (
     <View
-      style={{ height }}
+      style={{ height: height ?? (wide ? 300 : 220) }}
       className={`w-full relative overflow-hidden bg-[#0C0D0E] ${className}`}
     >
       {/* Background Photography */}
@@ -49,20 +57,20 @@ export const PhotoHero: React.FC<PhotoHeroProps> = ({
           <View className="flex-row mb-2">
             <View
               className={`px-2.5 py-0.5 rounded-full border ${
-                badgeVariant === 'suitable' || badgeVariant === 'olive'
-                  ? 'bg-[#22C55E]/20 border-[#22C55E]/40'
-                  : badgeVariant === 'caution'
-                  ? 'bg-[#F59E0B]/20 border-[#F59E0B]/40'
-                  : 'bg-[#E85D26]/20 border-[#E85D26]/40'
+                badgeVariant === "suitable" || badgeVariant === "olive"
+                  ? "bg-[#22C55E]/20 border-[#22C55E]/40"
+                  : badgeVariant === "caution"
+                    ? "bg-[#F59E0B]/20 border-[#F59E0B]/40"
+                    : "bg-[#E85D26]/20 border-[#E85D26]/40"
               }`}
             >
               <Text
                 className={`text-[10px] font-bold uppercase tracking-wider ${
-                  badgeVariant === 'suitable' || badgeVariant === 'olive'
-                    ? 'text-[#22C55E]'
-                    : badgeVariant === 'caution'
-                    ? 'text-[#F59E0B]'
-                    : 'text-[#E85D26]'
+                  badgeVariant === "suitable" || badgeVariant === "olive"
+                    ? "text-[#22C55E]"
+                    : badgeVariant === "caution"
+                      ? "text-[#F59E0B]"
+                      : "text-[#E85D26]"
                 }`}
               >
                 {badgeText}
@@ -96,23 +104,23 @@ export const PhotoHero: React.FC<PhotoHeroProps> = ({
 const styles = StyleSheet.create({
   topVignette: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(12, 13, 14, 0.25)',
+    backgroundColor: "rgba(12, 13, 14, 0.25)",
   },
   midVignette: {
-    position: 'absolute',
-    top: '30%',
+    position: "absolute",
+    top: "30%",
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(12, 13, 14, 0.50)',
+    backgroundColor: "rgba(12, 13, 14, 0.50)",
   },
   bottomVignette: {
-    position: 'absolute',
-    top: '60%',
+    position: "absolute",
+    top: "60%",
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(12, 13, 14, 0.82)',
+    backgroundColor: "rgba(12, 13, 14, 0.82)",
   },
 });
 

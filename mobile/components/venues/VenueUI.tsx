@@ -15,6 +15,8 @@ import * as ImagePicker from "expo-image-picker";
 import { ArenaHeader } from "../ui/ArenaHeader";
 import { venueService } from "../../services/venueService";
 import { COLORS, RADIUS } from "../../constants/theme";
+import { ArtworkScrollView } from "../ui/Artwork";
+import { ArtworkKind, GLASS_CARD } from "../../constants/artwork";
 
 export const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: COLORS.canvas },
@@ -23,15 +25,15 @@ export const styles = StyleSheet.create({
     paddingBottom: 50,
     gap: 16,
     width: "100%",
-    maxWidth: 850,
+    maxWidth: 1100,
     alignSelf: "center",
   },
   card: {
     padding: 18,
     borderRadius: RADIUS.lg,
-    backgroundColor: COLORS.surfaceCard,
+    backgroundColor: GLASS_CARD.backgroundColor,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: GLASS_CARD.borderColor,
     gap: 12,
   },
   title: {
@@ -47,7 +49,7 @@ export const styles = StyleSheet.create({
     fontWeight: "700",
     textTransform: "uppercase",
   },
-  text: { color: COLORS.textSecondary, fontSize: 13, lineHeight: 20 },
+  text: { color: "#D4D7DC", fontSize: 13, lineHeight: 20 },
   error: { color: COLORS.error, fontSize: 13, lineHeight: 20 },
   label: {
     color: COLORS.textLightSecondary,
@@ -101,35 +103,102 @@ export function Page({
   title,
   children,
   scrollSignal = 0,
+  artwork = "form",
+  showBack = true,
+  tabbed = false,
+  footer,
 }: {
   title: string;
   children: React.ReactNode;
   scrollSignal?: number;
+  artwork?: ArtworkKind;
+  showBack?: boolean;
+  tabbed?: boolean;
+  footer?: React.ReactNode;
 }) {
   const scroll = useRef<ScrollView>(null);
   useEffect(() => {
     if (scrollSignal) scroll.current?.scrollTo({ y: 0, animated: true });
   }, [scrollSignal]);
   return (
-    <SafeAreaView style={styles.page} edges={["top", "bottom"]}>
-      <ArenaHeader title={title} showBack fallbackRoute="/(tabs)/discover" />
+    <SafeAreaView
+      style={styles.page}
+      edges={tabbed ? ["top"] : ["top", "bottom"]}
+    >
+      <ArenaHeader
+        title={title}
+        showBack={showBack}
+        fallbackRoute="/(tabs)/discover"
+      />
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        <ScrollView
+        <ArtworkScrollView
+          kind={artwork}
           ref={scroll}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={styles.content}
         >
           {children}
-        </ScrollView>
+        </ArtworkScrollView>
+        {footer ? (
+          <View
+            style={{
+              padding: 16,
+              borderTopWidth: 1,
+              borderTopColor: COLORS.border,
+              backgroundColor: COLORS.canvas,
+            }}
+          >
+            <View
+              style={{ width: "100%", maxWidth: 1060, alignSelf: "center" }}
+            >
+              {footer}
+            </View>
+          </View>
+        ) : null}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
-export function Card({ children }: { children: React.ReactNode }) {
-  return <View style={styles.card}>{children}</View>;
+export function Card({
+  children,
+  heading,
+  step,
+}: {
+  children: React.ReactNode;
+  heading?: string;
+  step?: string;
+}) {
+  return (
+    <View style={styles.card}>
+      {heading ? (
+        <View
+          style={{
+            flexDirection: "row",
+            gap: 10,
+            alignItems: "center",
+            marginBottom: 6,
+          }}
+        >
+          {step ? (
+            <Text
+              style={{
+                color: COLORS.brandPrimary,
+                fontSize: 12,
+                fontWeight: "800",
+              }}
+            >
+              {step}
+            </Text>
+          ) : null}
+          <Text style={styles.heading}>{heading}</Text>
+        </View>
+      ) : null}
+      {children}
+    </View>
+  );
 }
 export function Action({
   title,

@@ -7,9 +7,10 @@ import {
   VenueDetails,
   defaultSlotPolicy,
 } from "../models/venueRepo.js";
-import { moneyToMinor } from '../utils/bookingPolicy.js';
+import { moneyToMinor } from "../utils/bookingPolicy.js";
 import { Sport, CourtStatus } from "../models/supabaseRepo.js";
 import { supabaseAdmin } from "../lib/supabase.js";
+import { serviceLocation } from "../config/locations.js";
 
 const sports: Sport[] = ["cricket", "football", "padel", "badminton"];
 const formats: Record<Sport, string[]> = {
@@ -89,6 +90,12 @@ export function parseSpace(body: any, ownerId: string) {
   };
 }
 export function parseVenue(body: any, ownerId: string) {
+  const cityId =
+    body.cityId ?? (/lahore/i.test(body.location || "") ? "lahore" : "");
+  const areaId = body.areaId ?? "";
+  const { city, area } = serviceLocation(cityId, areaId);
+  if (!city || (body.cityId !== undefined && !area))
+    throw new VenueError(400, "Select an available city and area.");
   const latitude = body.latitude == null ? null : Number(body.latitude);
   const longitude = body.longitude == null ? null : Number(body.longitude);
   if (
@@ -103,12 +110,23 @@ export function parseVenue(body: any, ownerId: string) {
       "Enter both valid latitude and longitude, or leave both empty.",
     );
   if (
+    latitude !== null &&
+    longitude !== null &&
+    (latitude < city.bounds.south ||
+      latitude > city.bounds.north ||
+      longitude < city.bounds.west ||
+      longitude > city.bounds.east)
+  )
+    throw new VenueError(400, `Place the venue pin inside ${city.name}.`);
+  if (
     !Array.isArray(body.sports) ||
     !body.sports.length ||
     body.sports.some((s: Sport) => !sports.includes(s))
   )
     throw new VenueError(400, "Choose at least one supported sport.");
   const details: VenueDetails = {
+    cityId,
+    areaId,
     latitude,
     longitude,
     description: text(body.description, "Description", 1500),
@@ -123,9 +141,36 @@ export function parseVenue(body: any, ownerId: string) {
   };
 }
 export function parseSlot(body: any) {
-  const policy={...defaultSlotPolicy,...Object.fromEntries(Object.keys(defaultSlotPolicy).filter(key=>body[key]!==undefined).map(key=>[key,body[key]]))};
-  if(typeof policy.bookingEnabled!=='boolean'||!['FULL_ONLY','FULL_OR_ADVANCE'].includes(policy.paymentPolicy)||!Number.isInteger(policy.advancePercent)||policy.advancePercent<1||policy.advancePercent>99||!Number.isInteger(policy.cancelBeforeHours)||policy.cancelBeforeHours<0||policy.cancelBeforeHours>720||!['FULL','KEEP_ADVANCE'].includes(policy.cancellationRefund))throw new VenueError(400,'Choose valid upfront payment and cancellation rules.');
-  if(policy.bookingEnabled){try{moneyToMinor(body.price);}catch(error){throw new VenueError(400,(error as Error).message);}}
+  const policy = {
+    ...defaultSlotPolicy,
+    ...Object.fromEntries(
+      Object.keys(defaultSlotPolicy)
+        .filter((key) => body[key] !== undefined)
+        .map((key) => [key, body[key]]),
+    ),
+  };
+  if (
+    typeof policy.bookingEnabled !== "boolean" ||
+    !["FULL_ONLY", "FULL_OR_ADVANCE"].includes(policy.paymentPolicy) ||
+    !Number.isInteger(policy.advancePercent) ||
+    policy.advancePercent < 1 ||
+    policy.advancePercent > 99 ||
+    !Number.isInteger(policy.cancelBeforeHours) ||
+    policy.cancelBeforeHours < 0 ||
+    policy.cancelBeforeHours > 720 ||
+    !["FULL", "KEEP_ADVANCE"].includes(policy.cancellationRefund)
+  )
+    throw new VenueError(
+      400,
+      "Choose valid upfront payment and cancellation rules.",
+    );
+  if (policy.bookingEnabled) {
+    try {
+      moneyToMinor(body.price);
+    } catch (error) {
+      throw new VenueError(400, (error as Error).message);
+    }
+  }
   const date = text(body.date, "Date", 10, true),
     start = text(body.startTime, "Start time", 5, true),
     end = text(body.endTime, "End time", 5, true);
@@ -186,11 +231,9 @@ export function venueHandler(
         res.status(error.status).json({ error: error.message });
       else {
         console.error("[Venue]", error.message);
-        res
-          .status(500)
-          .json({
-            error: "Unable to complete this venue request. Please try again.",
-          });
+        res.status(500).json({
+          error: "Unable to complete this venue request. Please try again.",
+        });
       }
     }
   };
@@ -212,6 +255,8 @@ async function ownerVenue(owner: string) {
     latitude: profile.latitude,
     longitude: profile.longitude,
     photoUrls: profile.photoUrls,
+    cityId: profile.cityId || "",
+    areaId: profile.areaId || "",
     spaces,
     slots,
   };
@@ -226,6 +271,9 @@ export const VenueController = {
       hubs: await VenueRepo.publicHubs(
         sport,
         text(req.query.search, "Search", 100),
+        text(req.query.city, "City", 50) || "lahore",
+        text(req.query.area, "Area", 100),
+        text(req.query.areaSearch, "Area search", 100),
       ),
     };
   }),
@@ -264,7 +312,10 @@ export const VenueController = {
     await VenueRepo.deleteSlot(req.auth!.userId, req.params.id);
     return { success: true };
   }),
-  uploadPhoto: venueHandler(async (req) => {
+  uploadPhoto: uploadImage("hub-photos"),
+};
+export function uploadImage(bucket: "hub-photos" | "profile-photos") {
+  return venueHandler(async (req) => {
     const owner = req.auth!.userId;
     let quota = uploads.get(owner);
     if (!quota || quota.until < Date.now()) {
@@ -306,12 +357,11 @@ export const VenueController = {
     quota.count++;
     const path = `${owner}/${crypto.randomUUID()}.${extension}`;
     const { error } = await supabaseAdmin.storage
-      .from("hub-photos")
+      .from(bucket)
       .upload(path, data, { contentType: type, upsert: false });
     if (error) throw new Error(error.message);
     return {
-      url: supabaseAdmin.storage.from("hub-photos").getPublicUrl(path).data
-        .publicUrl,
+      url: supabaseAdmin.storage.from(bucket).getPublicUrl(path).data.publicUrl,
     };
-  }, 201),
-};
+  }, 201);
+}

@@ -88,6 +88,7 @@ export const AgentController = {
 
       const responsePayload: AgentChatResponse = {
         intent: graphResult.intent,
+        synthesis: graphResult.synthesis,
         message: graphResult.response,
         toolUsed,
         toolResult: graphResult.toolResult || null,

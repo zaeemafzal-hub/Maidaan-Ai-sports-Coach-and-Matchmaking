@@ -1,3 +1,4 @@
+import { corsOrigin } from './config/cors.js';
 import express from 'express';
 import cors from 'cors';
 import authRoutes from './routes/authRoutes.js';
@@ -16,22 +17,26 @@ import agentRoutes from './routes/agentRoutes.js';
 import { VenueController } from './controllers/venueController.js';
 import { authenticateSupabaseUser, authorizeRoles } from './middleware/auth.js';
 import {BookingController,bookingRoutes} from './controllers/bookingController.js';
+import { serviceCities } from './config/locations.js';
+import {openMapPage} from './maps/openMapPage.js';
 
 const app = express();
 
 // Middleware
 app.use(
   cors({
-    origin: '*', // Development CORS policy allowing Expo and preview iframes
+    origin: corsOrigin, // Development CORS policy allowing Expo and preview iframes
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   })
 );
 app.use('/api/hub/photos', express.json({ limit: '7mb' }));
+app.use('/api/profile/player/photo', express.json({ limit: '7mb' }));
 app.post('/api/payments/safepay/webhook',express.raw({type:'application/json',limit:'128kb'}),BookingController.safepayWebhook);
 app.post('/api/payments/jazzcash/return',express.urlencoded({extended:false,limit:'32kb'}),express.json({limit:'32kb'}),BookingController.jazzcashReturn);
 app.get('/api/payments/return',BookingController.returnPage);
 app.use(express.json());
+app.get('/maps/view',(_req,res)=>{try{res.type('html').send(openMapPage());}catch{res.status(503).send('Map configuration unavailable.');}});
 
 // Health check endpoint
 app.get('/api/health', (_req, res) => {
@@ -46,6 +51,7 @@ app.get('/api/health', (_req, res) => {
 // Mount modular API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/profile', profileRoutes);
+app.get('/api/locations', (_req,res)=>res.json({cities:serviceCities.filter(city=>city.enabled)}));
 app.use('/api/matches', matchRoutes);
 app.use('/api/captain', captainRoutes);
 app.use('/api/join-requests', joinRequestRoutes);

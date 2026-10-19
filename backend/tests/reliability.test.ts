@@ -23,6 +23,17 @@ function fakeQuery(result: unknown, capture?: (payload: any) => void): any {
   return query;
 }
 
+test('admin count failure cannot masquerade as zero records', async (t) => {
+  t.mock.method(supabaseAdmin, 'from', () => fakeQuery({count:null,error:{message:'count unavailable'}}));
+  await assert.rejects(SupabaseRepo.getAdminDashboardSummary(), /counts are unavailable/);
+});
+
+test('live chat and notifications never silently persist to memory after database failure', async (t) => {
+  t.mock.method(supabaseAdmin, 'from', () => fakeQuery({data:null,error:{message:'database unavailable'}}));
+  await assert.rejects(SupabaseRepo.createChatMessage({roomId:userId,senderId:userId,body:'hello',clientMessageId:'failure_1'}), /database unavailable/);
+  await assert.rejects(SupabaseRepo.createNotification({userId,type:'JOIN_REQUEST_ACCEPTED',title:'test',message:'test'}), /persistence unavailable/);
+});
+
 test('revoked roles never fall back to the legacy profile role', async (t) => {
   t.mock.method(supabaseAdmin, 'from', () => fakeQuery({ data: [], error: null }));
   const legacy = t.mock.method(SupabaseRepo, 'getProfile', async () => ({ role: 'ADMIN' } as any));

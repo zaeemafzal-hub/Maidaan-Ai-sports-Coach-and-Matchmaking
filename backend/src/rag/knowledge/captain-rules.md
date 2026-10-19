@@ -1,18 +1,10 @@
-# Team Captain Rules & Capabilities
+# Team Captain Rules and Capabilities
 
 ## Who is a Team Captain?
-A Team Captain in Maidaan is an active recreational player who takes responsibility for organizing matches, assembling squads, and coordinating match logistics. Captains bridge individual players and venue facilities.
+Start as a Player, open Profile, activate Captain, complete Captain Setup, and select Captain mode. The server must grant TEAM_CAPTAIN. A legacy PLAYER primary role does not prevent a granted captain using Captain mode. One captain has one primary team. Team roster labels are CAPTAIN, VICE_CAPTAIN or PLAYER; statuses are ACTIVE, INVITED, LEFT or REMOVED. VICE_CAPTAIN is a roster label only.
 
 ## Captain Capabilities and Permissions
-Team Captains have dedicated access to the Captain Dashboard and match management tools:
-- Create & Publish Fixtures: Captains can publish matches with full details including sport, location, date, start time, total capacity, open slots needed, and per-player ground contribution fee.
-- Live Weather Advisory: When creating a match, the captain receives automated real-time weather suitability advisories to ensure safe match conditions.
-- Review Join Requests: Captains review incoming player applications, inspecting player profiles and skill levels before accepting or rejecting applicants.
-- Squad Coordination: Captains manage confirmed roster lineups and communicate with all approved squad members in the match group chat.
-- Fixture Management: Captains can monitor their active fixtures, view open slots, and update game notes.
+Captains can create future fixtures with sport, venue, area, Pakistan-local date/time, capacity, open slots and informational contribution. They can view owned fixtures, update recruitment, manage the team roster, review and accept or reject join requests, and chat with confirmed players. Weather is advisory. Changing recruitment shares a database lock with acceptance. Concierge can propose CREATE_MATCH, ACCEPT_JOIN_REQUEST or REJECT_JOIN_REQUEST; explicit confirmation is required before mutation.
 
 ## What Captains Cannot Do
-The captain role is tailored strictly for recreational sports coordination:
-- No Financial Checkout or Payment Collection: Captains cannot charge fees or process payments through the application. Any ground contributions are settled directly off-platform.
-- No Player Contracts or Bindings: Players participate recreationally and are not bound by contracts or commitments.
-- No Hub Facility Modification: Captains do not own or control venue court statuses; hub courts are managed independently by Hub Owners.
+Captains cannot collect real funds through match contributions, change another captain's matches, edit another owner's venue inventory, grant administrative privileges or bypass capacity checks. Existing fixture notes are displayed; do not promise an unsupported notes-editing API. Venue reservation checkout is separate and remains sandbox testing or disabled.

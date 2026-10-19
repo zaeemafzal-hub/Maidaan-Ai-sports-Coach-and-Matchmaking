@@ -2,6 +2,7 @@
   "name": "maidaan-platform",
   "private": true,
   "version": "1.0.0",
+  "packageManager": "npm@10.9.8",
   "type": "module",
   "workspaces": [
     "mobile",
@@ -12,6 +13,7 @@
     "test:nativewind": "node --test scripts/nativewind-warning.test.mjs",
     "test:speech": "node --test scripts/speech-recognition.test.mjs",
     "test:auth": "node --test scripts/auth-flow.test.mjs",
+    "test:maps": "node --test scripts/maps-bridge.test.mjs",
     "start": "npm --prefix mobile start",
     "android": "npm --prefix mobile run android",
     "ios": "npm --prefix mobile run ios",

@@ -30,6 +30,10 @@ export interface User {
 }
 
 export interface PlayerProfile {
+  phone?: string;
+  cityId?: string;
+  areaId?: string;
+  avatarUrl?: string;
   userId: string;
   preferredSports: Sport[];
   skillLevel: SkillLevel;
@@ -48,6 +52,8 @@ export interface CaptainProfile {
 }
 
 export interface HubOwnerProfile {
+  cityId?: string;
+  areaId?: string;
   userId: string;
   hubName: string;
   location: string;

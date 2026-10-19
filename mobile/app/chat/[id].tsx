@@ -1,4 +1,5 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { ThemedScreen } from "../../components/ui/ThemedScreen";
+import React, { useState, useRef, useCallback } from "react";
 import {
   View,
   Text,
@@ -7,41 +8,47 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams, router, useFocusEffect } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useAuthStore } from '../../store/useAuthStore';
-import { chatService, ChatMessage, ChatRoom } from '../../services/chatService';
-import { socketService } from '../../services/socketService';
-import { ConnectionBanner } from '../../components/chat/ConnectionBanner';
-import { MessageBubble, OptimisticChatMessage } from '../../components/chat/MessageBubble';
-import { ChatComposer } from '../../components/chat/ChatComposer';
-import { ChatEmptyState } from '../../components/chat/ChatEmptyState';
+} from "react-native";
+
+import { useLocalSearchParams, router, useFocusEffect } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { useAuthStore } from "../../store/useAuthStore";
+import { chatService, ChatMessage, ChatRoom } from "../../services/chatService";
+import { socketService } from "../../services/socketService";
+import { ConnectionBanner } from "../../components/chat/ConnectionBanner";
+import {
+  MessageBubble,
+  OptimisticChatMessage,
+} from "../../components/chat/MessageBubble";
+import { ChatComposer } from "../../components/chat/ChatComposer";
+import { ChatEmptyState } from "../../components/chat/ChatEmptyState";
 
 export default function ChatRoomScreen() {
   const { id } = useLocalSearchParams<{ id: string; type?: string }>();
   const { currentUser } = useAuthStore();
   const flatListRef = useRef<FlatList<OptimisticChatMessage>>(null);
 
-  const roomId = typeof id === 'string' ? id : '';
+  const roomId = typeof id === "string" ? id : "";
 
   const [room, setRoom] = useState<ChatRoom | null>(null);
   const [messages, setMessages] = useState<OptimisticChatMessage[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [authError, setAuthError] = useState<'FORBIDDEN' | 'NOT_FOUND' | 'ERROR' | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string>('');
+  const [authError, setAuthError] = useState<
+    "FORBIDDEN" | "NOT_FOUND" | "ERROR" | null
+  >(null);
+  const [errorMessage, setErrorMessage] = useState<string>("");
 
-  const [inputText, setInputText] = useState('');
+  const [inputText, setInputText] = useState("");
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
   const [typingUser, setTypingUser] = useState<string | null>(null);
+  const [roomState, setRoomState] = useState<'joining' | 'joined' | 'failed' | 'retrying'>('joining');
 
-  const currentUserId = currentUser?.id || '';
+  const currentUserId = currentUser?.id || "";
 
   const loadChannelData = async () => {
     if (!roomId) {
-      setAuthError('NOT_FOUND');
+      setAuthError("NOT_FOUND");
       setLoading(false);
       return;
     }
@@ -61,26 +68,31 @@ export default function ChatRoomScreen() {
         setRoom(matchedRoom);
       } else {
         // Construct fallback placeholder with room title if room metadata wasn't loaded
-        setRoom((prev) => prev || {
-          id: roomId,
-          type: 'GROUP',
-          title: 'Squad Channel',
-          members: [],
-        });
+        setRoom(
+          (prev) =>
+            prev || {
+              id: roomId,
+              type: "GROUP",
+              title: "Squad Channel",
+              members: [],
+            },
+        );
       }
 
-      setMessages(fetchedMessages.map((m) => ({ ...m, status: 'SENT' })));
+      setMessages(fetchedMessages.map((m) => ({ ...m, status: "SENT" })));
     } catch (err: any) {
-      console.warn('[ChatRoom] Failed to load messages for room:', roomId, err);
+      console.warn("[ChatRoom] Failed to load messages for room:", roomId, err);
       if (err?.status === 403) {
-        setAuthError('FORBIDDEN');
-        setErrorMessage('Access denied: You are not an authorized member of this chat room.');
+        setAuthError("FORBIDDEN");
+        setErrorMessage(
+          "Access denied: You are not an authorized member of this chat room.",
+        );
       } else if (err?.status === 404) {
-        setAuthError('NOT_FOUND');
-        setErrorMessage('This chat channel does not exist or has been closed.');
+        setAuthError("NOT_FOUND");
+        setErrorMessage("This chat channel does not exist or has been closed.");
       } else {
-        setAuthError('ERROR');
-        setErrorMessage(err?.message || 'Failed to load channel messages.');
+        setAuthError("ERROR");
+        setErrorMessage(err?.message || "Failed to load channel messages.");
       }
     } finally {
       setLoading(false);
@@ -91,42 +103,53 @@ export default function ChatRoomScreen() {
     useCallback(() => {
       loadChannelData();
 
+      const unsubscribeRoomState = socketService.onRoomStateChange((id, state) => {
+        if (id === roomId) setRoomState(state);
+      });
+
       if (roomId) {
         socketService.joinRoom(roomId);
       }
 
       // Live incoming messages listener
-      const unsubscribeMessage = socketService.onMessage((incoming: ChatMessage) => {
-        if (incoming.roomId === roomId) {
-          setMessages((prev) => {
-            // Check for match by server id or clientMessageId
-            const index = prev.findIndex(
-              (m) =>
-                m.id === incoming.id ||
-                (incoming.clientMessageId && m.clientMessageId === incoming.clientMessageId) ||
-                (incoming.clientMessageId && m.id === incoming.clientMessageId)
-            );
+      const unsubscribeMessage = socketService.onMessage(
+        (incoming: ChatMessage) => {
+          if (incoming.roomId === roomId) {
+            setMessages((prev) => {
+              // Check for match by server id or clientMessageId
+              const index = prev.findIndex(
+                (m) =>
+                  m.id === incoming.id ||
+                  (incoming.clientMessageId &&
+                    m.clientMessageId === incoming.clientMessageId) ||
+                  (incoming.clientMessageId &&
+                    m.id === incoming.clientMessageId),
+              );
 
-            if (index !== -1) {
-              const updated = [...prev];
-              updated[index] = { ...incoming, status: 'SENT' };
-              return updated;
-            }
+              if (index !== -1) {
+                const updated = [...prev];
+                updated[index] = { ...incoming, status: "SENT" };
+                return updated;
+              }
 
-            return [...prev, { ...incoming, status: 'SENT' }];
-          });
+              return [...prev, { ...incoming, status: "SENT" }];
+            });
 
-          setTimeout(() => {
-            flatListRef.current?.scrollToEnd({ animated: true });
-          }, 100);
-        }
-      });
+            setTimeout(() => {
+              flatListRef.current?.scrollToEnd({ animated: true });
+            }, 100);
+          }
+        },
+      );
 
       // Typing event listener
       const unsubscribeTyping = socketService.onTyping((typingData) => {
-        if (typingData.roomId === roomId && typingData.userId !== currentUserId) {
+        if (
+          typingData.roomId === roomId &&
+          typingData.userId !== currentUserId
+        ) {
           if (typingData.isTyping) {
-            setTypingUser(typingData.userName || 'Someone');
+            setTypingUser(typingData.userName || "Someone");
           } else {
             setTypingUser(null);
           }
@@ -135,15 +158,20 @@ export default function ChatRoomScreen() {
 
       // Live error listener
       const unsubscribeError = socketService.onError((err: any) => {
-        if (err?.code === 'ROOM_ACCESS_DENIED') {
-          setAuthError('FORBIDDEN');
-          setErrorMessage('Access denied: You are not an authorized member of this chat room.');
-        } else if (err?.code === 'RATE_LIMITED') {
-          setSendError('You are sending messages too quickly. Please wait a moment.');
+        if (err?.code === "ROOM_ACCESS_DENIED") {
+          setAuthError("FORBIDDEN");
+          setErrorMessage(
+            "Access denied: You are not an authorized member of this chat room.",
+          );
+        } else if (err?.code === "RATE_LIMITED") {
+          setSendError(
+            "You are sending messages too quickly. Please wait a moment.",
+          );
         }
       });
 
       return () => {
+        unsubscribeRoomState();
         unsubscribeMessage();
         unsubscribeTyping();
         unsubscribeError();
@@ -152,49 +180,58 @@ export default function ChatRoomScreen() {
           socketService.leaveRoom(roomId);
         }
       };
-    }, [roomId, currentUserId])
+    }, [roomId, currentUserId]),
   );
 
   const sendMessageAttempt = async (
     trimmedBody: string,
-    targetClientMessageId: string
+    targetClientMessageId: string,
   ): Promise<boolean> => {
     // Attempt send via Socket.IO first
-    const socketRes = await socketService.sendMessage(roomId, trimmedBody, targetClientMessageId);
+    const socketRes = await socketService.sendMessage(
+      roomId,
+      trimmedBody,
+      targetClientMessageId,
+    );
 
     if (socketRes.success && socketRes.message) {
       const persisted = socketRes.message;
       setMessages((prev) =>
         prev.map((m) =>
-          m.clientMessageId === targetClientMessageId || m.id === targetClientMessageId
-            ? { ...persisted, status: 'SENT' }
-            : m
-        )
+          m.clientMessageId === targetClientMessageId ||
+          m.id === targetClientMessageId
+            ? { ...persisted, status: "SENT" }
+            : m,
+        ),
       );
       return true;
     }
 
     // If socket failed due to connection or timeout, fallback to HTTP REST
     try {
-      const httpRes = await chatService.sendMessage(roomId, trimmedBody);
+      const httpRes = await chatService.sendMessage(roomId, trimmedBody, targetClientMessageId);
       setMessages((prev) =>
         prev.map((m) =>
-          m.clientMessageId === targetClientMessageId || m.id === targetClientMessageId
-            ? { ...httpRes, status: 'SENT' }
-            : m
-        )
+          m.clientMessageId === targetClientMessageId ||
+          m.id === targetClientMessageId
+            ? { ...httpRes, status: "SENT" }
+            : m,
+        ),
       );
       return true;
     } catch (httpErr: any) {
-      console.warn('[ChatRoom] Both socket and HTTP sends failed:', httpErr);
+      console.warn("[ChatRoom] Both socket and HTTP sends failed:", httpErr);
       setMessages((prev) =>
         prev.map((m) =>
-          m.clientMessageId === targetClientMessageId || m.id === targetClientMessageId
-            ? { ...m, status: 'FAILED' }
-            : m
-        )
+          m.clientMessageId === targetClientMessageId ||
+          m.id === targetClientMessageId
+            ? { ...m, status: "FAILED" }
+            : m,
+        ),
       );
-      setSendError(httpErr?.message || socketRes.error || 'Failed to send message.');
+      setSendError(
+        httpErr?.message || socketRes.error || "Failed to send message.",
+      );
       return false;
     }
   };
@@ -204,7 +241,7 @@ export default function ChatRoomScreen() {
     if (!trimmed || sending) return;
 
     if (trimmed.length > 500) {
-      setSendError('Message exceeds maximum limit of 500 characters.');
+      setSendError("Message exceeds maximum limit of 500 characters.");
       return;
     }
 
@@ -215,17 +252,17 @@ export default function ChatRoomScreen() {
       clientMessageId,
       roomId,
       senderId: currentUserId,
-      senderName: currentUser?.name || 'Athlete',
-      senderRole: (currentUser?.role || 'PLAYER') as any,
+      senderName: currentUser?.name || "Athlete",
+      senderRole: (currentUser?.role || "PLAYER") as any,
       body: trimmed,
       createdAt: new Date().toISOString(),
-      status: 'SENDING',
+      status: "SENDING",
     };
 
     try {
       setSending(true);
       setSendError(null);
-      setInputText('');
+      setInputText("");
 
       // Add optimistic message to list
       setMessages((prev) => [...prev, optimisticMsg]);
@@ -244,7 +281,7 @@ export default function ChatRoomScreen() {
     const msgId = failedMsg.clientMessageId || failedMsg.id;
 
     setMessages((prev) =>
-      prev.map((m) => (m.id === msgId ? { ...m, status: 'SENDING' } : m))
+      prev.map((m) => (m.id === msgId ? { ...m, status: "SENDING" } : m)),
     );
 
     await sendMessageAttempt(failedMsg.body, msgId);
@@ -254,7 +291,7 @@ export default function ChatRoomScreen() {
     if (router.canGoBack()) {
       router.back();
     } else {
-      router.replace('/(tabs)/chat');
+      router.replace("/(tabs)/chat");
     }
   };
 
@@ -266,11 +303,11 @@ export default function ChatRoomScreen() {
 
   // Guard: Unauthorized or Not Found States
   if (!loading && authError) {
-    const isForbidden = authError === 'FORBIDDEN';
+    const isForbidden = authError === "FORBIDDEN";
     return (
-      <SafeAreaView className="flex-1 bg-[#0C0D0E]" edges={['top', 'bottom']}>
+      <ThemedScreen className="flex-1 bg-transparent" edges={["top", "bottom"]}>
         {/* Header */}
-        <View className="w-full px-4 py-3.5 bg-[#141518] border-b border-white/[0.08] flex-row items-center">
+        <View className="w-full px-4 py-3.5 bg-[#141518]/25 border-b border-white/[0.08] flex-row items-center">
           <Pressable
             onPress={handleBack}
             accessibilityRole="button"
@@ -288,13 +325,15 @@ export default function ChatRoomScreen() {
         <View className="flex-1 items-center justify-center px-6">
           <View className="w-16 h-16 rounded-full bg-[#1B1D22] border border-white/[0.08] items-center justify-center mb-4">
             <Ionicons
-              name={isForbidden ? 'lock-closed-outline' : 'alert-circle-outline'}
+              name={
+                isForbidden ? "lock-closed-outline" : "alert-circle-outline"
+              }
               size={32}
               color="#F59E0B"
             />
           </View>
           <Text className="text-white text-xl font-black uppercase tracking-tight text-center">
-            {isForbidden ? 'CHANNEL ACCESS DENIED' : 'CHANNEL NOT FOUND'}
+            {isForbidden ? "CHANNEL ACCESS DENIED" : "CHANNEL NOT FOUND"}
           </Text>
           <Text className="text-[#A0A5AD] text-xs font-medium text-center mt-2 max-w-[280px] leading-5">
             {errorMessage}
@@ -310,16 +349,16 @@ export default function ChatRoomScreen() {
             </Text>
           </Pressable>
         </View>
-      </SafeAreaView>
+      </ThemedScreen>
     );
   }
 
-  const isGroup = room?.type === 'GROUP' || room?.type === ('group' as any);
+  const isGroup = room?.type === "GROUP" || room?.type === ("group" as any);
 
   return (
-    <SafeAreaView className="flex-1 bg-[#0C0D0E]" edges={['top', 'bottom']}>
+    <ThemedScreen className="flex-1 bg-transparent" edges={["top", "bottom"]}>
       {/* Top Header */}
-      <View className="w-full px-4 py-3 bg-[#141518] border-b border-white/[0.08] flex-row items-center justify-between">
+      <View className="w-full px-4 py-3 bg-[#141518]/25 border-b border-white/[0.08] flex-row items-center justify-between">
         <View className="flex-row items-center flex-1 mr-2">
           {/* Back Action */}
           <Pressable
@@ -335,12 +374,12 @@ export default function ChatRoomScreen() {
           <View
             className={`w-10 h-10 rounded-xl items-center justify-center mr-3 border ${
               isGroup
-                ? 'bg-[#E85D26]/15 border-[#E85D26]/40'
-                : 'bg-[#1B1D22] border-white/[0.08]'
+                ? "bg-[#E85D26]/15 border-[#E85D26]/40"
+                : "bg-[#1B1D22] border-white/[0.08]"
             }`}
           >
             <Ionicons
-              name={isGroup ? 'people' : 'person'}
+              name={isGroup ? "people" : "person"}
               size={19}
               color="#E85D26"
             />
@@ -352,11 +391,11 @@ export default function ChatRoomScreen() {
               numberOfLines={1}
               className="text-white text-base font-bold uppercase tracking-tight"
             >
-              {room?.title || 'MATCH CHANNEL'}
+              {room?.title || "MATCH CHANNEL"}
             </Text>
             <View className="flex-row items-center mt-0.5">
               <Text className="text-[#E85D26] text-[10px] font-bold uppercase tracking-wider">
-                {isGroup ? 'MATCH SQUAD' : 'DIRECT'}
+                {isGroup ? "MATCH SQUAD" : "DIRECT"}
               </Text>
               <Text className="text-[#5C616A] text-[10px] font-bold mx-1">
                 ·
@@ -365,7 +404,9 @@ export default function ChatRoomScreen() {
                 numberOfLines={1}
                 className="text-[#A0A5AD] text-[10px] font-medium tracking-tight"
               >
-                {room?.members ? `${room.members.length} PARTICIPANTS` : 'CONFIRMED LINEUP'}
+                {room?.members
+                  ? `${room.members.length} PARTICIPANTS`
+                  : "CONFIRMED LINEUP"}
               </Text>
             </View>
           </View>
@@ -374,13 +415,13 @@ export default function ChatRoomScreen() {
         {/* Status Indicator */}
         <View className="px-2.5 py-1 rounded-full bg-[#1B1D22] border border-white/[0.08]">
           <Text className="text-[#E85D26] text-[9px] font-bold uppercase tracking-wider">
-            {isGroup ? 'SQUAD' : 'DIRECT'}
+            {isGroup ? "SQUAD" : "DIRECT"}
           </Text>
         </View>
       </View>
 
       {/* Socket Live Connection Banner */}
-      <ConnectionBanner />
+      <ConnectionBanner roomState={roomState} />
 
       {/* Associated Match Context Strip */}
       {room?.matchId && (
@@ -403,7 +444,7 @@ export default function ChatRoomScreen() {
             onPress={handleViewMatch}
             accessibilityRole="button"
             accessibilityLabel="View associated match fixture"
-            className="py-1.5 px-3 rounded-lg bg-[#141518] border border-white/[0.08] active:scale-95"
+            className="py-1.5 px-3 rounded-lg bg-[#141518]/25 border border-white/[0.08] active:scale-95"
           >
             <Text className="text-[#E85D26] text-[10px] font-bold uppercase tracking-wider">
               VIEW FIXTURE →
@@ -414,9 +455,9 @@ export default function ChatRoomScreen() {
 
       {/* Main Messages FlatList Area */}
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
         className="flex-1"
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
       >
         {loading ? (
           <View className="flex-1 items-center justify-center p-8">
@@ -427,13 +468,13 @@ export default function ChatRoomScreen() {
           </View>
         ) : messages.length === 0 ? (
           <ChatEmptyState
-            title={isGroup ? 'SQUAD CHANNEL OPEN' : 'DIRECT CHANNEL OPEN'}
+            title={isGroup ? "SQUAD CHANNEL OPEN" : "DIRECT CHANNEL OPEN"}
             description={
               isGroup
-                ? 'Coordinate arrival, equipment and match-day details here.'
-                : 'Direct player-captain communication open for this fixture.'
+                ? "Coordinate arrival, equipment and match-day details here."
+                : "Direct player-captain communication open for this fixture."
             }
-            icon={isGroup ? 'people-outline' : 'chatbubble-ellipses-outline'}
+            icon={isGroup ? "people-outline" : "chatbubble-ellipses-outline"}
           />
         ) : (
           <FlatList
@@ -454,14 +495,20 @@ export default function ChatRoomScreen() {
               paddingBottom: 16,
             }}
             showsVerticalScrollIndicator={false}
-            onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
+            onContentSizeChange={() =>
+              flatListRef.current?.scrollToEnd({ animated: false })
+            }
           />
         )}
 
         {/* Typing Notification Strip */}
         {typingUser && (
-          <View className="px-4 py-1 bg-[#141518] border-t border-white/[0.08] flex-row items-center">
-            <ActivityIndicator size="small" color="#E85D26" style={{ transform: [{ scale: 0.6 }] }} />
+          <View className="px-4 py-1 bg-[#141518]/25 border-t border-white/[0.08] flex-row items-center">
+            <ActivityIndicator
+              size="small"
+              color="#E85D26"
+              style={{ transform: [{ scale: 0.6 }] }}
+            />
             <Text className="text-[#A0A5AD] text-[11px] font-medium ml-1">
               {typingUser} is typing...
             </Text>
@@ -491,10 +538,10 @@ export default function ChatRoomScreen() {
           onTypingStart={() => socketService.startTyping(roomId)}
           onTypingStop={() => socketService.stopTyping(roomId)}
           sending={sending}
-          placeholder={isGroup ? 'Message squad...' : 'Message captain...'}
+          placeholder={isGroup ? "Message squad..." : "Message captain..."}
           maxLength={500}
         />
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </ThemedScreen>
   );
 }

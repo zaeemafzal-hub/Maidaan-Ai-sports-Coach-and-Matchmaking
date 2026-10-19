@@ -1,16 +1,18 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useAuthStore } from '../../store/useAuthStore';
-import { Role } from '../../types';
-import { RoleCard } from '../../components/ui/RoleCard';
-import { PrimaryButton } from '../../components/ui/PrimaryButton';
-import { ArenaHeader } from '../../components/ui/ArenaHeader';
-import { AmbientGlowOverlay } from '../../components/ui';
-import { authService } from '../../services/authService';
-import { supabase, isSupabaseConfigured } from '../../lib/supabase';
+import { ArtworkScrollView as ThemedScroll } from "../../components/ui/Artwork";
+import { ThemedScreen } from "../../components/ui/ThemedScreen";
+import React, { useEffect, useState } from "react";
+import { View, Text } from "react-native";
+
+import { router } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { useAuthStore } from "../../store/useAuthStore";
+import { Role } from "../../types";
+import { RoleCard } from "../../components/ui/RoleCard";
+import { PrimaryButton } from "../../components/ui/PrimaryButton";
+import { ArenaHeader } from "../../components/ui/ArenaHeader";
+import { AmbientGlowOverlay } from "../../components/ui";
+import { authService } from "../../services/authService";
+import { supabase, isSupabaseConfigured } from "../../lib/supabase";
 
 interface RoleOption {
   role: Role;
@@ -22,41 +24,43 @@ interface RoleOption {
 
 const ROLE_OPTIONS: RoleOption[] = [
   {
-    role: 'PLAYER',
-    title: 'Athlete / Player',
+    role: "PLAYER",
+    title: "Athlete / Player",
     description:
-      'Find open evening matches, get drafted into local squads, track performance, and train.',
-    iconName: 'football-outline',
-    badgeText: 'PRIMARY',
+      "Find open evening matches, get drafted into local squads, track performance, and train.",
+    iconName: "football-outline",
+    badgeText: "PRIMARY",
   },
   {
-    role: 'TEAM_CAPTAIN',
-    title: 'Team Captain',
+    role: "TEAM_CAPTAIN",
+    title: "Team Captain",
     description:
-      'Organize competitive fixtures, recruit replacement players, manage join requests, and build team reputation.',
-    iconName: 'shield-outline',
+      "Organize competitive fixtures, recruit replacement players, manage join requests, and build team reputation.",
+    iconName: "shield-outline",
   },
   {
-    role: 'HUB_OWNER',
-    title: 'Ground Owner',
+    role: "HUB_OWNER",
+    title: "Ground Owner",
     description:
-      'List sports complexes, floodlit grounds, and turf arenas. Manage slots and increase bookings.',
-    iconName: 'business-outline',
+      "List sports complexes, floodlit grounds, and turf arenas. Manage slots and increase bookings.",
+    iconName: "business-outline",
   },
 ];
 
 export default function RoleSelectionScreen() {
-  const { selectedRole, setSelectedRole, loadProfile } = useAuthStore();
+  const { loadProfile } = useAuthStore();
+  // This legacy onboarding choice is only a form value, never an authorization mode.
+  const [selectedRole, setSelectedRole] = useState<Role>("PLAYER");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!selectedRole) {
-      setSelectedRole('PLAYER');
+      setSelectedRole("PLAYER");
     }
   }, [selectedRole, setSelectedRole]);
 
-  const currentRole = selectedRole || 'PLAYER';
+  const currentRole = selectedRole || "PLAYER";
 
   const handleContinue = async () => {
     if (isSubmitting) return;
@@ -72,8 +76,8 @@ export default function RoleSelectionScreen() {
           const displayName =
             meta.full_name ||
             meta.name ||
-            data.session.user?.email?.split('@')[0] ||
-            'Athlete';
+            data.session.user?.email?.split("@")[0] ||
+            "Athlete";
 
           await authService.initProfile({
             name: displayName,
@@ -83,34 +87,34 @@ export default function RoleSelectionScreen() {
           await loadProfile();
 
           switch (currentRole) {
-            case 'PLAYER':
-              router.replace('/onboarding/player-setup');
+            case "PLAYER":
+              router.replace("/onboarding/player-setup");
               break;
-            case 'TEAM_CAPTAIN':
-              router.replace('/onboarding/captain-setup');
+            case "TEAM_CAPTAIN":
+              router.replace("/onboarding/captain-setup");
               break;
-            case 'HUB_OWNER':
-              router.replace('/onboarding/hub-setup');
+            case "HUB_OWNER":
+              router.replace("/onboarding/hub-setup");
               break;
             default:
-              router.replace('/onboarding/player-setup');
+              router.replace("/onboarding/player-setup");
               break;
           }
           return;
         }
       } catch (err: any) {
-        setError(err?.message || 'Failed to initialize account identity.');
+        setError(err?.message || "Failed to initialize account identity.");
         setIsSubmitting(false);
         return;
       }
     }
 
     // New unauthenticated registration flow
-    router.push('/(auth)/create-account');
+    router.push("/(auth)/create-account");
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#0C0D0E]" edges={['top', 'bottom']}>
+    <ThemedScreen className="flex-1 bg-transparent" edges={["top", "bottom"]}>
       <AmbientGlowOverlay showTop={true} showBottom={false} />
       <ArenaHeader
         title="Role Selection"
@@ -126,7 +130,8 @@ export default function RoleSelectionScreen() {
         }
       />
 
-      <ScrollView
+      <ThemedScroll
+        kind="form"
         contentContainerStyle={{ flexGrow: 1 }}
         showsVerticalScrollIndicator={false}
         className="px-5"
@@ -137,7 +142,8 @@ export default function RoleSelectionScreen() {
             How will you participate?
           </Text>
           <Text className="text-[#A0A5AD] text-sm leading-relaxed mt-2 font-normal">
-            Choose your primary role. This personalizes your discovery, fixtures, coaching, and team tools.
+            Choose your primary role. This personalizes your discovery,
+            fixtures, coaching, and team tools.
           </Text>
         </View>
 
@@ -179,7 +185,7 @@ export default function RoleSelectionScreen() {
             You can change or add roles later in your profile settings.
           </Text>
         </View>
-      </ScrollView>
-    </SafeAreaView>
+      </ThemedScroll>
+    </ThemedScreen>
   );
 }

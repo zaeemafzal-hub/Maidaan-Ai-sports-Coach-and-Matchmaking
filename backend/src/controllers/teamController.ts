@@ -4,7 +4,7 @@ import { SupabaseRepo, Sport, SkillLevel, TeamMemberRole, TeamMemberStatus } fro
 const VALID_SPORTS: Sport[] = ['cricket', 'badminton', 'padel', 'football'];
 const VALID_SKILL_LEVELS: SkillLevel[] = ['beginner', 'intermediate', 'advanced'];
 const VALID_ROLES: TeamMemberRole[] = ['CAPTAIN', 'PLAYER', 'VICE_CAPTAIN'];
-const VALID_STATUSES: TeamMemberStatus[] = ['ACTIVE', 'INACTIVE'];
+const VALID_STATUSES: TeamMemberStatus[] = ['ACTIVE', 'INVITED', 'LEFT', 'REMOVED'];
 
 export const TeamController = {
   /**

@@ -6,10 +6,10 @@ export function responseData<T>(response: ApiResponse<T>): T {
   return response.data;
 }
 export const venueService = {
-  async browse(sport = "", search = "") {
+  async browse(sport = "", search = "", city = 'lahore', area = '', areaSearch = '') {
     return responseData(
       await api.get<{ hubs: Venue[] }>(
-        `/api/hubs?${new URLSearchParams({ ...(sport ? { sport } : {}), search })}`,
+        `/api/hubs?${new URLSearchParams({ ...(sport ? { sport } : {}), search,city,area,areaSearch })}`,
       ),
     ).hubs;
   },

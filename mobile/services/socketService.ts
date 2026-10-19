@@ -1,7 +1,7 @@
-import { io, Socket } from 'socket.io-client';
-import { AuthStorage } from './storage';
-import { supabase } from '../lib/supabase';
-import { ChatMessage } from './chatService';
+import { io, Socket } from "socket.io-client";
+import { AuthStorage } from "./storage";
+import { supabase } from "../lib/supabase";
+import { ChatMessage } from "./chatService";
 
 export interface ChatSendAck {
   success: boolean;
@@ -18,23 +18,15 @@ export interface TypingEventData {
   isTyping: boolean;
 }
 
-import { getDevHost } from './api';
+export type RoomConnectionState = "joining" | "joined" | "failed" | "retrying";
+
+import { getBaseUrl } from "./api";
 
 const getSocketUrl = (): string => {
-  if (typeof window !== 'undefined' && window.location && window.location.origin) {
-    if (window.location.port === '8081') {
-      return `http://${window.location.hostname}:5000`;
-    }
-    return window.location.origin;
-  }
-  const devHost = getDevHost();
-  if (devHost) {
-    return `http://${devHost}:5000`;
-  }
-  if (process.env.EXPO_PUBLIC_API_URL) {
-    return process.env.EXPO_PUBLIC_API_URL.replace(/\/+$/, '');
-  }
-  return 'http://localhost:5000';
+  return (
+    process.env.EXPO_PUBLIC_SOCKET_URL?.trim().replace(/\/+$/, "") ||
+    getBaseUrl()
+  );
 };
 
 class SocketService {
@@ -42,9 +34,24 @@ class SocketService {
   private joinedRooms: Set<string> = new Set();
   private messageListeners: Set<(message: ChatMessage) => void> = new Set();
   private errorListeners: Set<(err: any) => void> = new Set();
-  private connectionStateListeners: Set<(connected: boolean) => void> = new Set();
+  private connectionStateListeners: Set<(connected: boolean) => void> =
+    new Set();
   private typingListeners: Set<(data: TypingEventData) => void> = new Set();
   private isConnecting: boolean = false;
+  private roomStateListeners = new Set<
+    (roomId: string, state: RoomConnectionState) => void
+  >();
+  private notifyRoomState(roomId: string, state: RoomConnectionState): void {
+    this.roomStateListeners.forEach((listener) => listener(roomId, state));
+  }
+  onRoomStateChange(
+    listener: (roomId: string, state: RoomConnectionState) => void,
+  ): () => void {
+    this.roomStateListeners.add(listener);
+    return () => {
+      this.roomStateListeners.delete(listener);
+    };
+  }
 
   private async getFreshAuthToken(): Promise<string | null> {
     try {
@@ -94,7 +101,7 @@ class SocketService {
 
       this.socket = io(url, {
         auth: { token },
-        transports: ['websocket', 'polling'],
+        transports: ["websocket", "polling"],
         reconnection: true,
         reconnectionAttempts: 10,
         reconnectionDelay: 1000,
@@ -102,50 +109,53 @@ class SocketService {
         autoConnect: true,
       });
 
-      this.socket.on('connect', () => {
+      this.socket.on("connect", () => {
         this.notifyConnectionState(true);
 
         // Re-join active channels on initial connection or reconnect
         this.joinedRooms.forEach((roomId) => {
-          this.socket?.emit('room:join', { roomId });
+          void this.joinRoom(roomId);
         });
       });
 
-      this.socket.on('disconnect', () => {
+      this.socket.on("disconnect", () => {
+        this.notifyConnectionState(false);
+        this.joinedRooms.forEach((room) =>
+          this.notifyRoomState(room, "retrying"),
+        );
+      });
+
+      this.socket.on("connect_error", () => {
         this.notifyConnectionState(false);
       });
 
-      this.socket.on('connect_error', () => {
-        this.notifyConnectionState(false);
-      });
-
-      this.socket.on('chat:message', (message: ChatMessage) => {
+      this.socket.on("chat:message", (message: ChatMessage) => {
         this.messageListeners.forEach((listener) => {
           try {
             listener(message);
           } catch (e) {
-            console.warn('[SocketService] Error in message listener:', e);
+            console.warn("[SocketService] Error in message listener:", e);
           }
         });
       });
 
-      this.socket.on('chat:typing', (data: TypingEventData) => {
+      this.socket.on("chat:typing", (data: TypingEventData) => {
         this.typingListeners.forEach((listener) => {
           try {
             listener(data);
           } catch (e) {
-            console.warn('[SocketService] Error in typing listener:', e);
+            console.warn("[SocketService] Error in typing listener:", e);
           }
         });
       });
 
-      this.socket.on('chat:error', (error: any) => {
-        console.warn('[SocketService] Received chat error:', error);
+      this.socket.on("chat:error", (error: any) => {
+        console.warn("[SocketService] Received chat error:", error);
         this.errorListeners.forEach((listener) => {
           try {
             listener(error);
           } catch (e) {
-            console.warn('[SocketService] Error in error listener:', e);
+            console.warn("[SocketService] Error in error listener:", e);
           }
         });
       });
@@ -154,7 +164,7 @@ class SocketService {
       return this.socket;
     } catch (err) {
       this.isConnecting = false;
-      console.warn('[SocketService] Failed to initialize socket:', err);
+      console.warn("[SocketService] Failed to initialize socket:", err);
       this.notifyConnectionState(false);
       return null;
     }
@@ -165,7 +175,7 @@ class SocketService {
       try {
         listener(connected);
       } catch (e) {
-        console.warn('[SocketService] Error in connection listener:', e);
+        console.warn("[SocketService] Error in connection listener:", e);
       }
     });
   }
@@ -186,7 +196,9 @@ class SocketService {
    * Reconnect after session token refresh or network restoration.
    */
   async reconnect(): Promise<void> {
+    const rooms = [...this.joinedRooms];
     this.disconnect();
+    rooms.forEach((room) => this.joinedRooms.add(room));
     await this.connect();
   }
 
@@ -196,21 +208,31 @@ class SocketService {
   async joinRoom(roomId: string): Promise<boolean> {
     if (!roomId) return false;
     this.joinedRooms.add(roomId);
+    this.notifyRoomState(roomId, "joining");
 
     const s = await this.connect();
-    if (!s) return false;
+    if (!s) {
+      this.notifyRoomState(roomId, "failed");
+      return false;
+    }
 
     return new Promise((resolve) => {
-      s.emit('room:join', { roomId }, (res: any) => {
-        if (res && res.success) {
-          resolve(true);
-        } else {
-          resolve(false);
+      let settled = false;
+      const finish = (success: boolean) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        this.notifyRoomState(roomId, success ? "joined" : "failed");
+        resolve(success);
+      };
+      const timer = setTimeout(() => finish(false), 10000);
+      s.emit("room:join", { roomId }, (res: any) => {
+        if (settled && res?.success && this.joinedRooms.has(roomId)) {
+          this.notifyRoomState(roomId, "joined");
+          return;
         }
+        finish(Boolean(res?.success));
       });
-
-      // Safety timeout: resolve true optimistically if ack not returned
-      setTimeout(() => resolve(true), 2500);
     });
   }
 
@@ -222,7 +244,7 @@ class SocketService {
     this.joinedRooms.delete(roomId);
 
     if (this.socket && this.socket.connected) {
-      this.socket.emit('room:leave', { roomId });
+      this.socket.emit("room:leave", { roomId });
     }
   }
 
@@ -232,14 +254,14 @@ class SocketService {
   async sendMessage(
     roomId: string,
     body: string,
-    clientMessageId: string
+    clientMessageId: string,
   ): Promise<ChatSendAck> {
     const s = await this.connect();
     if (!s || !s.connected) {
       return {
         success: false,
-        code: 'NOT_CONNECTED',
-        error: 'Live socket connection is unavailable.',
+        code: "NOT_CONNECTED",
+        error: "Live socket connection is unavailable.",
       };
     }
 
@@ -251,14 +273,14 @@ class SocketService {
           resolved = true;
           resolve({
             success: false,
-            code: 'TIMEOUT',
-            error: 'Message send acknowledgement timed out.',
+            code: "TIMEOUT",
+            error: "Message send acknowledgement timed out.",
           });
         }
       }, 5000);
 
       s.emit(
-        'chat:send',
+        "chat:send",
         { roomId, body, clientMessageId },
         (res: ChatSendAck) => {
           if (!resolved) {
@@ -266,7 +288,7 @@ class SocketService {
             clearTimeout(timer);
             resolve(res);
           }
-        }
+        },
       );
     });
   }
@@ -276,13 +298,13 @@ class SocketService {
    */
   startTyping(roomId: string): void {
     if (this.socket && this.socket.connected) {
-      this.socket.emit('chat:typing:start', { roomId });
+      this.socket.emit("chat:typing:start", { roomId });
     }
   }
 
   stopTyping(roomId: string): void {
     if (this.socket && this.socket.connected) {
-      this.socket.emit('chat:typing:stop', { roomId });
+      this.socket.emit("chat:typing:stop", { roomId });
     }
   }
 

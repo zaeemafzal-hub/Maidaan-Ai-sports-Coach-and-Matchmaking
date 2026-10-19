@@ -1,3 +1,4 @@
+import { validateFutureSchedule } from '../utils/schedule.js';
 import { Request, Response } from 'express';
 import { SupabaseRepo, Sport, SkillLevel } from '../models/supabaseRepo.js';
 
@@ -72,7 +73,7 @@ export const MatchController = {
 
       // 5. Validate capacity constraints
       const capacityNum = Number(totalCapacity);
-      if (isNaN(capacityNum) || capacityNum < 2 || capacityNum > 30) {
+      if (!Number.isInteger(capacityNum) || capacityNum < 2 || capacityNum > 30) {
         res.status(400).json({
           error: 'Total capacity must be a number between 2 and 30.',
         });
@@ -80,7 +81,7 @@ export const MatchController = {
       }
 
       const slotsNum = Number(openSlots);
-      if (isNaN(slotsNum) || slotsNum < 0 || slotsNum > capacityNum) {
+      if (!Number.isInteger(slotsNum) || slotsNum < 0 || slotsNum > capacityNum) {
         res.status(400).json({
           error: 'Open slots must be between 0 and total capacity.',
         });
@@ -97,6 +98,9 @@ export const MatchController = {
         res.status(400).json({ error: 'Start time is required.' });
         return;
       }
+
+      const scheduleError = validateFutureSchedule(date, startTime);
+      if (scheduleError) { res.status(400).json({error: scheduleError}); return; }
 
       // 7. Validate contributionPerPlayer (informational only)
       let parsedContribution: number | null = null;

@@ -1,17 +1,10 @@
-# AI Tactical Sports Coach Capabilities & Boundaries
+# AI Tactical Sports Coach Capabilities and Boundaries
 
 ## Supported Sports
-The Maidaan AI Tactical Coach provides sport-specific technical and tactical guidance across four sports:
-- Cricket: Batting footwork, bowling action and seam alignment, fielding anticipation, and match tactics.
-- Football: First-touch control, passing weight, dribbling change of pace, positioning, and shooting drills.
-- Badminton: Split-step footwork, overhead clears, smash angles, defensive lift recovery, and drop shots.
-- Padel: Wall rebound angles, bandeja execution, vibora spin, positioning at the net, and lob management.
+The coach offers advisory drills and tactics for cricket (batting, bowling and fielding), football (passing, touch and positioning), badminton (footwork, clears and smashes), and padel (wall play, bandeja, lobs and positioning). Static drill examples are educational content, not personal live telemetry.
 
-## Medical & Physiological Disclaimer
-The AI Coach operates under strict athletic training guidelines:
-- Non-Medical: The coach is an AI sports assistant, NOT a medical doctor, orthopedic specialist, or physical therapist.
-- Acute Pain Rule: If a player mentions sharp pain, swelling, sprains, torn ligaments, or acute injury, the AI Coach immediately instructs them to cease physical activity and consult a certified medical professional.
-- No Prescription: The coach never recommends prescription medications, anti-inflammatory dosages, or rehabilitation regimens for injuries.
+## Medical and Physiological Boundaries
+The coach is not a medical professional. For sharp pain, swelling or acute injury stop play and seek qualified medical advice. It must not diagnose injuries or prescribe medication or rehabilitation dosages.
 
-## Advisory & Fallback Architecture
-All coaching outputs are advisory training suggestions. In the event of network disruption or LLM provider timeouts, the coaching service seamlessly provides deterministic, sport-specific fundamental drill templates to ensure continuous offline availability.
+## Advisory and Fallback Architecture
+Gemini is the configured primary provider and Groq is the existing backup, subject to availability. Provider requests use bounded timeouts and controlled errors. Deterministic concierge summaries describe actual tool results when synthesis is unavailable. Explicitly labeled offline guidance is not a live provider response. No agent can grant roles or silently execute a captain mutation. Voice recognition availability depends on the device/build; text chat remains available.

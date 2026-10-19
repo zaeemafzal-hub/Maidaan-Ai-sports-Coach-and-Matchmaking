@@ -1,4 +1,5 @@
-import React, { useState, useCallback } from 'react';
+import { ThemedScreen } from "../../components/ui/ThemedScreen";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -6,28 +7,31 @@ import {
   Pressable,
   ActivityIndicator,
   RefreshControl,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { router, useFocusEffect } from 'expo-router';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { ArenaHeader } from '../../components/ui/ArenaHeader';
-import { ArenaBadge } from '../../components/ui/ArenaBadge';
-import { chatService, ChatRoom } from '../../services/chatService';
-import { socketService } from '../../services/socketService';
-import { ConnectionBanner } from '../../components/chat/ConnectionBanner';
+} from "react-native";
 
-type ChannelFilter = 'ALL' | 'DIRECT' | 'SQUADS';
+import { router, useFocusEffect } from "expo-router";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { ArenaHeader } from "../../components/ui/ArenaHeader";
+import { ArenaBadge } from "../../components/ui/ArenaBadge";
+import { chatService, ChatRoom } from "../../services/chatService";
+import { socketService } from "../../services/socketService";
+import { ConnectionBanner } from "../../components/chat/ConnectionBanner";
+
+type ChannelFilter = "ALL" | "DIRECT" | "SQUADS";
 
 const formatTime = (dateStr?: string | null): string => {
-  if (!dateStr) return '';
+  if (!dateStr) return "";
   try {
     const date = new Date(dateStr);
     if (isNaN(date.getTime())) return dateStr;
     const now = new Date();
     if (date.toDateString() === now.toDateString()) {
-      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      return date.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
     }
-    return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    return date.toLocaleDateString([], { month: "short", day: "numeric" });
   } catch {
     return dateStr;
   }
@@ -35,7 +39,7 @@ const formatTime = (dateStr?: string | null): string => {
 
 export default function ChatScreen() {
   const [rooms, setRooms] = useState<ChatRoom[]>([]);
-  const [activeFilter, setActiveFilter] = useState<ChannelFilter>('ALL');
+  const [activeFilter, setActiveFilter] = useState<ChannelFilter>("ALL");
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,8 +60,8 @@ export default function ChatScreen() {
       }
     } catch (err: any) {
       if (isMountedRef.current) {
-        console.warn('[ChatScreen] Failed to load chat rooms:', err);
-        setError(err?.message || 'Could not load chat channels.');
+        console.warn("[ChatScreen] Failed to load chat rooms:", err);
+        setError(err?.message || "Could not load chat channels.");
       }
     } finally {
       if (isMountedRef.current) {
@@ -95,22 +99,27 @@ export default function ChatScreen() {
         isMountedRef.current = false;
         unsubscribe();
       };
-    }, [])
+    }, []),
   );
 
   const filteredRooms = rooms.filter((room) => {
-    if (activeFilter === 'ALL') return true;
-    if (activeFilter === 'DIRECT') return room.type === 'DIRECT' || room.type === ('direct' as any);
-    if (activeFilter === 'SQUADS') return room.type === 'GROUP' || room.type === ('group' as any);
+    if (activeFilter === "ALL") return true;
+    if (activeFilter === "DIRECT")
+      return room.type === "DIRECT" || room.type === ("direct" as any);
+    if (activeFilter === "SQUADS")
+      return room.type === "GROUP" || room.type === ("group" as any);
     return true;
   });
 
   const handleOpenRoom = (room: ChatRoom) => {
-    if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
+    if (
+      typeof document !== "undefined" &&
+      document.activeElement instanceof HTMLElement
+    ) {
       document.activeElement.blur();
     }
     router.push({
-      pathname: '/chat/[id]',
+      pathname: "/chat/[id]",
       params: {
         id: room.id,
         type: room.type,
@@ -119,7 +128,7 @@ export default function ChatScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#0C0D0E]" edges={['top']}>
+    <ThemedScreen className="flex-1 bg-transparent" edges={["top"]}>
       {/* Modern Header */}
       <ArenaHeader
         title="Messages"
@@ -127,8 +136,8 @@ export default function ChatScreen() {
         locationBadge="Lahore"
         rightAction={
           <Pressable
-            onPress={() => router.push('/notifications')}
-            className="w-10 h-10 rounded-xl bg-[#141518] border border-white/[0.08] items-center justify-center active:bg-[#1B1D22]"
+            onPress={() => router.push("/notifications")}
+            className="w-10 h-10 rounded-xl bg-[#141518]/25 border border-white/[0.08] items-center justify-center active:bg-[#1B1D22]"
             accessibilityRole="button"
             accessibilityLabel="Notifications"
           >
@@ -146,9 +155,9 @@ export default function ChatScreen() {
           <View className="flex-row space-x-1.5">
             {(
               [
-                { key: 'ALL', label: 'All Channels' },
-                { key: 'DIRECT', label: 'Direct' },
-                { key: 'SQUADS', label: 'Match Squads' },
+                { key: "ALL", label: "All Channels" },
+                { key: "DIRECT", label: "Direct" },
+                { key: "SQUADS", label: "Match Squads" },
               ] as const
             ).map((filter) => {
               const isSelected = activeFilter === filter.key;
@@ -161,13 +170,13 @@ export default function ChatScreen() {
                   accessibilityLabel={`Filter ${filter.label}`}
                   className={`px-3 py-1.5 rounded-lg border ${
                     isSelected
-                      ? 'bg-[#E85D26] border-[#E85D26]'
-                      : 'bg-[#141518] border-white/[0.08] active:bg-[#1B1D22]'
+                      ? "bg-[#E85D26] border-[#E85D26]"
+                      : "bg-[#141518]/25 border-white/[0.08] active:bg-[#1B1D22]"
                   }`}
                 >
                   <Text
                     className={`text-xs font-bold uppercase tracking-wider ${
-                      isSelected ? 'text-[#0C0D0E]' : 'text-[#A0A5AD]'
+                      isSelected ? "text-[#0C0D0E]" : "text-[#A0A5AD]"
                     }`}
                   >
                     {filter.label}
@@ -180,7 +189,7 @@ export default function ChatScreen() {
           {/* Activity State Badge */}
           <View className="flex-row items-center">
             <Text className="text-[#5C616A] text-[10px] font-bold uppercase tracking-wider">
-              {rooms.length} {rooms.length === 1 ? 'CHANNEL' : 'CHANNELS'}
+              {rooms.length} {rooms.length === 1 ? "CHANNEL" : "CHANNELS"}
             </Text>
           </View>
         </View>
@@ -196,7 +205,7 @@ export default function ChatScreen() {
         </View>
       ) : error ? (
         <View className="flex-1 items-center justify-center p-8">
-          <View className="p-8 mx-4 rounded-2xl bg-[#141518] border border-white/[0.08] items-center justify-center">
+          <View className="p-8 mx-4 rounded-2xl bg-[#141518]/25 border border-white/[0.08] items-center justify-center">
             <View className="w-14 h-14 rounded-full bg-[#F59E0B]/10 border border-[#F59E0B]/30 items-center justify-center mb-3">
               <Ionicons name="alert-circle-outline" size={26} color="#F59E0B" />
             </View>
@@ -221,7 +230,11 @@ export default function ChatScreen() {
           data={filteredRooms}
           keyExtractor={(item) => item.id}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 32 }}
+          contentContainerStyle={{
+            paddingHorizontal: 16,
+            paddingTop: 16,
+            paddingBottom: 32,
+          }}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -230,18 +243,23 @@ export default function ChatScreen() {
             />
           }
           ListEmptyComponent={
-            <View className="p-8 mt-6 rounded-2xl bg-[#141518] border border-white/[0.08] items-center justify-center">
+            <View className="p-8 mt-6 rounded-2xl bg-[#141518]/25 border border-white/[0.08] items-center justify-center">
               <View className="w-14 h-14 rounded-full bg-[#1B1D22] border border-white/[0.08] items-center justify-center mb-3">
-                <Ionicons name="chatbubbles-outline" size={26} color="#E85D26" />
+                <Ionicons
+                  name="chatbubbles-outline"
+                  size={26}
+                  color="#E85D26"
+                />
               </View>
               <Text className="text-[#FFFFFF] text-base font-bold uppercase tracking-tight text-center">
                 NO ACTIVE CHANNELS
               </Text>
               <Text className="text-[#A0A5AD] text-xs text-center mt-1.5 max-w-[260px] leading-4">
-                Match squad chats and direct messages will appear here when you join fixtures or connect with captains.
+                Match squad chats and direct messages will appear here when you
+                join fixtures or connect with captains.
               </Text>
               <Pressable
-                onPress={() => router.push('/(tabs)/discover')}
+                onPress={() => router.push("/(tabs)/discover")}
                 accessibilityRole="button"
                 accessibilityLabel="Discover Matches"
                 className="mt-5 px-5 py-2.5 rounded-xl bg-[#E85D26] active:opacity-90 shadow-sm"
@@ -253,7 +271,8 @@ export default function ChatScreen() {
             </View>
           }
           renderItem={({ item }) => {
-            const isDirect = item.type === 'DIRECT' || item.type === ('direct' as any);
+            const isDirect =
+              item.type === "DIRECT" || item.type === ("direct" as any);
             const memberCount = item.members?.length || 0;
 
             return (
@@ -261,16 +280,20 @@ export default function ChatScreen() {
                 onPress={() => handleOpenRoom(item)}
                 accessibilityRole="button"
                 accessibilityLabel={`${item.title}, ${
-                  isDirect ? 'direct channel' : 'match squad'
-                }. Latest message: ${item.lastMessage || 'No messages yet'}`}
-                className="w-full p-4 rounded-2xl border mb-3 active:scale-[0.99] bg-[#141518] border-white/[0.08] shadow-sm"
+                  isDirect ? "direct channel" : "match squad"
+                }. Latest message: ${item.lastMessage || "No messages yet"}`}
+                className="w-full p-4 rounded-2xl border mb-3 active:scale-[0.99] bg-[#141518]/25 border-white/[0.08] shadow-sm"
               >
                 <View className="flex-row items-start">
                   {/* Identity Well */}
                   <View className="mr-3.5 pt-0.5">
                     {isDirect ? (
                       <View className="w-12 h-12 rounded-xl bg-[#1B1D22] border border-white/[0.08] items-center justify-center relative">
-                        <MaterialCommunityIcons name="account" size={24} color="#E85D26" />
+                        <MaterialCommunityIcons
+                          name="account"
+                          size={24}
+                          color="#E85D26"
+                        />
                       </View>
                     ) : (
                       <View className="w-12 h-12 rounded-xl bg-[#E85D26]/15 border border-[#E85D26]/30 items-center justify-center relative">
@@ -285,8 +308,8 @@ export default function ChatScreen() {
                     <View className="flex-row items-center justify-between mb-1">
                       <View className="flex-row items-center space-x-1.5 flex-1 mr-2">
                         <ArenaBadge
-                          label={isDirect ? 'DIRECT' : 'MATCH SQUAD'}
-                          variant={isDirect ? 'stone' : 'olive'}
+                          label={isDirect ? "DIRECT" : "MATCH SQUAD"}
+                          variant={isDirect ? "stone" : "olive"}
                         />
                       </View>
 
@@ -309,7 +332,7 @@ export default function ChatScreen() {
                     <View className="flex-row items-center mt-0.5 mb-1.5">
                       <Text className="text-[#5C616A] text-[10px] font-bold uppercase tracking-wider">
                         {isDirect
-                          ? '1-ON-1 CONVERSATION'
+                          ? "1-ON-1 CONVERSATION"
                           : `${memberCount} CONFIRMED MEMBERS`}
                       </Text>
                     </View>
@@ -320,7 +343,9 @@ export default function ChatScreen() {
                         numberOfLines={1}
                         className="text-xs leading-4 flex-1 text-[#A0A5AD] font-normal"
                       >
-                        {item.lastMessage ? item.lastMessage : 'Channel opened. Send the first message.'}
+                        {item.lastMessage
+                          ? item.lastMessage
+                          : "Channel opened. Send the first message."}
                       </Text>
 
                       <Ionicons
@@ -337,6 +362,6 @@ export default function ChatScreen() {
           }}
         />
       )}
-    </SafeAreaView>
+    </ThemedScreen>
   );
 }

@@ -34,6 +34,10 @@ export const AgentStateAnnotation = Annotation.Root({
     reducer: (_, next) => next,
     default: () => '',
   }),
+  synthesis: Annotation<{provider: string; usedBackup: boolean} | undefined>({
+    reducer: (_, next) => next,
+    default: () => undefined,
+  }),
   action: Annotation<CaptainActionSummary | null>({
     reducer: (_, next) => (next !== undefined ? next : null),
     default: () => null,

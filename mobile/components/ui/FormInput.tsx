@@ -6,13 +6,16 @@ import {
   KeyboardTypeOptions,
   StyleSheet,
   Pressable,
+  TextInputProps,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 interface FormInputProps {
   label: string;
   value: string;
-  onChangeText: (text: string) => void;
+  onChangeText?: (text: string) => void;
+  editable?: boolean;
+  onFocus?: TextInputProps['onFocus'];
   placeholder?: string;
   secureTextEntry?: boolean;
   keyboardType?: KeyboardTypeOptions;
@@ -41,6 +44,8 @@ export const FormInput: React.FC<FormInputProps> = ({
   accessibilityLabel,
   multiline = false,
   numberOfLines = 1,
+  editable = true,
+  onFocus,
 }) => {
   const [isFocused, setIsFocused] = useState(false);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
@@ -66,6 +71,7 @@ export const FormInput: React.FC<FormInputProps> = ({
         <TextInput
           testID={testID}
           value={value}
+          editable={editable}
           onChangeText={onChangeText}
           placeholder={placeholder}
           placeholderTextColor="#5C616A"
@@ -75,7 +81,7 @@ export const FormInput: React.FC<FormInputProps> = ({
           autoCorrect={false}
           multiline={multiline}
           numberOfLines={numberOfLines}
-          onFocus={() => setIsFocused(true)}
+          onFocus={(event) => {setIsFocused(true);onFocus?.(event);}}
           onBlur={() => setIsFocused(false)}
           accessibilityLabel={accessibilityLabel || label}
           className="flex-1 text-white text-base font-normal p-0"

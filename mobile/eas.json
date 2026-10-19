@@ -11,6 +11,10 @@
       }
     },
     "preview": {
+      "environment": "preview",
+      "env": {
+        "EXPO_PUBLIC_APP_DATA_MODE": "production"
+      },
       "distribution": "internal",
       "android": {
         "buildType": "apk"

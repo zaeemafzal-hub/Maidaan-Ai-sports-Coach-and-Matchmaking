@@ -7,6 +7,8 @@ import { AuthStorage } from '../services/storage';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { socketService } from '../services/socketService';
 
+import { resolveActiveMode } from '../utils/capabilities';
+
 const ACTIVE_MODE_KEY = 'maidaan_active_mode';
 
 export type AuthStatus =
@@ -81,7 +83,7 @@ const authStoreCreator: StateCreator<AuthState> = (set, get) => ({
   setActiveMode: async (mode: AppMode) => {
     const userRoles = get().roles;
     // Validate activeMode strictly against granted server roles
-    const validatedMode = userRoles.includes(mode) ? mode : 'PLAYER';
+    const validatedMode = resolveActiveMode(userRoles, mode);
 
     try {
       await AsyncStorage.setItem(ACTIVE_MODE_KEY, validatedMode);
@@ -106,7 +108,8 @@ const authStoreCreator: StateCreator<AuthState> = (set, get) => ({
     });
   },
 
-  setSelectedRole: (role: Role) => set({ selectedRole: role, activeMode: role }),
+  // Compatibility alias; selecting a role never grants its capability.
+  setSelectedRole: (role: Role) => { void get().setActiveMode(role); },
   setCurrentUser: (user: User | null) =>
     set({
       currentUser: user,
@@ -289,6 +292,7 @@ const authStoreCreator: StateCreator<AuthState> = (set, get) => ({
                   });
                 } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
                   await AuthStorage.setToken(session.access_token);
+                  if (event === 'TOKEN_REFRESHED') await socketService.reconnect();
                   if (event === 'SIGNED_IN' && get().authStatus !== 'BOOTING') {
                     await get().loadProfile();
                   }

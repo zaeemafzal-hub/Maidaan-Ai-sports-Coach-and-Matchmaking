@@ -1,6 +1,6 @@
-import React from 'react';
-import { View, Text, Pressable } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import React from "react";
+import { View, Text, Pressable } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 interface RoleCardProps {
   title: string;
@@ -30,8 +30,8 @@ export const RoleCard: React.FC<RoleCardProps> = ({
       accessibilityLabel={`${title}: ${description}`}
       className={`w-full p-5 rounded-2xl border transition-all active:scale-[0.99] ${
         selected
-          ? 'bg-[#1B1D22] border-2 border-[#E85D26] shadow-md shadow-[#E85D26]/20'
-          : 'bg-[#141518] border-[rgba(255,255,255,0.08)]'
+          ? "bg-[#1B1D22] border-2 border-[#E85D26] shadow-md shadow-[#E85D26]/20"
+          : "bg-[#141518]/25 border-[rgba(255,255,255,0.08)]"
       }`}
     >
       <View className="flex-row items-start justify-between">
@@ -41,14 +41,14 @@ export const RoleCard: React.FC<RoleCardProps> = ({
           <View
             className={`w-12 h-12 rounded-xl items-center justify-center mr-3.5 ${
               selected
-                ? 'bg-[#E85D26]'
-                : 'bg-[#1B1D22] border border-[rgba(255,255,255,0.08)]'
+                ? "bg-[#E85D26]"
+                : "bg-[#1B1D22] border border-[rgba(255,255,255,0.08)]"
             }`}
           >
             <Ionicons
               name={iconName}
               size={22}
-              color={selected ? '#FFFFFF' : '#AEB6BE'}
+              color={selected ? "#FFFFFF" : "#AEB6BE"}
             />
           </View>
 

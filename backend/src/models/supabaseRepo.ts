@@ -21,6 +21,10 @@ export interface ProfileRecord {
 }
 
 export interface PlayerProfileRecord {
+  phone?: string;
+  city_id?: string;
+  area_id?: string;
+  avatar_url?: string;
   user_id: string;
   preferred_sports: Sport[];
   skill_level: SkillLevel;
@@ -41,6 +45,8 @@ export interface CaptainProfileRecord {
 }
 
 export interface HubOwnerProfileRecord {
+  city_id?: string;
+  area_id?: string;
   user_id: string;
   hub_name: string;
   contact_number?: string;
@@ -98,6 +104,7 @@ export interface HubVerificationOutput {
 }
 
 export interface AdminHubVerificationOutput {
+  id: string;
   requestId: string;
   hubOwnerId: string;
   hubName: string;
@@ -223,7 +230,7 @@ export interface AdminReportOutput {
 }
 
 export type TeamMemberRole = 'CAPTAIN' | 'PLAYER' | 'VICE_CAPTAIN';
-export type TeamMemberStatus = 'ACTIVE' | 'INACTIVE';
+export type TeamMemberStatus = 'ACTIVE' | 'INVITED' | 'LEFT' | 'REMOVED';
 
 export interface TeamDbRecord {
   id: string;
@@ -429,6 +436,7 @@ export interface ChatRoomMemberDbRecord {
 }
 
 export interface ChatMessageDbRecord {
+  client_message_id?: string | null;
   id: string;
   room_id: string;
   sender_id: string;
@@ -455,6 +463,7 @@ export interface ChatRoomOutput {
 }
 
 export interface ChatMessageOutput {
+  clientMessageId?: string;
   id: string;
   roomId: string;
   senderId: string;
@@ -540,6 +549,7 @@ function formatHubVerificationOutput(record: HubVerificationRequestDbRecord): Hu
 async function enrichAdminHubVerification(record: HubVerificationRequestDbRecord): Promise<AdminHubVerificationOutput> {
   const hubProfile = await SupabaseRepo.getHubOwnerProfile(record.hub_owner_id);
   return {
+    id: record.id,
     requestId: record.id,
     hubOwnerId: record.hub_owner_id,
     hubName: hubProfile ? hubProfile.hub_name : 'Unknown Hub',
@@ -890,6 +900,10 @@ export const SupabaseRepo = {
     preferredSports: Sport[];
     skillLevel: SkillLevel;
     primaryLocation: string;
+    phone?: string;
+    cityId?: string;
+    areaId?: string;
+    avatarUrl?: string;
     matchesPlayed?: number;
   }): Promise<PlayerProfileRecord> {
     const now = new Date().toISOString();
@@ -899,6 +913,10 @@ export const SupabaseRepo = {
       preferred_sports: data.preferredSports,
       skill_level: data.skillLevel,
       primary_location: data.primaryLocation.trim(),
+      ...(data.phone !== undefined ? {phone:data.phone} : {}),
+      ...(data.cityId !== undefined ? {city_id:data.cityId} : {}),
+      ...(data.areaId !== undefined ? {area_id:data.areaId} : {}),
+      ...(data.avatarUrl !== undefined ? {avatar_url:data.avatarUrl} : {}),
       matches_played: data.matchesPlayed ?? existing?.matches_played ?? 0,
       created_at: existing?.created_at ?? now,
       updated_at: now,
@@ -1000,7 +1018,15 @@ export const SupabaseRepo = {
     if (existingTeam) {
       await this.updateTeam(existingTeam.id, data.userId, teamFields);
     } else {
-      await this.createTeam({ captainId: data.userId, ...teamFields });
+      try {
+        await this.createTeam({ captainId: data.userId, ...teamFields });
+      } catch (error) {
+        if (!(error instanceof Error) || !error.message.includes('already has a registered team')) throw error;
+        // A simultaneous setup won the unique captain key; reuse that same owned team.
+        const concurrentTeam = await this.getCaptainTeam(data.userId);
+        if (!concurrentTeam) throw error;
+        await this.updateTeam(concurrentTeam.id, data.userId, teamFields);
+      }
     }
     return saved;
   },
@@ -1044,16 +1070,21 @@ export const SupabaseRepo = {
     contactNumber?: string;
     sports?: Sport[];
     location: string;
+    cityId?: string;
+    areaId?: string;
     courtCount: number;
   }): Promise<HubOwnerProfileRecord> {
     const now = new Date().toISOString();
     const existing = memoryHubOwnerProfiles.get(data.userId);
     const record: HubOwnerProfileRecord = {
+      ...(existing || {}),
       user_id: data.userId,
       hub_name: data.hubName.trim(),
       contact_number: data.contactNumber?.trim(),
       sports: data.sports || [],
       location: data.location.trim(),
+      ...(data.cityId!==undefined?{city_id:data.cityId}:{}),
+      ...(data.areaId!==undefined?{area_id:data.areaId}:{}),
       court_count: data.courtCount,
       is_verified: existing?.is_verified ?? false,
       created_at: existing?.created_at ?? now,
@@ -1087,6 +1118,8 @@ export const SupabaseRepo = {
       contactNumber?: string | null;
       sports?: Sport[];
       location?: string;
+      cityId?: string;
+      areaId?: string;
     }
   ): Promise<HubOwnerProfileRecord> {
     const now = new Date().toISOString();
@@ -1109,6 +1142,8 @@ export const SupabaseRepo = {
       }
       if (updates.sports !== undefined) updatePayload.sports = updates.sports;
       if (updates.location !== undefined) updatePayload.location = updates.location.trim();
+      if (updates.cityId !== undefined) updatePayload.city_id = updates.cityId;
+      if (updates.areaId !== undefined) updatePayload.area_id = updates.areaId;
       // Omitted administrator-owned fields retain their current database values.
 
       const { data, error } = await supabaseAdmin
@@ -1135,6 +1170,8 @@ export const SupabaseRepo = {
     }
     if (updates.sports !== undefined) existing.sports = updates.sports;
     if (updates.location !== undefined) existing.location = updates.location.trim();
+    if (updates.cityId !== undefined) existing.city_id = updates.cityId;
+    if (updates.areaId !== undefined) existing.area_id = updates.areaId;
     // Strictly preserve is_verified and court_count
     existing.updated_at = now;
 
@@ -1177,7 +1214,7 @@ export const SupabaseRepo = {
       return ((data || []) as HubOwnerProfileRecord[]).filter(h => !suspended.has(h.user_id));
     }
 
-    const isTestMode = isTest() || !isServerSupabaseConfigured;
+    const isTestMode = isInMemoryTestMode();
     if (!isTestMode && !isServerSupabaseConfigured) {
       throw new Error('Supabase live configuration is required in non-test mode.');
     }
@@ -1930,48 +1967,10 @@ export const SupabaseRepo = {
     const useMemoryStore = isTestMode || !isValidUuid(requestId) || !isValidUuid(captainId);
 
     if (!useMemoryStore) {
-      // 1. Fetch request
-      const { data: request, error: reqError } = await supabaseAdmin
-        .from('join_requests')
-        .select('*, matches(captain_id)')
-        .eq('id', requestId)
-        .maybeSingle();
-
-      if (reqError || !request) {
-        return { success: false, code: 'NOT_FOUND', error: 'Join request not found.' };
-      }
-
-      if (request.status !== 'PENDING') {
-        return { success: false, code: 'INVALID_STATUS', error: 'Only PENDING requests can be rejected.' };
-      }
-
-      if (request.matches?.captain_id !== captainId) {
-        return { success: false, code: 'FORBIDDEN', error: 'Only the match captain can reject requests.' };
-      }
-
-      const { data: updated, error: updError } = await supabaseAdmin
-        .from('join_requests')
-        .update({ status: 'REJECTED', updated_at: now })
-        .eq('id', requestId)
-        .select()
-        .single();
-
-      if (updError || !updated) {
-        return { success: false, code: 'SERVER_ERROR', error: 'Failed to update request status.' };
-      }
-
-      return {
-        success: true,
-        request: {
-          id: updated.id,
-          matchId: updated.match_id,
-          playerId: updated.player_id,
-          status: updated.status,
-          message: updated.message,
-          createdAt: updated.created_at,
-          updatedAt: updated.updated_at,
-        },
-      };
+      const {data,error} = await supabaseAdmin.rpc('reject_join_request',{p_request_id:requestId,p_captain_id:captainId});
+      if(error) return {success:false,code:'SERVER_ERROR',error:error.message};
+      if(!data?.success) return data;
+      return {success:true,request:{id:data.requestId,matchId:data.matchId,playerId:data.playerId,status:'REJECTED',createdAt:data.updatedAt,updatedAt:data.updatedAt}};
     }
 
     const req = memoryJoinRequests.get(requestId);
@@ -2191,10 +2190,11 @@ export const SupabaseRepo = {
           };
         }
       } catch {
-        // Fall back to memoryStore
+        throw new Error('Notification persistence unavailable.');
       }
     }
 
+    if (!isTestMode) throw new Error('Notification persistence unavailable.');
     memoryNotifications.set(id, dbRecord);
     return {
       id: dbRecord.id,
@@ -2238,10 +2238,11 @@ export const SupabaseRepo = {
           }));
         }
       } catch (err) {
-        // Fall back to memory
+        throw new Error('Notifications unavailable.');
       }
     }
 
+    if (!isTestMode) throw new Error('Notifications unavailable.');
     const records = Array.from(memoryNotifications.values()).filter(
       (n) => n.user_id === userId
     );
@@ -2383,7 +2384,7 @@ export const SupabaseRepo = {
   // =========================================================================
 
   async isChatRoomMember(roomId: string, userId: string): Promise<boolean> {
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured || !isValidUuid(roomId) || !isValidUuid(userId);
+    const isTestMode = isInMemoryTestMode();
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -2410,7 +2411,7 @@ export const SupabaseRepo = {
   },
 
   async getChatRoomById(roomId: string, viewerUserId?: string): Promise<ChatRoomOutput | null> {
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured || !isValidUuid(roomId);
+    const isTestMode = isInMemoryTestMode();
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -2522,7 +2523,7 @@ export const SupabaseRepo = {
   },
 
   async getUserChatRooms(userId: string): Promise<ChatRoomOutput[]> {
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured || !isValidUuid(userId);
+    const isTestMode = isInMemoryTestMode();
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -2580,7 +2581,7 @@ export const SupabaseRepo = {
       throw new Error('Cannot create direct chat room with oneself.');
     }
 
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured || !isValidUuid(userA) || !isValidUuid(userB);
+    const isTestMode = isInMemoryTestMode();
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -2656,7 +2657,7 @@ export const SupabaseRepo = {
     if (!match) return;
 
     const now = new Date().toISOString();
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured || !isValidUuid(roomId) || !isValidUuid(matchId);
+    const isTestMode = isInMemoryTestMode();
 
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
@@ -2738,7 +2739,7 @@ export const SupabaseRepo = {
   },
 
   async findOrCreateGroupRoom(matchId: string): Promise<{ room: ChatRoomOutput; created: boolean }> {
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured || !isValidUuid(matchId);
+    const isTestMode = isInMemoryTestMode();
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
@@ -2814,14 +2815,14 @@ export const SupabaseRepo = {
   },
 
   async getRoomMessages(roomId: string, limit = 100): Promise<ChatMessageOutput[]> {
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured || !isValidUuid(roomId);
+    const isTestMode = isInMemoryTestMode();
     if (!isTestMode) {
       if (!isServerSupabaseConfigured) {
         throw new Error('Supabase live configuration is required in non-test mode.');
       }
       const { data, error } = await supabaseAdmin
         .from('chat_messages')
-        .select('id, room_id, sender_id, body, created_at, profiles(id, name, role)')
+        .select('id, room_id, sender_id, body, created_at, client_message_id, profiles(id, name, role)')
         .eq('room_id', roomId)
         .order('created_at', { ascending: true })
         .limit(limit);
@@ -2837,6 +2838,7 @@ export const SupabaseRepo = {
         senderName: m.profiles?.name || 'User',
         senderRole: m.profiles?.role,
         body: m.body,
+        clientMessageId: m.client_message_id || undefined,
         createdAt: m.created_at,
       }));
     }
@@ -2856,89 +2858,39 @@ export const SupabaseRepo = {
         senderName: prof ? prof.name : 'User',
         senderRole: prof ? prof.role : undefined,
         body: m.body,
+        clientMessageId: m.client_message_id || undefined,
         createdAt: m.created_at,
       };
     });
   },
 
-  async createChatMessage(input: {
-    roomId: string;
-    senderId: string;
-    body: string;
-  }): Promise<ChatMessageOutput> {
-    const id = crypto.randomUUID();
-    const now = new Date().toISOString();
-    const trimmedBody = input.body.trim();
-
-    const isTestMode = process.env.NODE_ENV === 'test' || !isServerSupabaseConfigured || !isValidUuid(input.roomId) || !isValidUuid(input.senderId);
-    if (!isTestMode) {
-      if (!isServerSupabaseConfigured) {
-        throw new Error('Supabase live configuration is required in non-test mode.');
-      }
-      const { data, error } = await supabaseAdmin
-        .from('chat_messages')
-        .insert([
-          {
-            id,
-            room_id: input.roomId,
-            sender_id: input.senderId,
-            body: trimmedBody,
-            created_at: now,
-          },
-        ])
-        .select()
-        .single();
-
-      if (error || !data) {
-        throw new Error(error?.message || 'Failed to persist message to database.');
-      }
-
-      // Update room updated_at
-      await supabaseAdmin
-        .from('chat_rooms')
-        .update({ updated_at: now })
-        .eq('id', input.roomId);
-
-      const senderProfile = await this.getProfile(input.senderId);
-
-      return {
-        id: data.id,
-        roomId: data.room_id,
-        senderId: data.sender_id,
-        senderName: senderProfile ? senderProfile.name : 'User',
-        senderRole: senderProfile ? senderProfile.role : undefined,
-        body: data.body,
-        createdAt: data.created_at,
-      };
-    }
-
-    // Test-mode in-memory implementation
-    const msgRecord: ChatMessageDbRecord = {
-      id,
-      room_id: input.roomId,
-      sender_id: input.senderId,
-      body: trimmedBody,
-      created_at: now,
+  async createChatMessage(input: { roomId: string; senderId: string; body: string; clientMessageId?: string }): Promise<ChatMessageOutput> {
+    const key = input.clientMessageId;
+    if (key !== undefined && (typeof key !== 'string' || !/^[A-Za-z0-9:_-]{1,128}$/.test(key))) throw new Error('Invalid clientMessageId.');
+    const toOutput = async (row: ChatMessageDbRecord): Promise<ChatMessageOutput> => {
+      const profile = await this.getProfile(row.sender_id);
+      return {id: row.id, roomId: row.room_id, senderId: row.sender_id, senderName: profile?.name || 'User', senderRole: profile?.role, body: row.body, createdAt: row.created_at, clientMessageId: row.client_message_id || undefined};
     };
-    memoryChatMessages.set(id, msgRecord);
-
-    const room = memoryChatRooms.get(input.roomId);
-    if (room) {
-      room.updated_at = now;
-      memoryChatRooms.set(input.roomId, room);
+    const row: ChatMessageDbRecord = {id: crypto.randomUUID(), room_id: input.roomId, sender_id: input.senderId, body: input.body.trim(), created_at: new Date().toISOString(), client_message_id: key || null};
+    if (isInMemoryTestMode()) {
+      const existing = key && [...memoryChatMessages.values()].find(m => m.room_id === input.roomId && m.sender_id === input.senderId && m.client_message_id === key);
+      if (existing) return toOutput(existing);
+      memoryChatMessages.set(row.id, row);
+      const room = memoryChatRooms.get(input.roomId);
+      if (room) room.updated_at = row.created_at;
+      return toOutput(row);
     }
-
-    const senderProfile = memoryProfiles.get(input.senderId);
-
-    return {
-      id,
-      roomId: input.roomId,
-      senderId: input.senderId,
-      senderName: senderProfile ? senderProfile.name : 'User',
-      senderRole: senderProfile ? senderProfile.role : undefined,
-      body: trimmedBody,
-      createdAt: now,
-    };
+    if (!isServerSupabaseConfigured) throw new Error('Supabase live configuration is required in non-test mode.');
+    const {data, error} = await supabaseAdmin.from('chat_messages').insert(row).select().single();
+    if (error?.code === '23505' && key) {
+      const prior = await supabaseAdmin.from('chat_messages').select('*').eq('room_id', input.roomId).eq('sender_id', input.senderId).eq('client_message_id', key).single();
+      if (prior.error || !prior.data) throw new Error('Unable to retrieve previous message.');
+      return toOutput(prior.data);
+    }
+    if (error || !data) throw new Error(error?.message || 'Message persistence failed.');
+    const update = await supabaseAdmin.from('chat_rooms').update({updated_at: row.created_at}).eq('id', input.roomId);
+    if (update.error) console.warn('[Chat] Room timestamp update failed; message is persisted.');
+    return toOutput(data);
   },
 
   // =========================================================================
@@ -3683,9 +3635,12 @@ export const SupabaseRepo = {
           supabaseAdmin.from('reports').select('*', { count: 'exact', head: true }).eq('status', 'OPEN'),
         ]);
 
+      for (const result of [usersRes, matchesTotalRes, matchesOpenRes, hubsTotalRes, hubsVerifiedRes, verifPendingRes, reportsOpenRes]) {
+        if (result.error || result.count == null) throw new Error('Admin dashboard counts are unavailable.');
+      }
       return {
         users: {
-          total: usersRes.count ?? 0,
+          total: usersRes.count!,
         },
         matches: {
           total: matchesTotalRes.count ?? 0,
@@ -3964,7 +3919,7 @@ export const SupabaseRepo = {
         .single();
 
       if (error || !inserted) {
-        throw new Error(error?.message || 'Failed to create team in Supabase.');
+        throw new Error(error?.code === '23505' ? 'Captain already has a registered team.' : error?.message || 'Failed to create team in Supabase.');
       }
 
       // Add captain as active team member
@@ -3988,6 +3943,7 @@ export const SupabaseRepo = {
       return formatTeamOutput(inserted as TeamDbRecord, 1);
     }
 
+    if ([...memoryTeams.values()].some(t => t.captain_id === data.captainId)) throw new Error('Captain already has a registered team.');
     memoryTeams.set(id, dbRecord);
 
     const memberId = crypto.randomUUID();
@@ -4277,54 +4233,9 @@ export const SupabaseRepo = {
     const useMemoryStore = isTestMode || !isValidUuid(matchId) || !isValidUuid(captainId);
 
     if (!useMemoryStore) {
-      const { data: match, error: mErr } = await supabaseAdmin
-        .from('matches')
-        .select('*')
-        .eq('id', matchId)
-        .maybeSingle();
-
-      if (mErr || !match) {
-        throw new Error('Match not found.');
-      }
-      if (match.captain_id !== captainId) {
-        throw new Error('Only the match captain can update recruitment.');
-      }
-
-      // Count confirmed participants
-      const { count: participantCount, error: pErr } = await supabaseAdmin
-        .from('match_participants')
-        .select('id', { count: 'exact', head: true })
-        .eq('match_id', matchId);
-
-      if (pErr) {
-        throw new Error(pErr.message || 'Failed to check match participants.');
-      }
-
-      const confirmed = participantCount ?? 0;
-      const maxAllowedOpenSlots = match.total_capacity - confirmed;
-
-      if (typeof openSlots !== 'number' || isNaN(openSlots) || openSlots < 0 || openSlots > maxAllowedOpenSlots) {
-        throw new Error(`openSlots must be between 0 and ${maxAllowedOpenSlots}.`);
-      }
-
-      const newStatus = openSlots === 0 ? 'FULL' : 'OPEN';
-
-      const { data: updated, error: uErr } = await supabaseAdmin
-        .from('matches')
-        .update({
-          open_slots: openSlots,
-          status: newStatus,
-          updated_at: now,
-        })
-        .eq('id', matchId)
-        .select()
-        .single();
-
-      if (uErr || !updated) {
-        throw new Error(uErr?.message || 'Failed to update match recruitment.');
-      }
-
-      return enrichMatch(updated as MatchDbRecord);
+      const {data, error} = await supabaseAdmin.rpc('update_match_recruitment', {p_match_id: matchId, p_captain_id: captainId, p_open_slots: openSlots});
+      if (error) throw new Error(error.message || 'Could not update recruitment.');
+      return enrichMatch(data as MatchDbRecord);
     }
 
     const match = memoryMatches.get(matchId);

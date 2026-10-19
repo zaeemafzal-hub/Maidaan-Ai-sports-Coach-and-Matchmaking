@@ -1,14 +1,13 @@
-# Hub Verification & Venue Management
+# Hub Verification and Venue Management
 
 ## What is a Verified Hub?
-A Verified Hub in Maidaan is a sports venue whose profile details, court count, contact number, and location have been submitted by a registered Hub Owner and reviewed and approved by a platform Administrator. Verified hubs display a verified badge across the platform to indicate administrative approval.
+A verified hub has been reviewed and approved by a platform Administrator based on submitted profile details, contact information, location and listed facilities. This is administrative verification, not a physical inspection, safety certificate or equipment audit.
 
 ## Verification Workflow
-The verification lifecycle operates through an administrative review workflow:
-1. Hub Setup: The venue owner registers with the HUB_OWNER role, submitting the hub name, location, contact number, supported sports, and court count.
-2. Verification Submission: The Hub Owner submits a verification request (`POST /api/hub/verification-request`), which is created in `PENDING` status.
-3. Admin Review: A platform Administrator inspects pending requests from the Admin Dashboard (`GET /api/admin/hub-verifications`).
-4. Decision: The Administrator approves or rejects the request (`PATCH /api/admin/hub-verifications/:id`) with an optional administrative note. Upon approval, the hub's `is_verified` status is updated to `true` in the database.
+Start as a Player, activate Hub Owner from Profile and complete Hub Setup. Enter the venue name, address, Lahore area, contact, supported sports and court count. In Venue Details add a real pin and photos. Add courts or pitches with sport-specific details, then future available slots with prices and booking policy. Submit verification from the owner workspace. An ADMIN reviews the pending request, approves or rejects with a note, and the owner refreshes to see the updated state.
 
-## Verification Scope
-Hub verification confirms that the venue's profile was submitted by an authenticated Hub Owner and approved by platform administration. It is strictly an administrative platform review confirming venue profile details, contact information, and listed sports facilities. It does not involve on-site physical inspections or equipment audits.
+## Venue Reservations and Cancellation Policies
+Owners choose full payment only or full-or-advance when managing a bookable slot. An advance is always required to confirm a reservation. Owners disclose the advance percentage, cancellation deadline in hours and full-refund or keep-advance policy. Timely cancellation follows that policy; late cancellation is allowed without refund. Checkout is sandbox testing only or disabled. Refund records may require manual provider-dashboard action; never claim an automatic bank refund. Slot availability shown without payment confirmation is not a paid reservation.
+
+## Administrative Moderation
+Granted superusers can suspend and reinstate owners, captains and players. Suspension preserves history and hides affected listings. Public signup cannot create administrators.

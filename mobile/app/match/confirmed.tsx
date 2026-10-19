@@ -1,50 +1,50 @@
-import React, { useState, useCallback } from 'react';
+import { ArtworkScrollView as ThemedScroll } from "../../components/ui/Artwork";
+import { ThemedScreen } from "../../components/ui/ThemedScreen";
+import React, { useState, useCallback } from "react";
+import { View, Text, Pressable, Image, ActivityIndicator } from "react-native";
+
+import { useLocalSearchParams, router, useFocusEffect } from "expo-router";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { ArenaHeader } from "../../components/ui/ArenaHeader";
+import { ArenaBadge } from "../../components/ui/ArenaBadge";
+import { IMAGES } from "../../constants/images";
+import { MatchSlotItem } from "../../constants/matches";
+import { matchService } from "../../services/matchService";
 import {
-  View,
-  Text,
-  ScrollView,
-  Pressable,
-  Image,
-  ActivityIndicator,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams, router, useFocusEffect } from 'expo-router';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { ArenaHeader } from '../../components/ui/ArenaHeader';
-import { ArenaBadge } from '../../components/ui/ArenaBadge';
-import { IMAGES } from '../../constants/images';
-import { MatchSlotItem } from '../../constants/matches';
-import { matchService } from '../../services/matchService';
-import { joinRequestService, JoinRequest } from '../../services/joinRequestService';
-import { chatService } from '../../services/chatService';
-import { Sport } from '../../types';
+  joinRequestService,
+  JoinRequest,
+} from "../../services/joinRequestService";
+import { chatService } from "../../services/chatService";
+import { Sport } from "../../types";
 
 const getSportPhoto = (sport?: Sport) => {
   switch (sport) {
-    case 'football':
+    case "football":
       return IMAGES.arenaMatch;
-    case 'cricket':
+    case "cricket":
       return IMAGES.arenaGround;
-    case 'padel':
+    case "padel":
       return IMAGES.arenaTeam;
-    case 'badminton':
+    case "badminton":
       return IMAGES.arenaOnboard;
     default:
       return IMAGES.arenaTeam;
   }
 };
 
-const getSportIcon = (sport?: Sport): 'cricket' | 'badminton' | 'tennis' | 'soccer' => {
+const getSportIcon = (
+  sport?: Sport,
+): "cricket" | "badminton" | "tennis" | "soccer" => {
   switch (sport) {
-    case 'cricket':
-      return 'cricket';
-    case 'badminton':
-      return 'badminton';
-    case 'padel':
-      return 'tennis';
-    case 'football':
+    case "cricket":
+      return "cricket";
+    case "badminton":
+      return "badminton";
+    case "padel":
+      return "tennis";
+    case "football":
     default:
-      return 'soccer';
+      return "soccer";
   }
 };
 
@@ -52,7 +52,9 @@ export default function SpotConfirmedScreen() {
   const { matchId } = useLocalSearchParams<{ matchId?: string }>();
 
   const [match, setMatch] = useState<MatchSlotItem | null>(null);
-  const [acceptedRequest, setAcceptedRequest] = useState<JoinRequest | null>(null);
+  const [acceptedRequest, setAcceptedRequest] = useState<JoinRequest | null>(
+    null,
+  );
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isUnauthorized, setIsUnauthorized] = useState<boolean>(false);
 
@@ -76,7 +78,7 @@ export default function SpotConfirmedScreen() {
       // Verify that current user actually has an ACCEPTED request for this match
       const myRequests = await joinRequestService.getMyJoinRequests();
       const confirmedReq = myRequests.find(
-        (r) => r.matchId === matchId && r.status === 'ACCEPTED'
+        (r) => r.matchId === matchId && r.status === "ACCEPTED",
       );
 
       if (!confirmedReq) {
@@ -104,7 +106,7 @@ export default function SpotConfirmedScreen() {
       }
     } catch (err: any) {
       if (isMountedRef.current) {
-        console.warn('[SpotConfirmedScreen] Verification error:', err);
+        console.warn("[SpotConfirmedScreen] Verification error:", err);
         setIsUnauthorized(true);
       }
     } finally {
@@ -121,17 +123,20 @@ export default function SpotConfirmedScreen() {
       return () => {
         isMountedRef.current = false;
       };
-    }, [verifyConfirmation])
+    }, [verifyConfirmation]),
   );
 
   const handleBackToDiscover = () => {
-    router.replace('/(tabs)/discover');
+    router.replace("/(tabs)/discover");
   };
 
   // Safe invalid-context guard: do not expose arbitrary group rooms or fabricated match details
+  const [openingChat, setOpeningChat] = useState(false);
+  const [chatAuthError, setChatAuthError] = useState<string | null>(null);
+
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-[#0C0D0E]" edges={['top', 'bottom']}>
+      <ThemedScreen className="flex-1 bg-transparent" edges={["top", "bottom"]}>
         <ArenaHeader
           title="Spot Confirmed"
           subtitle="Lineup secured"
@@ -144,13 +149,13 @@ export default function SpotConfirmedScreen() {
             VERIFYING CONFIRMED SPOT...
           </Text>
         </View>
-      </SafeAreaView>
+      </ThemedScreen>
     );
   }
 
   if (isUnauthorized || !match || !acceptedRequest) {
     return (
-      <SafeAreaView className="flex-1 bg-[#0C0D0E]" edges={['top', 'bottom']}>
+      <ThemedScreen className="flex-1 bg-transparent" edges={["top", "bottom"]}>
         <ArenaHeader
           title="Spot Confirmed"
           subtitle="Lineup secured"
@@ -165,7 +170,8 @@ export default function SpotConfirmedScreen() {
             CONFIRMATION UNAVAILABLE
           </Text>
           <Text className="text-[#A0A5AD] text-xs font-medium text-center mt-2 max-w-[280px] leading-5">
-            You do not have an accepted spot for this fixture on the match roster.
+            You do not have an accepted spot for this fixture on the match
+            roster.
           </Text>
           <View className="w-full mt-8 max-w-[320px]">
             <Pressable
@@ -180,12 +186,9 @@ export default function SpotConfirmedScreen() {
             </Pressable>
           </View>
         </View>
-      </SafeAreaView>
+      </ThemedScreen>
     );
   }
-
-  const [openingChat, setOpeningChat] = useState(false);
-  const [chatAuthError, setChatAuthError] = useState<string | null>(null);
 
   const handleOpenMatchChat = async () => {
     try {
@@ -193,15 +196,19 @@ export default function SpotConfirmedScreen() {
       setChatAuthError(null);
       const room = await chatService.openMatchGroupRoom(match.id);
       router.push({
-        pathname: '/chat/[id]',
+        pathname: "/chat/[id]",
         params: { id: room.id, type: room.type },
       });
     } catch (err: any) {
-      console.warn('[handleOpenMatchChat] Failed to open group room:', err);
+      console.warn("[handleOpenMatchChat] Failed to open group room:", err);
       if (err?.status === 403) {
-        setChatAuthError('Access denied: You are not yet verified as a confirmed participant in this match squad.');
+        setChatAuthError(
+          "Access denied: You are not yet verified as a confirmed participant in this match squad.",
+        );
       } else {
-        setChatAuthError(err?.message || 'Unable to open squad chat channel at this time.');
+        setChatAuthError(
+          err?.message || "Unable to open squad chat channel at this time.",
+        );
       }
     } finally {
       setOpeningChat(false);
@@ -213,7 +220,7 @@ export default function SpotConfirmedScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#0C0D0E]" edges={['top', 'bottom']}>
+    <ThemedScreen className="flex-1 bg-transparent" edges={["top", "bottom"]}>
       {/* Modern Header */}
       <ArenaHeader
         title="Spot Confirmed"
@@ -222,7 +229,8 @@ export default function SpotConfirmedScreen() {
         onBack={handleBackToDiscover}
       />
 
-      <ScrollView
+      <ThemedScroll
+        kind="venues"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 48 }}
         className="flex-1"
@@ -248,12 +256,13 @@ export default function SpotConfirmedScreen() {
           </Text>
 
           <Text className="text-[#A0A5AD] text-xs font-medium text-center mt-2.5 max-w-[320px] leading-5">
-            The captain accepted your request. Your spot on the match roster is secured and group coordination is now open.
+            The captain accepted your request. Your spot on the match roster is
+            secured and group coordination is now open.
           </Text>
         </View>
 
         {/* 3-Step Matchmaking Progression Board */}
-        <View className="mx-4 mt-6 bg-[#141518] border border-white/[0.08] rounded-2xl p-4 shadow-sm">
+        <View className="mx-4 mt-6 bg-[#141518]/25 border border-white/[0.08] rounded-2xl p-4 shadow-sm">
           <View className="flex-row items-center justify-between mb-3 pb-2 border-b border-white/[0.08]">
             <Text className="text-[#5C616A] text-[10px] font-bold uppercase tracking-wider">
               MATCHMAKING PROGRESSION
@@ -296,7 +305,9 @@ export default function SpotConfirmedScreen() {
                   02. Captain Approved
                 </Text>
                 <Text className="text-[#A0A5AD] text-[11px] font-medium">
-                  {match.captainName ? `${match.captainName} approved your entry` : 'Match captain approved your entry'}
+                  {match.captainName
+                    ? `${match.captainName} approved your entry`
+                    : "Match captain approved your entry"}
                 </Text>
               </View>
               <Ionicons name="checkmark-circle" size={16} color="#E85D26" />
@@ -324,7 +335,7 @@ export default function SpotConfirmedScreen() {
         </View>
 
         {/* Photography Card */}
-        <View className="mx-4 mt-6 rounded-2xl overflow-hidden bg-[#141518] border border-white/[0.08] shadow-md">
+        <View className="mx-4 mt-6 rounded-2xl overflow-hidden bg-[#141518]/25 border border-white/[0.08] shadow-md">
           <View className="h-44 w-full relative">
             <Image
               source={getSportPhoto(match.sport)}
@@ -350,7 +361,7 @@ export default function SpotConfirmedScreen() {
 
             <View className="absolute bottom-3 left-4 right-4">
               <Text className="text-[#A0A5AD] text-[10px] font-bold uppercase tracking-widest">
-                {match.groundName || 'Local Sports Venue'}
+                {match.groundName || "Local Sports Venue"}
               </Text>
               <Text
                 numberOfLines={1}
@@ -363,7 +374,7 @@ export default function SpotConfirmedScreen() {
         </View>
 
         {/* Confirmed Fixture Ticket Sheet */}
-        <View className="mx-4 mt-4 bg-[#141518] border border-white/[0.08] rounded-2xl p-5 shadow-sm">
+        <View className="mx-4 mt-4 bg-[#141518]/25 border border-white/[0.08] rounded-2xl p-5 shadow-sm">
           {/* Ticket Header */}
           <View className="flex-row items-center justify-between pb-3 border-b border-white/[0.08]">
             <View className="flex-row items-center">
@@ -435,7 +446,12 @@ export default function SpotConfirmedScreen() {
               VENUE & LOCATION
             </Text>
             <View className="flex-row items-start">
-              <Ionicons name="location-sharp" size={14} color="#E85D26" style={{ marginTop: 1 }} />
+              <Ionicons
+                name="location-sharp"
+                size={14}
+                color="#E85D26"
+                style={{ marginTop: 1 }}
+              />
               <View className="ml-1.5 flex-1">
                 <Text className="text-[#FFFFFF] text-xs font-bold">
                   {match.groundName}
@@ -456,7 +472,7 @@ export default function SpotConfirmedScreen() {
               <View className="flex-row items-center">
                 <Ionicons name="shield-checkmark" size={14} color="#E85D26" />
                 <Text className="text-[#FFFFFF] text-xs font-bold ml-1.5">
-                  {match.captainName || 'Team Captain'}
+                  {match.captainName || "Team Captain"}
                 </Text>
               </View>
               <Text className="text-[#5C616A] text-[10px] font-bold uppercase tracking-wider ml-5">
@@ -472,9 +488,7 @@ export default function SpotConfirmedScreen() {
                 <Text className="text-[#E85D26] text-xs font-bold">
                   {match.feePerPlayer}
                 </Text>
-                <Text className="text-[#5C616A] text-[9px]">
-                  per player
-                </Text>
+                <Text className="text-[#5C616A] text-[9px]">per player</Text>
               </View>
             )}
           </View>
@@ -483,13 +497,18 @@ export default function SpotConfirmedScreen() {
           <View className="pt-3">
             <View className="p-3 rounded-xl bg-[#1B1D22] border border-white/[0.08]">
               <View className="flex-row items-center mb-1">
-                <Ionicons name="information-circle-outline" size={14} color="#E85D26" />
+                <Ionicons
+                  name="information-circle-outline"
+                  size={14}
+                  color="#E85D26"
+                />
                 <Text className="text-[#FFFFFF] text-xs font-bold uppercase tracking-wider ml-1.5">
                   ARRIVE 15 MIN EARLY
                 </Text>
               </View>
               <Text className="text-[#A0A5AD] text-xs leading-4">
-                {match.venueNotes || 'Bring required playing kit and check in with the team captain at the venue.'}
+                {match.venueNotes ||
+                  "Bring required playing kit and check in with the team captain at the venue."}
               </Text>
             </View>
           </View>
@@ -532,7 +551,7 @@ export default function SpotConfirmedScreen() {
             onPress={handleViewMatchDetails}
             accessibilityRole="button"
             accessibilityLabel="View Match Details"
-            className="w-full py-3.5 rounded-xl bg-[#141518] border border-white/[0.08] items-center justify-center shadow-sm active:bg-[#1B1D22] flex-row"
+            className="w-full py-3.5 rounded-xl bg-[#141518]/25 border border-white/[0.08] items-center justify-center shadow-sm active:bg-[#1B1D22] flex-row"
           >
             <Ionicons name="document-text-outline" size={16} color="#FFFFFF" />
             <Text className="text-[#FFFFFF] text-xs font-bold uppercase tracking-wider ml-1.5">
@@ -554,7 +573,7 @@ export default function SpotConfirmedScreen() {
             </Text>
           </Pressable>
         </View>
-      </ScrollView>
-    </SafeAreaView>
+      </ThemedScroll>
+    </ThemedScreen>
   );
 }

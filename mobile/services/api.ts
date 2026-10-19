@@ -1,3 +1,4 @@
+import { resolveBackendUrl } from '../utils/backendUrl';
 import Constants from 'expo-constants';
 import { AuthStorage } from './storage';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
@@ -28,23 +29,7 @@ export const getDevHost = (): string | null => {
 };
 
 export const getBaseUrl = (): string => {
-  if (typeof window !== 'undefined' && window.location && window.location.hostname) {
-    if (window.location.port === '8081') {
-      return `http://${window.location.hostname}:5000`;
-    }
-    return '';
-  }
-
-  const devHost = getDevHost();
-  if (devHost) {
-    return `http://${devHost}:5000`;
-  }
-
-  if (process.env.EXPO_PUBLIC_API_URL) {
-    return process.env.EXPO_PUBLIC_API_URL.replace(/\/+$/, '');
-  }
-
-  return 'http://localhost:5000';
+  return resolveBackendUrl(process.env.EXPO_PUBLIC_API_URL, typeof window !== 'undefined' ? window.location : undefined, getDevHost());
 };
 
 class ApiClient {
@@ -99,7 +84,7 @@ class ApiClient {
     // Use AbortController timeout to guarantee requests never hang mobile UI indefinitely
     const controller = new AbortController();
     // Concierge can classify first, then try both coaching providers.
-    const timeoutMs = path.startsWith('/api/coach/') || path.startsWith('/api/agent/') ? 65000 : path.includes('/checkout') ? 70000 : path === '/api/hub/photos' ? 25000 : 15000;
+    const timeoutMs = path.startsWith('/api/coach/') || path.startsWith('/api/agent/') ? 65000 : path.includes('/checkout') ? 70000 : path === '/api/hub/photos' || path === '/api/profile/player/photo' ? 25000 : 15000;
     const timer = setTimeout(() => controller.abort(), timeoutMs);
 
     try {

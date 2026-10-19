@@ -47,7 +47,7 @@ export function loadAllKnowledgeChunks(): KnowledgeChunk[] {
 
   if (!fs.existsSync(knowledgeDir)) {
     console.warn(`[KnowledgeLoader] Knowledge directory not found at: ${knowledgeDir}`);
-    return allChunks;
+    throw new Error('Required RAG knowledge directory is missing: ' + knowledgeDir);
   }
 
   for (const filename of APPROVED_KNOWLEDGE_FILES) {
@@ -56,7 +56,7 @@ export function loadAllKnowledgeChunks(): KnowledgeChunk[] {
     try {
       if (!fs.existsSync(fullPath)) {
         console.warn(`[KnowledgeLoader] Approved knowledge file missing: ${filename}`);
-        continue;
+        throw new Error('Required RAG file missing: ' + filename);
       }
 
       const rawContent = fs.readFileSync(fullPath, 'utf-8');
@@ -79,7 +79,7 @@ export function loadAllKnowledgeChunks(): KnowledgeChunk[] {
         allChunks.push(chunk);
       }
     } catch (err: any) {
-      console.error(`[KnowledgeLoader] Failed to read ${filename}:`, err.message);
+      throw new Error('Could not load required RAG file ' + filename + ': ' + err.message);
     }
   }
 

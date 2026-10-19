@@ -1,3 +1,5 @@
+import { decideJoinRequest } from '../../services/joinDecisionService.js';
+import { validateFutureSchedule } from '../../utils/schedule.js';
 import crypto from 'crypto';
 import { SupabaseRepo, Sport, SkillLevel } from '../../models/supabaseRepo.js';
 import {
@@ -357,6 +359,8 @@ async function executeCaptainActionOnce(
   if (action.type === 'CREATE_MATCH' && action.payload.type === 'CREATE_MATCH') {
     const data = action.payload.data;
     try {
+      const scheduleError = validateFutureSchedule(data.date, data.startTime);
+      if (scheduleError) throw new Error(scheduleError);
       const created = await SupabaseRepo.createMatch({
         captainId: executingUserId,
         sport: data.sport,
@@ -400,7 +404,7 @@ async function executeCaptainActionOnce(
   if (action.type === 'ACCEPT_JOIN_REQUEST' && action.payload.type === 'ACCEPT_JOIN_REQUEST') {
     const { requestId, playerName, matchTitle } = action.payload.data;
     // Calls existing deterministic acceptJoinRequest (checks ownership, status PENDING, capacity > 0)
-    const result = await SupabaseRepo.acceptJoinRequest(requestId, executingUserId);
+    const result = await decideJoinRequest(requestId, executingUserId, 'ACCEPT');
     if (!result.success) {
       return {
         success: false,
@@ -432,7 +436,7 @@ async function executeCaptainActionOnce(
 
   if (action.type === 'REJECT_JOIN_REQUEST' && action.payload.type === 'REJECT_JOIN_REQUEST') {
     const { requestId, playerName, matchTitle } = action.payload.data;
-    const result = await SupabaseRepo.rejectJoinRequest(requestId, executingUserId);
+    const result = await decideJoinRequest(requestId, executingUserId, 'REJECT');
     if (!result.success) {
       return {
         success: false,

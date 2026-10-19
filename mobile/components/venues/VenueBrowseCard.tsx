@@ -9,7 +9,7 @@ export function VenueBrowseCard() {
     <Pressable
       accessibilityRole="button"
       accessibilityLabel="Browse hubs, prices & available slots"
-      onPress={() => router.push("/hubs" as any)}
+      onPress={() => router.push("/(tabs)/venues" as any)}
       style={({ pressed }) => [
         styles.card,
         pressed && { backgroundColor: COLORS.surfaceHighlight },
@@ -40,9 +40,9 @@ const styles = StyleSheet.create({
     gap: 12,
     padding: 16,
     borderRadius: RADIUS.lg,
-    backgroundColor: COLORS.surfaceCard,
+    backgroundColor: "rgba(20,21,24,.24)",
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: "rgba(255,255,255,.22)",
   },
   icon: {
     width: 44,

@@ -1,4 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import { isDemo } from "../../config/runtime";
+import { normalizeMatchSchedule } from "../../utils/matchSchedule";
+import { isActiveCapability } from "../../utils/capabilities";
+import { ArtworkScrollView as ThemedScroll } from "../../components/ui/Artwork";
+import { ThemedScreen } from "../../components/ui/ThemedScreen";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -8,25 +13,25 @@ import {
   Modal,
   KeyboardAvoidingView,
   Platform,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useAuthStore } from '../../store/useAuthStore';
-import { MatchSlotItem } from '../../constants/matches';
-import { matchService } from '../../services/matchService';
-import { teamService } from '../../services/teamService';
-import { ArenaHeader } from '../../components/ui/ArenaHeader';
-import { ArenaBadge } from '../../components/ui/ArenaBadge';
-import { PrimaryButton } from '../../components/ui/PrimaryButton';
-import { Sport, SkillLevel } from '../../types';
-import { weatherService, WeatherOutlook } from '../../services/weatherService';
-import { WeatherOutlookCard } from '../../components/ui/WeatherOutlookCard';
+} from "react-native";
+
+import { router } from "expo-router";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { useAuthStore } from "../../store/useAuthStore";
+import { MatchSlotItem } from "../../constants/matches";
+import { matchService } from "../../services/matchService";
+import { teamService } from "../../services/teamService";
+import { ArenaHeader } from "../../components/ui/ArenaHeader";
+import { ArenaBadge } from "../../components/ui/ArenaBadge";
+import { PrimaryButton } from "../../components/ui/PrimaryButton";
+import { Sport, SkillLevel } from "../../types";
+import { weatherService, WeatherOutlook } from "../../services/weatherService";
+import { WeatherOutlookCard } from "../../components/ui/WeatherOutlookCard";
 
 // Sport display metadata
 interface SportMeta {
   label: string;
-  icon: 'cricket' | 'badminton' | 'tennis' | 'soccer';
+  icon: "cricket" | "badminton" | "tennis" | "soccer";
   defaultFormat: string;
   defaultTotalSlots: number;
   defaultOpenSlots: number;
@@ -36,79 +41,70 @@ interface SportMeta {
 
 const SPORTS_CONFIG: Record<Sport, SportMeta> = {
   football: {
-    label: 'Football',
-    icon: 'soccer',
-    defaultFormat: '7v7 Friendly',
+    label: "Football",
+    icon: "soccer",
+    defaultFormat: "7v7 Friendly",
     defaultTotalSlots: 14,
     defaultOpenSlots: 3,
-    defaultFee: 'Rs. 450',
-    formats: [
-      '5v5 Friendly',
-      '7v7 Friendly',
-      '11v11 Friendly',
-    ],
+    defaultFee: "Rs. 450",
+    formats: ["5v5 Friendly", "7v7 Friendly", "11v11 Friendly"],
   },
   cricket: {
-    label: 'Cricket',
-    icon: 'cricket',
-    defaultFormat: 'Tape Ball Friendly',
+    label: "Cricket",
+    icon: "cricket",
+    defaultFormat: "Tape Ball Friendly",
     defaultTotalSlots: 16,
     defaultOpenSlots: 4,
-    defaultFee: 'Rs. 300',
-    formats: [
-      'Tape Ball Friendly',
-      'Box Cricket',
-      'Hard Ball Friendly',
-    ],
+    defaultFee: "Rs. 300",
+    formats: ["Tape Ball Friendly", "Box Cricket", "Hard Ball Friendly"],
   },
   padel: {
-    label: 'Padel',
-    icon: 'tennis',
-    defaultFormat: 'Friendly Doubles',
+    label: "Padel",
+    icon: "tennis",
+    defaultFormat: "Friendly Doubles",
     defaultTotalSlots: 4,
     defaultOpenSlots: 1,
-    defaultFee: 'Rs. 850',
-    formats: [
-      'Friendly Doubles',
-      'Casual Singles',
-    ],
+    defaultFee: "Rs. 850",
+    formats: ["Friendly Doubles", "Casual Singles"],
   },
   badminton: {
-    label: 'Badminton',
-    icon: 'badminton',
-    defaultFormat: 'Friendly Doubles',
+    label: "Badminton",
+    icon: "badminton",
+    defaultFormat: "Friendly Doubles",
     defaultTotalSlots: 4,
     defaultOpenSlots: 2,
-    defaultFee: 'Rs. 350',
-    formats: [
-      'Friendly Doubles',
-      'Casual Singles',
-    ],
+    defaultFee: "Rs. 350",
+    formats: ["Friendly Doubles", "Casual Singles"],
   },
 };
 
 // Skill tier metadata
 const SKILL_METAS: Record<
   SkillLevel,
-  { label: string; badge: string; subtitle: string; variant: 'stone' | 'olive' | 'rust' }
+  {
+    label: string;
+    badge: string;
+    subtitle: string;
+    variant: "stone" | "olive" | "rust";
+  }
 > = {
   beginner: {
-    label: 'Beginner',
-    badge: 'Tier 3',
-    subtitle: 'Grassroots Casual',
-    variant: 'stone',
+    label: "Beginner",
+    badge: "Tier 3",
+    subtitle: "Grassroots Casual",
+    variant: "stone",
   },
   intermediate: {
-    label: 'Intermediate',
-    badge: 'Tier 2',
-    subtitle: 'Club Regular',
-    variant: 'olive',
+    label: "Intermediate",
+    badge: "Tier 2",
+    subtitle: "Club Regular",
+    variant: "olive",
   },
   advanced: {
-    label: 'Advanced',
-    badge: 'Tier 1',
-    subtitle: 'Premier Circuit',
-    variant: 'rust',
+    label: "Advanced",
+    badge: "Tier 1",
+    subtitle: "Premier Circuit",
+    variant: "rust",
   },
 };
 
@@ -119,73 +115,79 @@ const VENUE_PRESETS: {
   mapPosition: { x: number; y: number };
 }[] = [
   {
-    name: 'Model Town Football Turf, Pitch 1',
-    area: 'Model Town, Lahore',
-    sport: 'football',
+    name: isDemo() ? "Model Town Football Turf, Pitch 1" : "",
+    area: "Model Town, Lahore",
+    sport: "football",
     mapPosition: { x: 34, y: 56 },
   },
   {
-    name: 'Legends Arena, Court 2',
-    area: 'Gulberg III, Lahore',
-    sport: 'football',
+    name: "Legends Arena, Court 2",
+    area: "Gulberg III, Lahore",
+    sport: "football",
     mapPosition: { x: 50, y: 38 },
   },
   {
-    name: 'Smash Padel Club, Court 1',
-    area: 'DHA Phase 5, Lahore',
-    sport: 'padel',
+    name: "Smash Padel Club, Court 1",
+    area: "DHA Phase 5, Lahore",
+    sport: "padel",
     mapPosition: { x: 73, y: 48 },
   },
   {
-    name: 'Padelo Arena, Indoor Glass Court',
-    area: 'Gulberg II, Lahore',
-    sport: 'padel',
+    name: "Padelo Arena, Indoor Glass Court",
+    area: "Gulberg II, Lahore",
+    sport: "padel",
     mapPosition: { x: 54, y: 35 },
   },
   {
-    name: 'Garrison Sports Complex, Court 1',
-    area: 'Cantt, Lahore',
-    sport: 'badminton',
+    name: "Garrison Sports Complex, Court 1",
+    area: "Cantt, Lahore",
+    sport: "badminton",
     mapPosition: { x: 65, y: 22 },
   },
   {
-    name: 'Lahore Gymkhana Badminton Arena',
-    area: 'Mall Road, Lahore',
-    sport: 'badminton',
+    name: "Lahore Gymkhana Badminton Arena",
+    area: "Mall Road, Lahore",
+    sport: "badminton",
     mapPosition: { x: 42, y: 30 },
   },
   {
-    name: 'Mughalpura Cricket Ground, Pitch 2',
-    area: 'Mughalpura, Lahore',
-    sport: 'cricket',
+    name: "Mughalpura Cricket Ground, Pitch 2",
+    area: "Mughalpura, Lahore",
+    sport: "cricket",
     mapPosition: { x: 68, y: 18 },
   },
   {
-    name: 'Johar Town Arena Turf',
-    area: 'Johar Town, Lahore',
-    sport: 'football',
+    name: "Johar Town Arena Turf",
+    area: "Johar Town, Lahore",
+    sport: "football",
     mapPosition: { x: 22, y: 72 },
   },
 ];
 
 // Quick date chips
-const DATE_PRESETS = ['Tonight', 'Tomorrow', 'Wednesday', 'Friday', 'Saturday', 'Sunday'];
+const DATE_PRESETS = [
+  "Tonight",
+  "Tomorrow",
+  "Wednesday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+];
 
 // Quick time presets
 const TIME_PRESETS = [
-  '8:30 PM - 10:00 PM',
-  '7:00 PM - 8:30 PM',
-  '9:00 PM - 10:30 PM',
-  '6:00 PM - 7:30 PM',
-  '10:00 PM - 11:30 PM',
+  "8:30 PM - 10:00 PM",
+  "7:00 PM - 8:30 PM",
+  "9:00 PM - 10:30 PM",
+  "6:00 PM - 7:30 PM",
+  "10:00 PM - 11:30 PM",
 ];
 
 export default function CreateMatchScreen() {
-  const { currentUser, selectedRole, captainProfile } = useAuthStore();
+  const { currentUser, roles, activeMode, captainProfile } = useAuthStore();
 
   // Determine current effective role
-  const effectiveRole = currentUser?.role || selectedRole || 'PLAYER';
-  const isCaptain = effectiveRole === 'TEAM_CAPTAIN';
+  const isCaptain = isActiveCapability(roles, activeMode, "TEAM_CAPTAIN");
 
   // Sourced captain identity strictly from auth store (no fake fallbacks)
   const captainUserId = currentUser?.id ?? captainProfile?.userId;
@@ -193,50 +195,61 @@ export default function CreateMatchScreen() {
   const captainTeamName = captainProfile?.teamName?.trim();
 
   // Display strings for neutral presentation when not set
-  const displayCaptainName = captainName || 'Captain Name Not Set';
-  const displayTeamName = captainTeamName || 'Team Name Not Set';
+  const displayCaptainName = captainName || "Captain Name Not Set";
+  const displayTeamName = captainTeamName || "Team Name Not Set";
 
   // Initial prefill values from captain profile
   const initialSport: Sport =
     captainProfile?.sports && captainProfile.sports.length > 0
       ? captainProfile.sports[0]
-      : 'football';
+      : "football";
 
-  const initialSkill: SkillLevel = captainProfile?.skillLevel || 'intermediate';
-  const initialArea = captainProfile?.primaryLocation?.trim() || 'Model Town, Lahore';
+  const initialSkill: SkillLevel = captainProfile?.skillLevel || "intermediate";
+  const initialArea =
+    captainProfile?.primaryLocation?.trim() || "Model Town, Lahore";
 
   // Form State
   const [sport, setSport] = useState<Sport>(initialSport);
   const [title, setTitle] = useState<string>(
-    `${captainTeamName ? captainTeamName : 'Friendly'} ${SPORTS_CONFIG[initialSport].label} Match`
+    `${captainTeamName ? captainTeamName : "Friendly"} ${SPORTS_CONFIG[initialSport].label} Match`,
   );
-  const [format, setFormat] = useState<string>(SPORTS_CONFIG[initialSport].defaultFormat);
-  const [date, setDate] = useState<string>('Tonight');
-  const [time, setTime] = useState<string>('8:30 PM - 10:00 PM');
-  const [duration, setDuration] = useState<string>('90 Mins');
-  const [groundName, setGroundName] = useState<string>('Model Town Football Turf, Pitch 1');
+  const [format, setFormat] = useState<string>(
+    SPORTS_CONFIG[initialSport].defaultFormat,
+  );
+  const [date, setDate] = useState<string>("Tonight");
+  const [time, setTime] = useState<string>("8:30 PM - 10:00 PM");
+  const [duration, setDuration] = useState<string>("90 Mins");
+  const [groundName, setGroundName] = useState<string>(
+    isDemo() ? "Model Town Football Turf, Pitch 1" : "",
+  );
   const [area, setArea] = useState<string>(initialArea);
   const [totalSlots, setTotalSlots] = useState<number>(
-    SPORTS_CONFIG[initialSport].defaultTotalSlots
+    SPORTS_CONFIG[initialSport].defaultTotalSlots,
   );
   const [slotsOpen, setSlotsOpen] = useState<number>(
-    SPORTS_CONFIG[initialSport].defaultOpenSlots
+    SPORTS_CONFIG[initialSport].defaultOpenSlots,
   );
   const [skillLevel, setSkillLevel] = useState<SkillLevel>(initialSkill);
   const [feePerPlayer, setFeePerPlayer] = useState<string>(
-    SPORTS_CONFIG[initialSport].defaultFee
+    SPORTS_CONFIG[initialSport].defaultFee,
   );
   const [description, setDescription] = useState<string>(
-    'Evening friendly match on turf. Looking for committed players to fill out our squad. Balls and equipment provided.'
+    isDemo()
+      ? "Evening friendly match on turf. Looking for committed players to fill out our squad. Balls and equipment provided."
+      : "",
   );
   const [venueNotes, setVenueNotes] = useState<string>(
-    'Please arrive 15 minutes before kick-off. Ample parking available on-site.'
+    isDemo()
+      ? "Please arrive 15 minutes before kick-off. Ample parking available on-site."
+      : "",
   );
 
   // UI / Feedback State
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [createdFixture, setCreatedFixture] = useState<MatchSlotItem | null>(null);
+  const [createdFixture, setCreatedFixture] = useState<MatchSlotItem | null>(
+    null,
+  );
   const [showSuccessModal, setShowSuccessModal] = useState<boolean>(false);
   const [weather, setWeather] = useState<WeatherOutlook | null>(null);
   const [weatherLoading, setWeatherLoading] = useState<boolean>(false);
@@ -295,11 +308,13 @@ export default function CreateMatchScreen() {
     setTotalSlots(config.defaultTotalSlots);
     setSlotsOpen(config.defaultOpenSlots);
     setFeePerPlayer(config.defaultFee);
-    setTitle(`${captainTeamName ? captainTeamName : 'Friendly'} ${config.label} Session`);
+    setTitle(
+      `${captainTeamName ? captainTeamName : "Friendly"} ${config.label} Session`,
+    );
 
     // Match ground preset if available
     const matchingVenue = VENUE_PRESETS.find((v) => v.sport === newSport);
-    if (matchingVenue) {
+    if (isDemo() && matchingVenue) {
       setGroundName(matchingVenue.name);
       setArea(matchingVenue.area);
     }
@@ -336,12 +351,12 @@ export default function CreateMatchScreen() {
   // =========================================================================
   if (!isCaptain) {
     return (
-      <SafeAreaView className="flex-1 bg-[#0C0D0E]" edges={['top']}>
+      <ThemedScreen className="flex-1 bg-transparent" edges={["top"]}>
         <ArenaHeader
           title="Create Match"
           subtitle="Role Restriction"
           showBack
-          onBack={() => router.replace('/(tabs)/discover')}
+          onBack={() => router.replace("/(tabs)/discover")}
         />
         <View className="flex-1 items-center justify-center p-6 bg-[#0C0D0E]">
           <View className="w-16 h-16 rounded-full bg-[#F4A261]/10 items-center justify-center border border-[#F4A261]/30 mb-5">
@@ -355,23 +370,24 @@ export default function CreateMatchScreen() {
           </Text>
 
           <Text className="text-[#A0A5AD] text-sm text-center mt-2 max-w-[310px] leading-5">
-            Only Team Captain accounts can schedule matches and open player slots on the Maidaan board.
+            Only Team Captain accounts can schedule matches and open player
+            slots on the Maidaan board.
           </Text>
 
           <View className="w-full mt-6 space-y-3">
             <PrimaryButton
               title="RETURN TO DISCOVER"
               variant="primary"
-              onPress={() => router.replace('/(tabs)/discover')}
+              onPress={() => router.replace("/(tabs)/discover")}
             />
             <PrimaryButton
               title="SET UP CAPTAIN PROFILE"
               variant="outline"
-              onPress={() => router.replace('/onboarding/captain-setup')}
+              onPress={() => router.replace("/onboarding/captain-setup")}
             />
           </View>
         </View>
-      </SafeAreaView>
+      </ThemedScreen>
     );
   }
 
@@ -382,22 +398,24 @@ export default function CreateMatchScreen() {
     const errors: Record<string, string> = {};
 
     if (!captainUserId) {
-      errors.auth = 'Captain identity unavailable. Please complete Captain Setup or sign in again.';
+      errors.auth =
+        "Captain identity unavailable. Please complete Captain Setup or sign in again.";
     }
     if (!title.trim() || title.trim().length < 4) {
-      errors.title = 'Match title must be at least 4 characters long';
+      errors.title = "Match title must be at least 4 characters long";
     }
     if (!groundName.trim()) {
-      errors.groundName = 'Ground / Venue name is required';
+      errors.groundName = "Ground / Venue name is required";
     }
     if (!area.trim()) {
-      errors.area = 'Area / Neighborhood location is required';
+      errors.area = "Area / Neighborhood location is required";
     }
     if (slotsOpen < 1) {
-      errors.slotsOpen = 'At least 1 open slot is required for player discovery';
+      errors.slotsOpen =
+        "At least 1 open slot is required for player discovery";
     }
     if (slotsOpen > totalSlots) {
-      errors.slotsOpen = 'Open slots cannot exceed total squad capacity';
+      errors.slotsOpen = "Open slots cannot exceed total squad capacity";
     }
 
     setFormErrors(errors);
@@ -408,23 +426,27 @@ export default function CreateMatchScreen() {
     setSport(initialSport);
     const config = SPORTS_CONFIG[initialSport];
     setTitle(
-      `${captainTeamName ? captainTeamName : 'Friendly'} ${config.label} Match`
+      `${captainTeamName ? captainTeamName : "Friendly"} ${config.label} Match`,
     );
     setFormat(config.defaultFormat);
-    setDate('Tonight');
-    setTime('8:30 PM - 10:00 PM');
-    setDuration('90 Mins');
-    setGroundName('Model Town Football Turf, Pitch 1');
+    setDate("Tonight");
+    setTime("8:30 PM - 10:00 PM");
+    setDuration("90 Mins");
+    setGroundName(isDemo() ? "Model Town Football Turf, Pitch 1" : "");
     setArea(initialArea);
     setTotalSlots(config.defaultTotalSlots);
     setSlotsOpen(config.defaultOpenSlots);
     setSkillLevel(initialSkill);
     setFeePerPlayer(config.defaultFee);
     setDescription(
-      'Evening friendly match on turf. Looking for committed players to fill out our squad. Balls and equipment provided.'
+      isDemo()
+        ? "Evening friendly match on turf. Looking for committed players to fill out our squad. Balls and equipment provided."
+        : "",
     );
     setVenueNotes(
-      'Please arrive 15 minutes before kick-off. Ample parking available on-site.'
+      isDemo()
+        ? "Please arrive 15 minutes before kick-off. Ample parking available on-site."
+        : "",
     );
     setFormErrors({});
     setCreatedFixture(null);
@@ -440,32 +462,27 @@ export default function CreateMatchScreen() {
 
     try {
       const matchingPreset = VENUE_PRESETS.find(
-        (v) => v.name.toLowerCase() === groundName.trim().toLowerCase()
+        (v) => v.name.toLowerCase() === groundName.trim().toLowerCase(),
       );
       const resolvedCoordinates = matchingPreset
         ? matchingPreset.mapPosition
         : { x: 50, y: 50 };
 
       let numericContribution: number | null = null;
-      const digits = feePerPlayer.replace(/[^0-9]/g, '');
+      const digits = feePerPlayer.replace(/[^0-9]/g, "");
       if (digits) {
         numericContribution = parseInt(digits, 10);
       }
 
-      const matchDate = date.trim() && date.trim().toLowerCase() !== 'tonight'
-        ? date.trim()
-        : new Date().toISOString().split('T')[0];
-
-      const matchStartTime = time.includes(' - ')
-        ? time.split(' - ')[0].trim()
-        : (time.trim() || '20:30');
+      const { date: matchDate, startTime: matchStartTime } =
+        normalizeMatchSchedule(date, time);
 
       const combinedNotes = [
         description.trim(),
         venueNotes.trim() ? `Arrival: ${venueNotes.trim()}` : null,
       ]
         .filter(Boolean)
-        .join('\n');
+        .join("\n");
 
       const newFixture = await matchService.createMatch({
         teamId: captainTeamId || undefined,
@@ -487,9 +504,11 @@ export default function CreateMatchScreen() {
       setCreatedFixture(newFixture);
       setShowSuccessModal(true);
     } catch (err: any) {
-      console.error('[CreateMatchScreen] Publish error:', err);
+      console.error("[CreateMatchScreen] Publish error:", err);
       setFormErrors({
-        submit: err?.message || 'Failed to create fixture. Please check your network and input.',
+        submit:
+          err?.message ||
+          "Failed to create fixture. Please check your network and input.",
       });
     } finally {
       setIsSubmitting(false);
@@ -501,9 +520,9 @@ export default function CreateMatchScreen() {
   const reservedCount = totalSlots - slotsOpen;
 
   return (
-    <SafeAreaView className="flex-1 bg-[#0C0D0E]" edges={['top']}>
+    <ThemedScreen className="flex-1 bg-transparent" edges={["top"]}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
         className="flex-1"
       >
         {/* Modern Athletic Header */}
@@ -516,18 +535,19 @@ export default function CreateMatchScreen() {
             if (router.canGoBack()) {
               router.back();
             } else {
-              router.replace('/captain/dashboard');
+              router.replace("/captain/dashboard");
             }
           }}
         />
 
-        <ScrollView
-          className="flex-1 bg-[#0C0D0E]"
+        <ThemedScroll
+          kind="form"
+          className="flex-1 bg-transparent"
           contentContainerStyle={{ paddingBottom: 64 }}
           keyboardShouldPersistTaps="handled"
         >
           {/* TOP BANNER: CAPTAIN CREDENTIAL CONTEXT */}
-          <View className="px-4 py-3 bg-[#141518] border-b border-white/[0.08] flex-row items-center justify-between">
+          <View className="px-4 py-3 bg-[#141518]/25 border-b border-white/[0.08] flex-row items-center justify-between">
             <View className="flex-row items-center flex-1 pr-2">
               <View className="w-2.5 h-2.5 rounded-full bg-[#E85D26] mr-2" />
               <View>
@@ -578,36 +598,38 @@ export default function CreateMatchScreen() {
             </View>
 
             <View className="flex-row space-x-2">
-              {(['football', 'cricket', 'padel', 'badminton'] as Sport[]).map((s) => {
-                const conf = SPORTS_CONFIG[s];
-                const isSelected = sport === s;
-                return (
-                  <Pressable
-                    key={s}
-                    onPress={() => handleSelectSport(s)}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Select ${conf.label}`}
-                    className={`flex-1 py-3 px-1 items-center rounded-xl border ${
-                      isSelected
-                        ? 'bg-[#E85D26] border-[#E85D26] shadow-sm'
-                        : 'bg-[#141518] border-white/[0.08] active:bg-[#1B1D22]'
-                    }`}
-                  >
-                    <MaterialCommunityIcons
-                      name={conf.icon}
-                      size={22}
-                      color={isSelected ? '#0C0D0E' : '#A0A5AD'}
-                    />
-                    <Text
-                      className={`text-[11px] font-bold uppercase tracking-wider mt-1.5 ${
-                        isSelected ? 'text-[#0C0D0E]' : 'text-[#A0A5AD]'
+              {(["football", "cricket", "padel", "badminton"] as Sport[]).map(
+                (s) => {
+                  const conf = SPORTS_CONFIG[s];
+                  const isSelected = sport === s;
+                  return (
+                    <Pressable
+                      key={s}
+                      onPress={() => handleSelectSport(s)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Select ${conf.label}`}
+                      className={`flex-1 py-3 px-1 items-center rounded-xl border ${
+                        isSelected
+                          ? "bg-[#E85D26] border-[#E85D26] shadow-sm"
+                          : "bg-[#141518]/25 border-white/[0.08] active:bg-[#1B1D22]"
                       }`}
                     >
-                      {conf.label}
-                    </Text>
-                  </Pressable>
-                );
-              })}
+                      <MaterialCommunityIcons
+                        name={conf.icon}
+                        size={22}
+                        color={isSelected ? "#0C0D0E" : "#A0A5AD"}
+                      />
+                      <Text
+                        className={`text-[11px] font-bold uppercase tracking-wider mt-1.5 ${
+                          isSelected ? "text-[#0C0D0E]" : "text-[#A0A5AD]"
+                        }`}
+                      >
+                        {conf.label}
+                      </Text>
+                    </Pressable>
+                  );
+                },
+              )}
             </View>
           </View>
 
@@ -620,7 +642,7 @@ export default function CreateMatchScreen() {
             </Text>
 
             {/* Title Input */}
-            <View className="bg-[#141518] p-4 rounded-2xl border border-white/[0.08] mb-3">
+            <View className="bg-[#141518]/25 p-4 rounded-2xl border border-white/[0.08] mb-3">
               <Text className="text-[#5C616A] text-[10px] font-mono uppercase mb-2 font-bold">
                 Match Listing Title
               </Text>
@@ -629,7 +651,7 @@ export default function CreateMatchScreen() {
                 onChangeText={(text) => {
                   setTitle(text);
                   if (formErrors.title) {
-                    setFormErrors((prev) => ({ ...prev, title: '' }));
+                    setFormErrors((prev) => ({ ...prev, title: "" }));
                   }
                 }}
                 placeholder="e.g. Model Town 7v7 Floodlit Friendly"
@@ -644,7 +666,7 @@ export default function CreateMatchScreen() {
             </View>
 
             {/* Format Selector */}
-            <View className="bg-[#141518] p-4 rounded-2xl border border-white/[0.08]">
+            <View className="bg-[#141518]/25 p-4 rounded-2xl border border-white/[0.08]">
               <Text className="text-[#5C616A] text-[10px] font-mono uppercase mb-2 font-bold">
                 Sport Format Presets
               </Text>
@@ -657,13 +679,15 @@ export default function CreateMatchScreen() {
                       onPress={() => setFormat(fmt)}
                       className={`mr-2 mb-2 px-3 py-1.5 rounded-xl border ${
                         isSelected
-                          ? 'bg-[#E85D26] border-[#E85D26]'
-                          : 'bg-[#1B1D22] border-white/[0.08] active:bg-white/5'
+                          ? "bg-[#E85D26] border-[#E85D26]"
+                          : "bg-[#1B1D22] border-white/[0.08] active:bg-white/5"
                       }`}
                     >
                       <Text
                         className={`text-xs ${
-                          isSelected ? 'text-[#0C0D0E] font-bold' : 'text-[#A0A5AD]'
+                          isSelected
+                            ? "text-[#0C0D0E] font-bold"
+                            : "text-[#A0A5AD]"
                         }`}
                       >
                         {fmt}
@@ -683,13 +707,17 @@ export default function CreateMatchScreen() {
               3. Schedule & Duration
             </Text>
 
-            <View className="bg-[#141518] p-4 rounded-2xl border border-white/[0.08] space-y-3">
+            <View className="bg-[#141518]/25 p-4 rounded-2xl border border-white/[0.08] space-y-3">
               {/* Date Selector */}
               <View>
                 <Text className="text-[#5C616A] text-[10px] font-mono uppercase mb-2 font-bold">
                   Match Date
                 </Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  className="flex-row"
+                >
                   {DATE_PRESETS.map((d) => {
                     const isSelected = date === d;
                     return (
@@ -698,13 +726,13 @@ export default function CreateMatchScreen() {
                         onPress={() => setDate(d)}
                         className={`mr-2 px-3.5 py-2 rounded-xl border ${
                           isSelected
-                            ? 'bg-[#E85D26] border-[#E85D26]'
-                            : 'bg-[#1B1D22] border-white/[0.08]'
+                            ? "bg-[#E85D26] border-[#E85D26]"
+                            : "bg-[#1B1D22] border-white/[0.08]"
                         }`}
                       >
                         <Text
                           className={`text-xs font-bold uppercase tracking-wider ${
-                            isSelected ? 'text-[#0C0D0E]' : 'text-[#A0A5AD]'
+                            isSelected ? "text-[#0C0D0E]" : "text-[#A0A5AD]"
                           }`}
                         >
                           {d}
@@ -720,7 +748,11 @@ export default function CreateMatchScreen() {
                 <Text className="text-[#5C616A] text-[10px] font-mono uppercase mb-2 font-bold">
                   Time Window
                 </Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  className="flex-row"
+                >
                   {TIME_PRESETS.map((t) => {
                     const isSelected = time === t;
                     return (
@@ -729,13 +761,15 @@ export default function CreateMatchScreen() {
                         onPress={() => setTime(t)}
                         className={`mr-2 px-3.5 py-2 rounded-xl border ${
                           isSelected
-                            ? 'bg-[#E85D26] border-[#E85D26]'
-                            : 'bg-[#1B1D22] border-white/[0.08]'
+                            ? "bg-[#E85D26] border-[#E85D26]"
+                            : "bg-[#1B1D22] border-white/[0.08]"
                         }`}
                       >
                         <Text
                           className={`text-xs font-mono ${
-                            isSelected ? 'text-[#0C0D0E] font-bold' : 'text-[#A0A5AD]'
+                            isSelected
+                              ? "text-[#0C0D0E] font-bold"
+                              : "text-[#A0A5AD]"
                           }`}
                         >
                           {t}
@@ -752,7 +786,7 @@ export default function CreateMatchScreen() {
                   Estimated Duration
                 </Text>
                 <View className="flex-row space-x-1.5">
-                  {['60 Mins', '90 Mins', '120 Mins'].map((dur) => {
+                  {["60 Mins", "90 Mins", "120 Mins"].map((dur) => {
                     const isSelected = duration === dur;
                     return (
                       <Pressable
@@ -760,13 +794,13 @@ export default function CreateMatchScreen() {
                         onPress={() => setDuration(dur)}
                         className={`px-3 py-1.5 rounded-xl border ${
                           isSelected
-                            ? 'bg-[#E85D26] border-[#E85D26]'
-                            : 'bg-[#1B1D22] border-white/[0.08]'
+                            ? "bg-[#E85D26] border-[#E85D26]"
+                            : "bg-[#1B1D22] border-white/[0.08]"
                         }`}
                       >
                         <Text
                           className={`text-xs font-mono font-bold ${
-                            isSelected ? 'text-[#0C0D0E]' : 'text-[#A0A5AD]'
+                            isSelected ? "text-[#0C0D0E]" : "text-[#A0A5AD]"
                           }`}
                         >
                           {dur}
@@ -792,7 +826,7 @@ export default function CreateMatchScreen() {
               </Text>
             </View>
 
-            <View className="bg-[#141518] p-4 rounded-2xl border border-white/[0.08] mb-2">
+            <View className="bg-[#141518]/25 p-4 rounded-2xl border border-white/[0.08] mb-2">
               <Text className="text-[#5C616A] text-[10px] font-mono uppercase mb-2 font-bold">
                 Ground / Venue Name
               </Text>
@@ -801,7 +835,7 @@ export default function CreateMatchScreen() {
                 onChangeText={(text) => {
                   setGroundName(text);
                   if (formErrors.groundName) {
-                    setFormErrors((prev) => ({ ...prev, groundName: '' }));
+                    setFormErrors((prev) => ({ ...prev, groundName: "" }));
                   }
                 }}
                 placeholder="e.g. Model Town Football Turf, Pitch 1"
@@ -822,7 +856,7 @@ export default function CreateMatchScreen() {
                 onChangeText={(text) => {
                   setArea(text);
                   if (formErrors.area) {
-                    setFormErrors((prev) => ({ ...prev, area: '' }));
+                    setFormErrors((prev) => ({ ...prev, area: "" }));
                   }
                 }}
                 placeholder="e.g. Model Town, Lahore"
@@ -836,22 +870,34 @@ export default function CreateMatchScreen() {
               ) : null}
             </View>
 
-            {/* Quick Demo Venue Labels */}
-            <Text className="text-[#5C616A] text-[10px] font-mono uppercase mb-2 px-0.5 font-bold">
-              Venue Presets (Tap to Fill)
-            </Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
-              {VENUE_PRESETS.filter((v) => v.sport === sport).map((v) => (
-                <Pressable
-                  key={v.name}
-                  onPress={() => handleSelectVenuePreset(v)}
-                  className="mr-2 bg-[#1B1D22] px-3 py-2 rounded-xl border border-white/[0.08] active:bg-white/5"
+            {isDemo() ? (
+              <>
+                {/* Quick Demo Venue Labels */}
+                <Text className="text-[#5C616A] text-[10px] font-mono uppercase mb-2 px-0.5 font-bold">
+                  Venue Presets (Tap to Fill)
+                </Text>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  className="flex-row"
                 >
-                  <Text className="text-[#FFFFFF] text-xs font-bold">{v.name}</Text>
-                  <Text className="text-[#5C616A] text-[10px]">{v.area}</Text>
-                </Pressable>
-              ))}
-            </ScrollView>
+                  {VENUE_PRESETS.filter((v) => v.sport === sport).map((v) => (
+                    <Pressable
+                      key={v.name}
+                      onPress={() => handleSelectVenuePreset(v)}
+                      className="mr-2 bg-[#1B1D22] px-3 py-2 rounded-xl border border-white/[0.08] active:bg-white/5"
+                    >
+                      <Text className="text-[#FFFFFF] text-xs font-bold">
+                        {v.name}
+                      </Text>
+                      <Text className="text-[#5C616A] text-[10px]">
+                        {v.area}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </ScrollView>
+              </>
+            ) : null}
           </View>
 
           {/* ================================================================= */}
@@ -864,12 +910,12 @@ export default function CreateMatchScreen() {
               </Text>
               <ArenaBadge
                 label={`${slotsOpen} VACANCIES`}
-                variant={slotsOpen === 1 ? 'rust' : 'olive'}
+                variant={slotsOpen === 1 ? "rust" : "olive"}
                 size="sm"
               />
             </View>
 
-            <View className="bg-[#141518] p-4 rounded-2xl border border-white/[0.08]">
+            <View className="bg-[#141518]/25 p-4 rounded-2xl border border-white/[0.08]">
               {/* Stepper Row: Total Slots */}
               <View className="flex-row items-center justify-between pb-3 border-b border-white/[0.08]">
                 <View className="flex-1 pr-3">
@@ -1009,34 +1055,36 @@ export default function CreateMatchScreen() {
             </View>
 
             <View className="flex-row space-x-2">
-              {(['beginner', 'intermediate', 'advanced'] as SkillLevel[]).map((lvl) => {
-                const conf = SKILL_METAS[lvl];
-                const isSelected = skillLevel === lvl;
-                return (
-                  <Pressable
-                    key={lvl}
-                    onPress={() => setSkillLevel(lvl)}
-                    className={`flex-1 p-3.5 rounded-2xl border ${
-                      isSelected
-                        ? 'bg-[#1B1D22] border-[#E85D26] shadow-sm'
-                        : 'bg-[#141518] border-white/[0.08] active:bg-[#1B1D22]'
-                    }`}
-                  >
-                    <View className="flex-row items-center justify-between mb-1">
-                      <Text
-                        className={`text-xs font-black uppercase ${
-                          isSelected ? 'text-[#E85D26]' : 'text-[#FFFFFF]'
-                        }`}
-                      >
-                        {conf.label}
+              {(["beginner", "intermediate", "advanced"] as SkillLevel[]).map(
+                (lvl) => {
+                  const conf = SKILL_METAS[lvl];
+                  const isSelected = skillLevel === lvl;
+                  return (
+                    <Pressable
+                      key={lvl}
+                      onPress={() => setSkillLevel(lvl)}
+                      className={`flex-1 p-3.5 rounded-2xl border ${
+                        isSelected
+                          ? "bg-[#1B1D22] border-[#E85D26] shadow-sm"
+                          : "bg-[#141518]/25 border-white/[0.08] active:bg-[#1B1D22]"
+                      }`}
+                    >
+                      <View className="flex-row items-center justify-between mb-1">
+                        <Text
+                          className={`text-xs font-black uppercase ${
+                            isSelected ? "text-[#E85D26]" : "text-[#FFFFFF]"
+                          }`}
+                        >
+                          {conf.label}
+                        </Text>
+                      </View>
+                      <Text className="text-[#5C616A] text-[10px] leading-3 mt-0.5">
+                        {conf.subtitle}
                       </Text>
-                    </View>
-                    <Text className="text-[#5C616A] text-[10px] leading-3 mt-0.5">
-                      {conf.subtitle}
-                    </Text>
-                  </Pressable>
-                );
-              })}
+                    </Pressable>
+                  );
+                },
+              )}
             </View>
           </View>
 
@@ -1048,7 +1096,7 @@ export default function CreateMatchScreen() {
               7. Split & Details
             </Text>
 
-            <View className="bg-[#141518] p-4 rounded-2xl border border-white/[0.08] space-y-3">
+            <View className="bg-[#141518]/25 p-4 rounded-2xl border border-white/[0.08] space-y-3">
               {/* Fee per player */}
               <View>
                 <View className="flex-row items-center justify-between mb-1.5">
@@ -1067,7 +1115,8 @@ export default function CreateMatchScreen() {
                   className="text-[#FFFFFF] text-sm font-bold bg-[#1B1D22] p-3 rounded-xl border border-white/[0.08] mb-1"
                 />
                 <Text className="text-[#5C616A] text-[10px] leading-3.5">
-                  Recreational venue cost sharing. Collected directly at ground — no in-app billing.
+                  Recreational venue cost sharing. Collected directly at ground
+                  — no in-app billing.
                 </Text>
               </View>
 
@@ -1134,7 +1183,9 @@ export default function CreateMatchScreen() {
             ) : null}
 
             <PrimaryButton
-              title={isSubmitting ? 'SCHEDULING FIXTURE...' : 'CREATE MATCH FIXTURE'}
+              title={
+                isSubmitting ? "SCHEDULING FIXTURE..." : "CREATE MATCH FIXTURE"
+              }
               variant="primary"
               disabled={isSubmitting}
               loading={isSubmitting}
@@ -1142,10 +1193,11 @@ export default function CreateMatchScreen() {
             />
 
             <Text className="text-[#5C616A] text-xs text-center mt-2.5">
-              Configured fixture validates squad requirements and slots according to Maidaan standards.
+              Configured fixture validates squad requirements and slots
+              according to Maidaan standards.
             </Text>
           </View>
-        </ScrollView>
+        </ThemedScroll>
 
         {/* ================================================================= */}
         {/* SUCCESS MODAL */}
@@ -1160,7 +1212,7 @@ export default function CreateMatchScreen() {
           }}
         >
           <View className="flex-1 bg-[#0C0D0E]/85 items-center justify-center p-5">
-            <View className="w-full max-w-sm bg-[#141518] rounded-2xl p-6 border border-white/[0.08] shadow-2xl">
+            <View className="w-full max-w-sm bg-[#141518]/25 rounded-2xl p-6 border border-white/[0.08] shadow-2xl">
               <View className="w-12 h-12 rounded-xl bg-[#E85D26] items-center justify-center mb-3">
                 <Ionicons name="checkmark-sharp" size={26} color="#0C0D0E" />
               </View>
@@ -1172,13 +1224,17 @@ export default function CreateMatchScreen() {
               </Text>
 
               <Text className="text-[#A0A5AD] text-xs leading-4 mt-1">
-                Your match is now open for player discovery on the Maidaan board.
+                Your match is now open for player discovery on the Maidaan
+                board.
               </Text>
 
               {/* Fixture Summary Card */}
               {createdFixture ? (
                 <View className="my-4 p-3.5 bg-[#1B1D22] rounded-xl border border-white/[0.08]">
-                  <Text className="text-[#FFFFFF] text-xs font-black uppercase" numberOfLines={1}>
+                  <Text
+                    className="text-[#FFFFFF] text-xs font-black uppercase"
+                    numberOfLines={1}
+                  >
                     {createdFixture.title}
                   </Text>
 
@@ -1188,7 +1244,9 @@ export default function CreateMatchScreen() {
                     </Text>
                     <ArenaBadge
                       label={`${createdFixture.slotsOpen} OPEN`}
-                      variant={createdFixture.slotsOpen === 1 ? 'rust' : 'olive'}
+                      variant={
+                        createdFixture.slotsOpen === 1 ? "rust" : "olive"
+                      }
                       size="sm"
                     />
                   </View>
@@ -1223,7 +1281,7 @@ export default function CreateMatchScreen() {
                   onPress={() => {
                     setShowSuccessModal(false);
                     handleResetForm();
-                    router.replace('/captain/dashboard');
+                    router.replace("/captain/dashboard");
                   }}
                 />
 
@@ -1243,6 +1301,6 @@ export default function CreateMatchScreen() {
           </View>
         </Modal>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </ThemedScreen>
   );
 }

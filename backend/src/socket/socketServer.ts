@@ -1,3 +1,4 @@
+import { corsOrigin, isOriginAllowed } from '../config/cors.js';
 import { Server as HttpServer } from 'http';
 import { Server, Socket } from 'socket.io';
 import { verifyAuthToken } from '../middleware/auth.js';
@@ -46,8 +47,9 @@ export function initSocketServer(httpServer: HttpServer): Server {
   }
 
   io = new Server(httpServer, {
+    allowRequest: (request, callback) => callback(null, isOriginAllowed(request.headers.origin)),
     cors: {
-      origin: '*',
+      origin: corsOrigin,
       methods: ['GET', 'POST'],
     },
     transports: ['websocket', 'polling'],
@@ -273,6 +275,7 @@ export function initSocketServer(httpServer: HttpServer): Server {
             roomId,
             senderId: userId,
             body: trimmedBody,
+            clientMessageId: data.clientMessageId,
           });
 
           // Acknowledge the sender

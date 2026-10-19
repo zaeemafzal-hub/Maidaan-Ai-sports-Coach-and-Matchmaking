@@ -223,6 +223,7 @@ export const ChatController = {
         roomId,
         senderId: userId,
         body: trimmedBody,
+        clientMessageId: req.body?.clientMessageId,
       });
 
       // Realtime Broadcast: Emit persisted message to authorized room subscribers

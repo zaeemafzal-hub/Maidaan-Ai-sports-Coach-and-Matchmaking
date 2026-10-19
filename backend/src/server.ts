@@ -16,7 +16,8 @@ dotenv.config();
 // Enforce strict production invariants at startup
 validateProductionInvariants(isServerSupabaseConfigured);
 
-const PORT = Number(process.env.BACKEND_PORT) || 5000;
+console.log(`[Maidaan] APP_DATA_MODE=${getAppDataMode()}`);
+const PORT = Number(process.env.PORT || process.env.BACKEND_PORT) || 5000;
 
 // Initialize Supabase admin and initial matches ONLY in test mode or local sandbox
 (async () => {

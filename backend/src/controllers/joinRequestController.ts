@@ -1,3 +1,4 @@
+import { decideJoinRequest } from '../services/joinDecisionService.js';
 import { isUpcomingMatch } from '../utils/matchTime.js';
 import { Request, Response } from 'express';
 import { SupabaseRepo } from '../models/supabaseRepo.js';
@@ -208,7 +209,7 @@ export const JoinRequestController = {
       }
 
       if (action === 'REJECT') {
-        const result = await SupabaseRepo.rejectJoinRequest(requestId, captainId);
+        const result = await decideJoinRequest(requestId, captainId, 'REJECT');
         if (!result.success) {
           if (result.code === 'NOT_FOUND') {
             res.status(404).json({ error: result.error });
@@ -226,20 +227,6 @@ export const JoinRequestController = {
           return;
         }
 
-        // EVENT 3: Notify Player that request was rejected
-        try {
-          await SupabaseRepo.createNotification({
-            userId: existingReq.player_id,
-            type: 'JOIN_REQUEST_REJECTED',
-            title: 'REQUEST UPDATE',
-            message: `Your request for ${match.title} was not accepted.`,
-            matchId: match.id,
-            joinRequestId: existingReq.id,
-          });
-        } catch (notifErr) {
-          console.warn('[JoinRequestController] Failed to create rejection notification:', notifErr);
-        }
-
         res.json({
           request: result.request,
           message: 'Join request rejected.',
@@ -248,7 +235,7 @@ export const JoinRequestController = {
       }
 
       // action === 'ACCEPT' (Atomic)
-      const result = await SupabaseRepo.acceptJoinRequest(requestId, captainId);
+      const result = await decideJoinRequest(requestId, captainId, 'ACCEPT');
       if (!result.success) {
         if (result.code === 'NOT_FOUND') {
           res.status(404).json({ error: result.error });
@@ -264,20 +251,6 @@ export const JoinRequestController = {
         }
         res.status(500).json({ error: result.error || 'Failed to accept request.' });
         return;
-      }
-
-      // EVENT 2: Notify Player that request was accepted
-      try {
-        await SupabaseRepo.createNotification({
-          userId: existingReq.player_id,
-          type: 'JOIN_REQUEST_ACCEPTED',
-          title: 'SPOT CONFIRMED',
-          message: `Your slot for ${match.title} has been confirmed. You are in the lineup!`,
-          matchId: match.id,
-          joinRequestId: existingReq.id,
-        });
-      } catch (notifErr) {
-        console.warn('[JoinRequestController] Failed to create acceptance notification:', notifErr);
       }
 
       res.json({

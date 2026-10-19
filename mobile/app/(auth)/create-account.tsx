@@ -1,28 +1,28 @@
-import React, { useState } from 'react';
+import { ArtworkScrollView as ThemedScroll } from "../../components/ui/Artwork";
+import { ThemedScreen } from "../../components/ui/ThemedScreen";
+import React, { useState } from "react";
 import {
   View,
   Text,
   Pressable,
-  ScrollView,
   KeyboardAvoidingView,
   Platform,
   Image,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { completeSignIn } from '../../services/completeSignIn';
-import { authService } from '../../services/authService';
-import { FormInput } from '../../components/ui/FormInput';
-import { PrimaryButton } from '../../components/ui/PrimaryButton';
-import { ArenaHeader } from '../../components/ui/ArenaHeader';
-import { IMAGES } from '../../constants/images';
+} from "react-native";
+
+import { router } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { completeSignIn } from "../../services/completeSignIn";
+import { authService } from "../../services/authService";
+import { FormInput } from "../../components/ui/FormInput";
+import { PrimaryButton } from "../../components/ui/PrimaryButton";
+import { ArenaHeader } from "../../components/ui/ArenaHeader";
+import { IMAGES } from "../../constants/images";
 
 export default function CreateAccountScreen() {
-
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
@@ -41,28 +41,28 @@ export default function CreateAccountScreen() {
 
     const trimmedName = fullName.trim();
     if (!trimmedName) {
-      nextErrors.fullName = 'Full name is required';
+      nextErrors.fullName = "Full name is required";
     } else if (trimmedName.length < 2) {
-      nextErrors.fullName = 'Name must be at least 2 characters';
+      nextErrors.fullName = "Name must be at least 2 characters";
     }
 
     const trimmedEmail = email.trim();
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!trimmedEmail) {
-      nextErrors.email = 'Email address is required';
+      nextErrors.email = "Email address is required";
     } else if (!emailRegex.test(trimmedEmail)) {
-      nextErrors.email = 'Please enter a valid email address';
+      nextErrors.email = "Please enter a valid email address";
     }
 
     if (!password) {
-      nextErrors.password = 'Password is required';
+      nextErrors.password = "Password is required";
     } else if (password.length < 8) {
-      nextErrors.password = 'Password must be at least 8 characters';
+      nextErrors.password = "Password must be at least 8 characters";
     }
 
     if (!acceptedTerms) {
       nextErrors.terms =
-        'You must agree to the Terms of Service and Privacy Policy to continue';
+        "You must agree to the Terms of Service and Privacy Policy to continue";
     }
 
     setErrors(nextErrors);
@@ -82,7 +82,7 @@ export default function CreateAccountScreen() {
         name: fullName.trim(),
         email: email.trim().toLowerCase(),
         password,
-        role: 'PLAYER',
+        role: "PLAYER",
       });
 
       if (result.needsEmailConfirmation) {
@@ -93,7 +93,7 @@ export default function CreateAccountScreen() {
       router.replace(await completeSignIn());
     } catch (err: any) {
       setErrors({
-        general: err?.message || 'Failed to create account. Please try again.',
+        general: err?.message || "Failed to create account. Please try again.",
       });
     } finally {
       setIsSubmitting(false);
@@ -103,7 +103,7 @@ export default function CreateAccountScreen() {
   const handleGoogleSignup = async () => {
     if (isSubmitting) return;
     if (!acceptedTerms) {
-      setErrors({ terms: 'Please accept the community terms to continue.' });
+      setErrors({ terms: "Please accept the community terms to continue." });
       return;
     }
     setIsSubmitting(true);
@@ -112,19 +112,21 @@ export default function CreateAccountScreen() {
       const result = await authService.signInWithGoogle();
       if (result.success) router.replace(await completeSignIn());
     } catch (err) {
-      setErrors({ general: err instanceof Error ? err.message : 'Google sign-in failed.' });
+      setErrors({
+        general: err instanceof Error ? err.message : "Google sign-in failed.",
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleLogin = () => {
-    router.push('/(auth)/login');
+    router.push("/(auth)/login");
   };
 
   if (showConfirmation) {
     return (
-      <SafeAreaView className="flex-1 bg-[#0C0D0E]" edges={['top', 'bottom']}>
+      <ThemedScreen className="flex-1 bg-transparent" edges={["top", "bottom"]}>
         <ArenaHeader
           title="Account Verification"
           subtitle="Email Confirmation"
@@ -145,13 +147,12 @@ export default function CreateAccountScreen() {
           <Text className="text-[#A0A5AD] text-sm text-center font-normal leading-relaxed mb-4 max-w-xs">
             We sent a verification link to:
           </Text>
-          <View className="px-4 py-2 bg-[#141518] border border-white/[0.08] rounded-xl mb-6">
-            <Text className="text-white text-xs font-semibold">
-              {email}
-            </Text>
+          <View className="px-4 py-2 bg-[#141518]/25 border border-white/[0.08] rounded-xl mb-6">
+            <Text className="text-white text-xs font-semibold">{email}</Text>
           </View>
           <Text className="text-[#5C616A] text-xs text-center font-normal leading-relaxed mb-8 max-w-xs">
-            Please confirm your email address by clicking the link, then sign in to complete your profile setup.
+            Please confirm your email address by clicking the link, then sign in
+            to complete your profile setup.
           </Text>
           <View className="w-full max-w-xs">
             <PrimaryButton
@@ -162,19 +163,22 @@ export default function CreateAccountScreen() {
             />
           </View>
         </View>
-      </SafeAreaView>
+      </ThemedScreen>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-[#0C0D0E]" edges={['top', 'bottom']}>
+    <ThemedScreen className="flex-1 bg-transparent" edges={["top", "bottom"]}>
       <ArenaHeader
         title="Create Account"
         subtitle="Join the Arena"
         showBack
         fallbackRoute="/(auth)/welcome"
         rightAction={
-          <Pressable onPress={handleLogin} className="py-1.5 px-3 rounded-full bg-brand-primary/15 border border-brand-primary/30">
+          <Pressable
+            onPress={handleLogin}
+            className="py-1.5 px-3 rounded-full bg-brand-primary/15 border border-brand-primary/30"
+          >
             <Text className="text-brand-primary text-xs font-semibold uppercase tracking-wider">
               Log In
             </Text>
@@ -183,16 +187,17 @@ export default function CreateAccountScreen() {
       />
 
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
         className="flex-1"
       >
-        <ScrollView
+        <ThemedScroll
+          kind="form"
           contentContainerStyle={{ flexGrow: 1 }}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
           {/* Upper Hero Sports Photography */}
-          <View className="h-44 w-full relative bg-[#141518] overflow-hidden">
+          <View className="h-44 w-full relative bg-[#141518]/25 overflow-hidden">
             <Image
               source={IMAGES.arenaOnboard}
               className="w-full h-full object-cover"
@@ -228,7 +233,8 @@ export default function CreateAccountScreen() {
                 value={fullName}
                 onChangeText={(text) => {
                   setFullName(text);
-                  if (errors.fullName) setErrors((prev) => ({ ...prev, fullName: undefined }));
+                  if (errors.fullName)
+                    setErrors((prev) => ({ ...prev, fullName: undefined }));
                 }}
                 placeholder="e.g. Zaeem Chaudhary"
                 error={errors.fullName}
@@ -240,7 +246,8 @@ export default function CreateAccountScreen() {
                 value={email}
                 onChangeText={(text) => {
                   setEmail(text);
-                  if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }));
+                  if (errors.email)
+                    setErrors((prev) => ({ ...prev, email: undefined }));
                 }}
                 placeholder="player@maidaan.pk"
                 keyboardType="email-address"
@@ -254,7 +261,8 @@ export default function CreateAccountScreen() {
                 value={password}
                 onChangeText={(text) => {
                   setPassword(text);
-                  if (errors.password) setErrors((prev) => ({ ...prev, password: undefined }));
+                  if (errors.password)
+                    setErrors((prev) => ({ ...prev, password: undefined }));
                 }}
                 placeholder="At least 8 characters"
                 secureTextEntry={!showPassword}
@@ -264,11 +272,13 @@ export default function CreateAccountScreen() {
                   <Pressable
                     onPress={() => setShowPassword(!showPassword)}
                     accessibilityRole="button"
-                    accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+                    accessibilityLabel={
+                      showPassword ? "Hide password" : "Show password"
+                    }
                     className="p-1"
                   >
                     <Ionicons
-                      name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                      name={showPassword ? "eye-off-outline" : "eye-outline"}
                       size={20}
                       color="#A0A5AD"
                     />
@@ -281,7 +291,8 @@ export default function CreateAccountScreen() {
             <Pressable
               onPress={() => {
                 setAcceptedTerms(!acceptedTerms);
-                if (errors.terms) setErrors((prev) => ({ ...prev, terms: undefined }));
+                if (errors.terms)
+                  setErrors((prev) => ({ ...prev, terms: undefined }));
               }}
               accessibilityRole="checkbox"
               accessibilityState={{ checked: acceptedTerms }}
@@ -291,8 +302,8 @@ export default function CreateAccountScreen() {
               <View
                 className={`w-5 h-5 rounded-md border items-center justify-center mt-0.5 mr-3 ${
                   acceptedTerms
-                    ? 'bg-brand-primary border-brand-primary'
-                    : 'border-white/[0.08] bg-[#141518]'
+                    ? "bg-brand-primary border-brand-primary"
+                    : "border-white/[0.08] bg-[#141518]/25"
                 }`}
               >
                 {acceptedTerms && (
@@ -301,7 +312,8 @@ export default function CreateAccountScreen() {
               </View>
 
               <Text className="text-[#A0A5AD] text-xs leading-relaxed flex-1 font-normal">
-                I agree to the Maidaan Fair Play Code of Conduct, Rules of Play, and Community Terms.
+                I agree to the Maidaan Fair Play Code of Conduct, Rules of Play,
+                and Community Terms.
               </Text>
             </Pressable>
 
@@ -339,14 +351,16 @@ export default function CreateAccountScreen() {
                 accessibilityLabel="Already registered? Log in"
               >
                 <Text className="text-[#5C616A] text-sm font-medium">
-                  Already have an account?{' '}
-                  <Text className="text-brand-primary font-semibold">Log In</Text>
+                  Already have an account?{" "}
+                  <Text className="text-brand-primary font-semibold">
+                    Log In
+                  </Text>
                 </Text>
               </Pressable>
             </View>
           </View>
-        </ScrollView>
+        </ThemedScroll>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </ThemedScreen>
   );
 }

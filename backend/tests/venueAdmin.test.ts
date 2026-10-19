@@ -46,14 +46,14 @@ test("venue availability and account moderation boundaries", async (t) => {
     userId: ids.owner,
     hubName: "Availability Test Hub",
     sports: ["cricket", "badminton"],
-    location: "Test location",
+    location: "Gulberg, Lahore",
     courtCount: 0,
   });
   await SupabaseRepo.upsertHubOwnerProfile({
     userId: ids.other,
     hubName: "Other Hub",
     sports: ["cricket"],
-    location: "Other location",
+    location: "Model Town, Lahore",
     courtCount: 0,
   });
   let courtId = "",

@@ -1,5 +1,5 @@
-import React from 'react';
-import { View } from 'react-native';
+import React from "react";
+import { View } from "react-native";
 
 interface SkeletonCardProps {
   height?: number;
@@ -8,12 +8,12 @@ interface SkeletonCardProps {
 
 export const SkeletonCard: React.FC<SkeletonCardProps> = ({
   height = 130,
-  className = '',
+  className = "",
 }) => {
   return (
     <View
       style={{ height }}
-      className={`w-full rounded-2xl p-4 bg-[#141518] border border-[rgba(255,255,255,0.06)] overflow-hidden justify-between animate-pulse ${className}`}
+      className={`w-full rounded-2xl p-4 bg-[#141518]/25 border border-[rgba(255,255,255,0.06)] overflow-hidden justify-between animate-pulse ${className}`}
     >
       <View className="flex-row items-center justify-between">
         <View className="w-24 h-5 bg-[#1B1D22] rounded-lg" />

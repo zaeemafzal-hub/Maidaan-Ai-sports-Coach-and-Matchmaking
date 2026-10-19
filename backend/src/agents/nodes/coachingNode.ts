@@ -18,6 +18,7 @@ export async function coachingNode(state: AgentState): Promise<AgentUpdate> {
 
     return {
       response: coachResponse.message,
+      synthesis: {provider: coachResponse.provider, usedBackup: coachResponse.usedBackup ?? false},
       toolResult: {
         tool: 'coachingProvider',
         sport: coachResponse.sport,

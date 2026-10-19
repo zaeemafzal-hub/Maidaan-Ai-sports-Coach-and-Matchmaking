@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { View, Text, Pressable } from 'react-native';
-import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
-import { Sport } from '../../types';
+import React, { useState } from "react";
+import { View, Text, Pressable } from "react-native";
+import { MaterialCommunityIcons, Ionicons } from "@expo/vector-icons";
+import { Sport } from "../../types";
 
 interface SportCardProps {
   sport: Sport;
@@ -30,13 +30,13 @@ export const SportCard: React.FC<SportCardProps> = ({
       onPressOut={() => setIsPressed(false)}
       accessibilityRole="checkbox"
       accessibilityState={{ checked: selected }}
-      accessibilityLabel={`${label} sport ${selected ? 'selected' : 'not selected'}`}
+      accessibilityLabel={`${label} sport ${selected ? "selected" : "not selected"}`}
       className={`flex-1 py-3 px-1 rounded-2xl items-center justify-center min-h-[96px] border relative transition-all ${
-        isPressed ? 'scale-[0.96]' : 'scale-100'
+        isPressed ? "scale-[0.96]" : "scale-100"
       } ${
         selected
-          ? 'bg-[#1B1D22] border-2 border-[#E85D26] shadow-sm shadow-[#E85D26]/20'
-          : 'bg-[#141518] border border-white/[0.08]'
+          ? "bg-[#1B1D22] border-2 border-[#E85D26] shadow-sm shadow-[#E85D26]/20"
+          : "bg-[#141518]/25 border border-white/[0.08]"
       }`}
     >
       {/* Orange Selection Indicator Badge */}
@@ -50,14 +50,14 @@ export const SportCard: React.FC<SportCardProps> = ({
       <View
         className={`w-11 h-11 rounded-xl items-center justify-center mb-1.5 ${
           selected
-            ? 'bg-[#E85D26]/15 border border-[#E85D26]/30'
-            : 'bg-[#101214] border border-white/[0.06]'
+            ? "bg-[#E85D26]/15 border border-[#E85D26]/30"
+            : "bg-[#101214] border border-white/[0.06]"
         }`}
       >
         <MaterialCommunityIcons
           name={iconName}
           size={22}
-          color={selected ? '#E85D26' : '#A0A5AD'}
+          color={selected ? "#E85D26" : "#A0A5AD"}
         />
       </View>
 
@@ -66,9 +66,9 @@ export const SportCard: React.FC<SportCardProps> = ({
         numberOfLines={1}
         adjustsFontSizeToFit
         minimumFontScale={0.7}
-        style={{ color: selected ? '#FFFFFF' : '#A0A5AD' }}
+        style={{ color: selected ? "#FFFFFF" : "#A0A5AD" }}
         className={`text-[10px] text-center tracking-wide uppercase font-bold px-0.5 ${
-          selected ? 'text-white font-extrabold' : 'text-[#A0A5AD]'
+          selected ? "text-white font-extrabold" : "text-[#A0A5AD]"
         }`}
       >
         {label}

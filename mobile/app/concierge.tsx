@@ -1,4 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { ArtworkScrollView as ThemedScroll } from "../components/ui/Artwork";
+import { ThemedScreen } from "../components/ui/ThemedScreen";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,11 +10,11 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-} from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useAuthStore } from '../store/useAuthStore';
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { router } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { useAuthStore } from "../store/useAuthStore";
 import {
   agentService,
   AgentIntent,
@@ -22,17 +24,17 @@ import {
   AgentHubData,
   AgentWeatherData,
   AgentJoinRequestData,
-} from '../services/agentService';
-import { MatchResultCards } from '../components/concierge/MatchResultCards';
-import { HubResultCards } from '../components/concierge/HubResultCards';
-import { WeatherResultCard } from '../components/concierge/WeatherResultCard';
-import { CaptainConfirmationCard } from '../components/concierge/CaptainConfirmationCard';
-import { CaptainRequestCard } from '../components/concierge/CaptainRequestCard';
-import { SourceChips } from '../components/concierge/SourceChips';
+} from "../services/agentService";
+import { MatchResultCards } from "../components/concierge/MatchResultCards";
+import { HubResultCards } from "../components/concierge/HubResultCards";
+import { WeatherResultCard } from "../components/concierge/WeatherResultCard";
+import { CaptainConfirmationCard } from "../components/concierge/CaptainConfirmationCard";
+import { CaptainRequestCard } from "../components/concierge/CaptainRequestCard";
+import { SourceChips } from "../components/concierge/SourceChips";
 
 interface ChatMessage {
   id: string;
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   text: string;
   intent?: AgentIntent;
   toolResult?: Record<string, unknown> | null;
@@ -42,29 +44,29 @@ interface ChatMessage {
 }
 
 const PLAYER_PROMPT_SUGGESTIONS = [
-  'Find me a football match',
-  'Find a verified Padel hub near DHA',
-  'Should I play cricket outside tomorrow?',
-  'What does verified hub mean?',
-  'How do join requests work?',
+  "Find me a football match",
+  "Find a verified Padel hub near DHA",
+  "Should I play cricket outside tomorrow?",
+  "What does verified hub mean?",
+  "How do join requests work?",
 ];
 
 const CAPTAIN_PROMPT_SUGGESTIONS = [
-  'Show my matches with open slots',
-  'Show pending join requests',
-  'Create a 7v7 football match tomorrow at 8pm',
-  'Should I host an outdoor match tomorrow?',
-  'What does verified hub mean?',
+  "Show my matches with open slots",
+  "Show pending join requests",
+  "Create a 7v7 football match tomorrow at 8pm",
+  "Should I host an outdoor match tomorrow?",
+  "What does verified hub mean?",
 ];
 
 export default function ConciergeScreen() {
   const insets = useSafeAreaInsets();
-  const { currentUser } = useAuthStore();
-  const userRole = currentUser?.role || 'PLAYER';
-  const isCaptain = userRole === 'TEAM_CAPTAIN';
+  const { currentUser, roles, activeMode } = useAuthStore();
+  const userRole = roles.includes(activeMode) ? activeMode : "PLAYER";
+  const isCaptain = userRole === "TEAM_CAPTAIN";
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [inputText, setInputText] = useState('');
+  const [inputText, setInputText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [sessionError, setSessionError] = useState<string | null>(null);
 
@@ -78,22 +80,27 @@ export default function ConciergeScreen() {
     return () => clearTimeout(timer);
   }, [messages, isLoading]);
 
-  const promptSuggestions = isCaptain ? CAPTAIN_PROMPT_SUGGESTIONS : PLAYER_PROMPT_SUGGESTIONS;
+  const promptSuggestions = isCaptain
+    ? CAPTAIN_PROMPT_SUGGESTIONS
+    : PLAYER_PROMPT_SUGGESTIONS;
 
   const handleSendMessage = async (textToSend?: string) => {
     const raw = textToSend !== undefined ? textToSend : inputText;
     const message = raw.trim();
     if (!message || isLoading) return;
 
-    setInputText('');
+    setInputText("");
     setSessionError(null);
 
     const userMsgId = `usr_${Date.now()}`;
     const userMsg: ChatMessage = {
       id: userMsgId,
-      role: 'user',
+      role: "user",
       text: message,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      timestamp: new Date().toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
     };
 
     setMessages((prev) => [...prev, userMsg]);
@@ -103,20 +110,25 @@ export default function ConciergeScreen() {
       const response = await agentService.chat(message);
 
       if (!response || response.status !== 200 || !response.data) {
-        let errorFallback = 'Maidaan Concierge is temporarily unavailable.';
+        let errorFallback = "Maidaan Concierge is temporarily unavailable.";
         if (response?.status === 401) {
-          errorFallback = 'Authentication required. Please sign in to consult your Concierge.';
+          errorFallback =
+            "Authentication required. Please sign in to consult your Concierge.";
         } else if (response?.status === 400) {
-          errorFallback = 'Invalid request. Please provide more detail about your match or game.';
+          errorFallback =
+            "Invalid request. Please provide more detail about your match or game.";
         } else if (response?.error) {
           errorFallback = response.error;
         }
 
         const errorMsg: ChatMessage = {
           id: `err_${Date.now()}`,
-          role: 'assistant',
+          role: "assistant",
           text: errorFallback,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          timestamp: new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
         };
         setMessages((prev) => [...prev, errorMsg]);
         return;
@@ -125,22 +137,28 @@ export default function ConciergeScreen() {
       const agentData = response.data;
       const assistantMsg: ChatMessage = {
         id: agentData.requestId || `ast_${Date.now()}`,
-        role: 'assistant',
+        role: "assistant",
         text: agentData.message,
         intent: agentData.intent,
         toolResult: agentData.data || agentData.toolResult,
         action: agentData.action,
         sources: agentData.sources,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        timestamp: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
       };
 
       setMessages((prev) => [...prev, assistantMsg]);
     } catch {
       const fallbackMsg: ChatMessage = {
         id: `err_${Date.now()}`,
-        role: 'assistant',
-        text: 'Maidaan Concierge is temporarily unavailable. Please check your connection and try again.',
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        role: "assistant",
+        text: "Maidaan Concierge is temporarily unavailable. Please check your connection and try again.",
+        timestamp: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
       };
       setMessages((prev) => [...prev, fallbackMsg]);
     } finally {
@@ -148,14 +166,20 @@ export default function ConciergeScreen() {
     }
   };
 
-  const handleActionComplete = (msgId: string, updatedAction: CaptainActionSummary) => {
+  const handleActionComplete = (
+    msgId: string,
+    updatedAction: CaptainActionSummary,
+  ) => {
     setMessages((prev) =>
-      prev.map((m) => (m.id === msgId ? { ...m, action: updatedAction } : m))
+      prev.map((m) => (m.id === msgId ? { ...m, action: updatedAction } : m)),
     );
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#0C0D0E]" edges={['top', 'left', 'right']}>
+    <ThemedScreen
+      className="flex-1 bg-transparent"
+      edges={["top", "left", "right"]}
+    >
       {/* Header (44px min touch target on back button) */}
       <View className="px-5 py-3.5 border-b border-white/[0.08] bg-[#0C0D0E] flex-row items-center justify-between">
         <View className="flex-row items-center flex-1">
@@ -163,7 +187,7 @@ export default function ConciergeScreen() {
             onPress={() => router.back()}
             accessibilityRole="button"
             accessibilityLabel="Back to previous screen"
-            className="w-11 h-11 rounded-full bg-[#141518] border border-white/[0.08] items-center justify-center mr-3 active:bg-[#1B1D22]"
+            className="w-11 h-11 rounded-full bg-[#141518]/25 border border-white/[0.08] items-center justify-center mr-3 active:bg-[#1B1D22]"
           >
             <Ionicons name="chevron-back" size={20} color="#FFFFFF" />
           </Pressable>
@@ -182,20 +206,21 @@ export default function ConciergeScreen() {
         </View>
 
         {/* Role Pill */}
-        <View className="px-2.5 py-1 rounded-full bg-[#141518] border border-white/[0.08]">
+        <View className="px-2.5 py-1 rounded-full bg-[#141518]/25 border border-white/[0.08]">
           <Text className="text-[#E85D26] text-[10px] font-bold uppercase tracking-wider">
-            {isCaptain ? 'Team Captain' : 'Player'}
+            {isCaptain ? "Team Captain" : "Player"}
           </Text>
         </View>
       </View>
 
       {/* Main Conversation Stream */}
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top : 0}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={Platform.OS === "ios" ? insets.top : 0}
         className="flex-1"
       >
-        <ScrollView
+        <ThemedScroll
+          kind="profile"
           ref={scrollViewRef}
           contentContainerStyle={{
             paddingHorizontal: 20,
@@ -216,8 +241,11 @@ export default function ConciergeScreen() {
                 Game-Day Operations, Simplified
               </Text>
               <Text className="text-[#A0A5AD] text-sm leading-5 mb-6">
-                Ask about open matches, verified sports hubs, outdoor weather conditions, or platform rules.
-                {isCaptain ? ' As Team Captain, you can also draft fixtures and review squad applicants.' : ''}
+                Ask about open matches, verified sports hubs, outdoor weather
+                conditions, or platform rules.
+                {isCaptain
+                  ? " As Team Captain, you can also draft fixtures and review squad applicants."
+                  : ""}
               </Text>
 
               {/* Role-Aware Suggestion Chips */}
@@ -231,9 +259,11 @@ export default function ConciergeScreen() {
                     onPress={() => handleSendMessage(prompt)}
                     accessibilityRole="button"
                     accessibilityLabel={`Suggested question: ${prompt}`}
-                    className="w-full min-h-[44px] p-3 rounded-xl bg-[#141518] border border-white/[0.08] active:bg-[#1B1D22] flex-row items-center justify-between"
+                    className="w-full min-h-[44px] p-3 rounded-xl bg-[#141518]/25 border border-white/[0.08] active:bg-[#1B1D22] flex-row items-center justify-between"
                   >
-                    <Text className="text-[#A0A5AD] text-xs font-medium flex-1 mr-2">{prompt}</Text>
+                    <Text className="text-[#A0A5AD] text-xs font-medium flex-1 mr-2">
+                      {prompt}
+                    </Text>
                     <Ionicons name="arrow-forward" size={14} color="#E85D26" />
                   </Pressable>
                 ))}
@@ -241,7 +271,7 @@ export default function ConciergeScreen() {
             </View>
           ) : (
             messages.map((msg) => {
-              const isUser = msg.role === 'user';
+              const isUser = msg.role === "user";
 
               // Extract structured data from toolResult if present
               const matchesList: AgentMatchData[] =
@@ -249,7 +279,7 @@ export default function ConciergeScreen() {
               const hubsList: AgentHubData[] =
                 (msg.toolResult?.hubs as AgentHubData[]) || [];
               const weatherObj: AgentWeatherData | null =
-                msg.intent === 'WEATHER' && msg.toolResult
+                msg.intent === "WEATHER" && msg.toolResult
                   ? (msg.toolResult as unknown as AgentWeatherData)
                   : null;
               const pendingRequests: AgentJoinRequestData[] =
@@ -258,13 +288,13 @@ export default function ConciergeScreen() {
               return (
                 <View
                   key={msg.id}
-                  className={`w-full mb-4 flex-row ${isUser ? 'justify-end' : 'justify-start'}`}
+                  className={`w-full mb-4 flex-row ${isUser ? "justify-end" : "justify-start"}`}
                 >
                   <View
                     className={`max-w-[88%] rounded-2xl p-4 ${
                       isUser
-                        ? 'bg-[#20232A] border border-[#E85D26]/30 rounded-tr-sm'
-                        : 'bg-[#141518] border border-white/[0.08] rounded-tl-sm'
+                        ? "bg-[#20232A] border border-[#E85D26]/30 rounded-tr-sm"
+                        : "bg-[#141518]/25 border border-white/[0.08] rounded-tl-sm"
                     }`}
                   >
                     {/* Role header for assistant */}
@@ -288,9 +318,9 @@ export default function ConciergeScreen() {
                     </Text>
 
                     {/* Coaching Navigation CTA */}
-                    {msg.intent === 'COACHING' ? (
+                    {msg.intent === "COACHING" ? (
                       <Pressable
-                        onPress={() => router.push('/(tabs)/coach')}
+                        onPress={() => router.push("/(tabs)/coach")}
                         accessibilityRole="button"
                         accessibilityLabel="Open dedicated AI Tactical Coach screen"
                         className="mt-3 p-2.5 rounded-lg bg-[#E85D26]/10 border border-[#E85D26]/30 flex-row items-center justify-between active:bg-[#E85D26]/20 min-h-[44px]"
@@ -301,7 +331,11 @@ export default function ConciergeScreen() {
                             Open AI Tactical Coach
                           </Text>
                         </View>
-                        <Ionicons name="chevron-forward" size={14} color="#E85D26" />
+                        <Ionicons
+                          name="chevron-forward"
+                          size={14}
+                          color="#E85D26"
+                        />
                       </Pressable>
                     ) : null}
 
@@ -329,7 +363,9 @@ export default function ConciergeScreen() {
                     {msg.action ? (
                       <CaptainConfirmationCard
                         action={msg.action}
-                        onActionComplete={(updated) => handleActionComplete(msg.id, updated)}
+                        onActionComplete={(updated) =>
+                          handleActionComplete(msg.id, updated)
+                        }
                       />
                     ) : null}
 
@@ -352,14 +388,14 @@ export default function ConciergeScreen() {
 
           {/* Loading Indicator */}
           {isLoading ? (
-            <View className="flex-row items-center p-3 rounded-xl bg-[#141518] border border-white/[0.08] max-w-[80%] mb-3">
+            <View className="flex-row items-center p-3 rounded-xl bg-[#141518]/25 border border-white/[0.08] max-w-[80%] mb-3">
               <ActivityIndicator size="small" color="#E85D26" />
               <Text className="text-[#A0A5AD] text-xs font-medium ml-2.5">
                 Consulting fixtures and conditions...
               </Text>
             </View>
           ) : null}
-        </ScrollView>
+        </ThemedScroll>
 
         {/* Composer (44px min touch target on send button) */}
         <View className="px-5 py-3 bg-[#0C0D0E] border-t border-white/[0.08]">
@@ -372,7 +408,7 @@ export default function ConciergeScreen() {
               returnKeyType="send"
               onSubmitEditing={() => handleSendMessage()}
               editable={!isLoading}
-              className="flex-1 min-h-[46px] px-4 rounded-xl bg-[#141518] border border-white/[0.08] text-white text-sm focus:border-[#E85D26]"
+              className="flex-1 min-h-[46px] px-4 rounded-xl bg-[#141518]/25 border border-white/[0.08] text-white text-sm focus:border-[#E85D26]"
             />
 
             <Pressable
@@ -382,19 +418,19 @@ export default function ConciergeScreen() {
               accessibilityLabel="Send message to Maidaan Concierge"
               className={`w-11 h-11 rounded-xl items-center justify-center ${
                 inputText.trim() && !isLoading
-                  ? 'bg-[#E85D26] active:bg-[#D04E1B]'
-                  : 'bg-[#141518] border border-white/[0.08] opacity-50'
+                  ? "bg-[#E85D26] active:bg-[#D04E1B]"
+                  : "bg-[#141518]/25 border border-white/[0.08] opacity-50"
               }`}
             >
               <Ionicons
                 name="send"
                 size={18}
-                color={inputText.trim() && !isLoading ? '#FFFFFF' : '#5C616A'}
+                color={inputText.trim() && !isLoading ? "#FFFFFF" : "#5C616A"}
               />
             </Pressable>
           </View>
         </View>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </ThemedScreen>
   );
 }

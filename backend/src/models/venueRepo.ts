@@ -4,6 +4,7 @@ import { allowsMemoryStores } from "../config/runtime.js";
 import { SupabaseRepo, Sport, CourtStatus } from "./supabaseRepo.js";
 import { BookingRepo } from "./bookingRepo.js";
 import { SlotPaymentPolicy } from "../utils/bookingPolicy.js";
+import { serviceLocation, normalizeLocation } from "../config/locations.js";
 
 export class VenueError extends Error {
   constructor(
@@ -22,6 +23,8 @@ export interface SpaceDetails {
   photoUrls: string[];
 }
 export interface VenueDetails {
+  cityId?: string;
+  areaId?: string;
   latitude: number | null;
   longitude: number | null;
   description: string;
@@ -231,7 +234,13 @@ export const VenueRepo = {
     const profile = await SupabaseRepo.getHubOwnerProfile(ownerId);
     if (!profile) throw new VenueError(404, "Venue not found.");
     if (allowsMemoryStores())
-      return { ...profile, ...(memoryVenues.get(ownerId) || blankVenue) };
+      return {
+        ...profile,
+        ...(memoryVenues.get(ownerId) || blankVenue),
+        cityId:
+          profile.city_id || (/lahore/i.test(profile.location) ? "lahore" : ""),
+        areaId: profile.area_id || "",
+      };
     const row = profile as typeof profile & {
       latitude?: number;
       longitude?: number;
@@ -244,6 +253,8 @@ export const VenueRepo = {
       longitude: row.longitude ?? null,
       description: row.description || "",
       photoUrls: row.photo_urls || [],
+      cityId: row.city_id || (/lahore/i.test(profile.location) ? "lahore" : ""),
+      areaId: row.area_id || "",
     };
   },
   async saveDetails(
@@ -270,6 +281,8 @@ export const VenueRepo = {
           longitude: input.longitude,
           description: input.description,
           photo_urls: input.photoUrls,
+          city_id: input.cityId || null,
+          area_id: input.areaId || null,
           updated_at: new Date().toISOString(),
         })
         .eq("user_id", ownerId)
@@ -410,6 +423,12 @@ export const VenueRepo = {
       this.spaces(ownerId),
       this.slots(ownerId, true),
     ]);
+    if (
+      !serviceLocation(
+        hub.cityId || (/lahore/i.test(hub.location) ? "lahore" : ""),
+      ).city
+    )
+      throw new VenueError(404, "Venue not found in an available city.");
     return {
       id: ownerId,
       name: hub.hub_name,
@@ -421,11 +440,21 @@ export const VenueRepo = {
       longitude: hub.longitude,
       description: hub.description,
       photoUrls: hub.photoUrls,
+      cityId: hub.cityId || (/lahore/i.test(hub.location) ? "lahore" : ""),
+      areaId: hub.areaId || "",
+      cityName:serviceLocation(hub.cityId || (/lahore/i.test(hub.location)?'lahore':'')).city?.name || '',
+      areaLabel:serviceLocation(hub.cityId,hub.areaId).area?.name || '',
       spaces: spaces.filter((s) => s.status !== "UNAVAILABLE"),
       slots,
     };
   },
-  async publicHubs(sport?: Sport, search = "") {
+  async publicHubs(
+    sport?: Sport,
+    search = "",
+    cityId = "lahore",
+    areaId = "",
+    areaSearch = "",
+  ) {
     const hubs = await SupabaseRepo.getHubs();
     const results = await Promise.all(
       hubs.map(async (hub) => {
@@ -437,9 +466,25 @@ export const VenueRepo = {
         }
       }),
     );
-    const term = search.toLowerCase();
+    const term = normalizeLocation(search);
     return results
       .filter((hub): hub is NonNullable<typeof hub> => Boolean(hub))
+      .filter(
+        (hub) =>
+          hub.cityId === cityId && Boolean(serviceLocation(hub.cityId).city),
+      )
+      .filter((hub) => !areaId || hub.areaId === areaId)
+      .filter(
+        (hub) =>
+          !areaSearch ||
+          normalizeLocation(
+            [
+              hub.location,
+              serviceLocation(hub.cityId, hub.areaId).area?.name,
+              ...(serviceLocation(hub.cityId, hub.areaId).area?.aliases || []),
+            ].join(" "),
+          ).includes(normalizeLocation(areaSearch)),
+      )
       .filter(
         (hub) =>
           !sport ||
@@ -448,7 +493,16 @@ export const VenueRepo = {
       )
       .filter(
         (hub) =>
-          !term || (hub.name + " " + hub.location).toLowerCase().includes(term),
+          !term ||
+          normalizeLocation(
+            [
+              hub.name,
+              hub.location,
+              serviceLocation(hub.cityId).city?.name,
+              serviceLocation(hub.cityId, hub.areaId).area?.name,
+              ...(serviceLocation(hub.cityId, hub.areaId).area?.aliases || []),
+            ].join(" "),
+          ).includes(term),
       );
   },
 };

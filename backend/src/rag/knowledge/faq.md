@@ -1,25 +1,13 @@
 # Maidaan Sports Platform FAQ
 
 ## What is Maidaan?
-Maidaan is an AI-powered recreational sports matchmaking and coaching mobile application. It solves three critical problems for sports enthusiasts: helping solo players discover local games, assisting team captains in finding replacement players for open slots, and providing accessible tactical AI sports coaching.
+Maidaan helps Lahore recreational players find local matches, captains recruit players, hub owners list playing spaces, and athletes train with an AI sports coach. Supported sports are cricket, football, badminton and padel.
 
-## Supported Sports
-Maidaan officially supports four core sports across all matchmaking, scheduling, and coaching modules:
-- Cricket: Turf wickets, tape-ball, and net practice fixtures.
-- Football: 5-a-side, 7-a-side, and full ground open-slot matches.
-- Badminton: Singles and doubles indoor and outdoor court games.
-- Padel: Padel court matches and squad doubles fixtures.
+## Platform Roles and Player-First Signup
+Every new public account starts as a PLAYER. Complete Player Setup with name, email, phone, sports, skill and home address. A profile photo is optional. From Profile activate Team Captain or Hub Owner and complete the appropriate setup. One account can have multiple capabilities. Active mode selects the interface; the backend checks granted capabilities. ADMIN cannot be selected at signup.
 
-## Platform Roles
-Maidaan supports four dedicated roles tailored to each stakeholder in the recreational sports ecosystem:
-- Player: Discovers open fixtures, requests to join squads, tracks match history, and trains with AI Coach.
-- Team Captain: Creates and hosts match fixtures, manages team lineups, reviews incoming join requests, and coordinates squads.
-- Hub Owner: Manages indoor or outdoor sports complexes, registers court inventory, sets court availability, and submits hub verification.
-- Administrator: Platform governance, reviewing hub verification submissions, and auditing safety reports.
+## Main Navigation and Features
+There are five primary tabs: Discover, Venues, AI Coach, Chat and Profile. Discover lists human-organized match fixtures. Venues lists hubs and available courts or pitches with prices, photos and future slots. The real venue map uses OpenStreetMap by default, with Google as a configured failure backup. Search by Lahore area, venue name or address. Only Lahore is enabled currently. Enter an address freely in the player home location; a catalogue area tag is optional.
 
-## Main Navigation & Features
-The mobile app provides intuitive navigation through four primary tabs and specialized screens:
-- Discover: Browse nearby matches on an interactive schematic ground map or a filterable list view with real-time weather suitability indicators.
-- AI Coach: Multi-turn tactical chat with suggested drill carousels and hands-free voice coaching.
-- Chat: Direct 1-on-1 player messaging and squad group chat rooms for confirmed match participants.
-- Profile: Personal sports preferences, skill rating, matches played counter, and activity history.
+## Payments and Reservations
+Joining a match is a captain-reviewed request, with no in-app collection of match contributions. Venue reservations are separate. Online checkout is sandbox testing only and may be disabled in a controlled pilot. No real funds are collected. A displayed slot is not a confirmed reservation until its required test payment succeeds. Contact the venue directly when checkout is disabled; the app does not mark that conversation as a paid reservation.
