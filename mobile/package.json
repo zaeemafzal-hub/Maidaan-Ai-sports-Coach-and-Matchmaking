@@ -6,7 +6,9 @@
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "build:web": "node ../scripts/check-cloud-env.mjs && expo export --platform web",
+    "eas-build-post-install": "node ../scripts/check-cloud-env.mjs --eas"
   },
   "dependencies": {
     "@expo/vector-icons": "~15.1.0",

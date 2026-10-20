@@ -1,0 +1,14 @@
+node_modules
+.npm-cache
+.expo
+mobile/.expo
+.playwright-cli
+output
+backend/.env*
+mobile/.env*
+.env*
+backend/dist
+mobile/dist
+docs
+tools
+.vercel

@@ -56,6 +56,9 @@ test("REST and socket backend resolution honors separate hosted API and explicit
     "https://api.example.com",
   );
   assert.equal(resolveBackendUrl("same-origin", hosted), hosted.origin);
+  assert.equal(resolveBackendUrl("https://api.example.com", undefined, null, false), "https://api.example.com");
+  assert.throws(() => resolveBackendUrl("", undefined, "192.168.18.11", false), /public HTTPS/);
+  assert.throws(() => resolveBackendUrl("http://192.168.18.11:5000", undefined, null, false), /HTTPS/);
   assert.throws(() => resolveBackendUrl("", hosted), /EXPO_PUBLIC_API_URL/);
   assert.equal(
     resolveBackendUrl("", {

@@ -4,6 +4,7 @@ import {
   WeatherSuitabilityStatus,
 } from './weatherSuitability.js';
 import { isProduction } from '../config/runtime.js';
+import { getLiveForecast, clearForecastCache } from './weatherProviders.js';
 
 export interface WeatherQueryOptions {
   area?: string;
@@ -25,15 +26,6 @@ export interface WeatherResponse {
   timestamp: string;
   isFallback: boolean;
 }
-
-interface CacheEntry {
-  data: WeatherResponse;
-  expiresAt: number;
-}
-
-// In-memory cache with 15 minutes TTL (FYP lightweight architectural decision)
-const CACHE_TTL_MS = 15 * 60 * 1000;
-const weatherCache = new Map<string, CacheEntry>();
 
 // Supported Lahore regional geocodes
 const AREA_COORDINATES: Record<string, { lat: number; lon: number; label: string }> = {
@@ -77,26 +69,6 @@ function resolveLocation(area?: string, lat?: number, lon?: number): { lat: numb
 }
 
 /**
- * Maps WMO Weather Interpretation Codes (0-99) to clean human descriptions.
- */
-function mapWmoCodeToCondition(code: number): string {
-  if (code === 0) return 'Clear Sky';
-  if (code === 1) return 'Mainly Clear';
-  if (code === 2) return 'Partly Cloudy';
-  if (code === 3) return 'Overcast';
-  if (code === 45 || code === 48) return 'Foggy';
-  if (code >= 51 && code <= 55) return 'Light Drizzle';
-  if (code >= 56 && code <= 57) return 'Freezing Drizzle';
-  if (code >= 61 && code <= 65) return 'Rain';
-  if (code >= 66 && code <= 67) return 'Freezing Rain';
-  if (code >= 71 && code <= 77) return 'Snow';
-  if (code >= 80 && code <= 82) return 'Rain Showers';
-  if (code >= 85 && code <= 86) return 'Snow Showers';
-  if (code >= 95 && code <= 99) return 'Thunderstorm';
-  return 'Partly Cloudy';
-}
-
-/**
  * Parses time string (e.g., "8:30 PM", "20:00", "Tonight, 8:00 PM - 10:00 PM") into a 0-23 hour integer.
  */
 function parseHourFromTimeString(timeStr?: string): number | null {
@@ -123,18 +95,18 @@ function parseHourFromTimeString(timeStr?: string): number | null {
 function parseDateString(dateStr?: string): string {
   const now = new Date();
   if (!dateStr || dateStr.toLowerCase().includes('today') || dateStr.toLowerCase().includes('tonight')) {
-    return now.toISOString().split('T')[0];
+    return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Karachi', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
   }
   if (dateStr.toLowerCase().includes('tomorrow')) {
     const tmrw = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-    return tmrw.toISOString().split('T')[0];
+    return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Karachi', year: 'numeric', month: '2-digit', day: '2-digit' }).format(tmrw);
   }
   // If YYYY-MM-DD format
   const isoMatch = dateStr.match(/^\d{4}-\d{2}-\d{2}$/);
   if (isoMatch) {
     return dateStr;
   }
-  return now.toISOString().split('T')[0];
+  return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Karachi', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
 }
 
 /**
@@ -171,70 +143,20 @@ export class WeatherService {
     const location = resolveLocation(options.area, options.lat, options.lon);
     const targetDate = parseDateString(options.date);
     const targetHour = parseHourFromTimeString(options.time);
-    const sportKey = options.sport ? options.sport.toLowerCase().trim() : 'all';
-
-    // 1. Check in-memory cache
-    const cacheKey = `${location.label.toLowerCase()}_${targetDate}_${targetHour ?? 'current'}_${sportKey}`;
-    const cached = weatherCache.get(cacheKey);
-    const now = Date.now();
-    if (cached && cached.expiresAt > now) {
-      return cached.data;
-    }
 
     try {
-      // 2. Query Open-Meteo Free API with 5-second AbortController timeout
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-      const url = `https://api.open-meteo.com/v1/forecast?latitude=${location.lat}&longitude=${location.lon}&current=temperature_2m,relative_humidity_2m,precipitation_probability,precipitation,weather_code,wind_speed_10m&hourly=temperature_2m,precipitation_probability,weather_code,wind_speed_10m&timezone=auto&forecast_days=3`;
-
-      const response = await fetch(url, {
-        signal: controller.signal,
-        headers: {
-          'Accept': 'application/json',
-          'User-Agent': 'Maidaan-Sports-Platform/1.0',
-        },
-      });
-
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        throw new Error(`Open-Meteo responded with status ${response.status}`);
+      // Forecast data is shared across users, sports and requested slots.
+      const forecast = await getLiveForecast(location.lat, location.lon);
+      let selected = forecast.current;
+      if (targetHour !== null || targetDate !== parseDateString()) {
+        const hour = targetHour ?? 12;
+        const candidates = forecast.hourly.filter(entry => entry.time.startsWith(targetDate + 'T'));
+        const nearest = candidates.sort((a, b) =>
+          Math.abs(Number(a.time.slice(11, 13)) - hour) - Math.abs(Number(b.time.slice(11, 13)) - hour))[0];
+        if (!nearest) throw new Error('Requested date is outside the available weather forecast');
+        selected = nearest.metrics;
       }
-
-      const data = await response.json() as any;
-
-      // 3. Extract metrics (either specific hourly slot or current)
-      let temp = 26;
-      let rainProb = 10;
-      let condition = 'Partly Cloudy';
-      let windSpeed = 12;
-
-      if (targetHour !== null && data?.hourly?.time?.length) {
-        // Construct target ISO prefix like "2026-10-15T20:00"
-        const hourPrefix = `${targetDate}T${String(targetHour).padStart(2, '0')}:00`;
-        const idx = (data.hourly.time as string[]).findIndex((t) => t.startsWith(hourPrefix));
-
-        if (idx !== -1) {
-          temp = Math.round(data.hourly.temperature_2m?.[idx] ?? 26);
-          rainProb = Math.round(data.hourly.precipitation_probability?.[idx] ?? 10);
-          windSpeed = Math.round(data.hourly.wind_speed_10m?.[idx] ?? 12);
-          const wmo = data.hourly.weather_code?.[idx] ?? 2;
-          condition = mapWmoCodeToCondition(wmo);
-        } else if (data.current) {
-          temp = Math.round(data.current.temperature_2m ?? 26);
-          rainProb = Math.round(data.current.precipitation_probability ?? 10);
-          windSpeed = Math.round(data.current.wind_speed_10m ?? 12);
-          const wmo = data.current.weather_code ?? 2;
-          condition = mapWmoCodeToCondition(wmo);
-        }
-      } else if (data.current) {
-        temp = Math.round(data.current.temperature_2m ?? 26);
-        rainProb = Math.round(data.current.precipitation_probability ?? 10);
-        windSpeed = Math.round(data.current.wind_speed_10m ?? 12);
-        const wmo = data.current.weather_code ?? 2;
-        condition = mapWmoCodeToCondition(wmo);
-      }
+      const { temperatureC: temp, rainProbability: rainProb, condition, windSpeedKmh: windSpeed } = selected;
 
       // 4. Calculate suitability with centralized model
       const suitability = evaluateWeatherSuitability({
@@ -256,12 +178,6 @@ export class WeatherService {
         timestamp: new Date().toISOString(),
         isFallback: false,
       };
-
-      // 5. Store in cache
-      weatherCache.set(cacheKey, {
-        data: weatherResult,
-        expiresAt: now + CACHE_TTL_MS,
-      });
 
       return weatherResult;
     } catch (err: any) {
@@ -289,7 +205,7 @@ export class WeatherService {
    * Helper to clear or purge cache entries during testing.
    */
   clearCache(): void {
-    weatherCache.clear();
+    clearForecastCache();
   }
 }
 

@@ -11,6 +11,7 @@
       }
     },
     "preview": {
+      "developmentClient": false,
       "environment": "preview",
       "env": {
         "EXPO_PUBLIC_APP_DATA_MODE": "production"
@@ -20,7 +21,10 @@
         "buildType": "apk"
       }
     },
-    "production": {}
+    "production": {
+      "environment": "production",
+      "env": { "EXPO_PUBLIC_APP_DATA_MODE": "production" }
+    }
   },
   "submit": {
     "production": {}

@@ -9,6 +9,7 @@ mobile/.env
 # Dependencies
 .npm-cache/
 tools/cloudflared.exe
+tools/render-cli/
 tools/cloudflared-download.exe
 tools/cloudflared-range.part
 tools/.cloudflared-parts/
@@ -30,6 +31,8 @@ mobile/node_modules/
 # Expo
 .expo/
 mobile/.expo/
+.vercel/
+mobile/.vercel/
 
 # Build output
 dist/
@@ -48,4 +51,3 @@ mobile/android/build/
 
 # Local monorepo root junction
 /app
-

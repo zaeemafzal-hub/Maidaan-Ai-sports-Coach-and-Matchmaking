@@ -1,5 +1,7 @@
 # F0 controlled deployment
 
+For the current public-hosting setup and outstanding account verification, see [Public deployment](PUBLIC-DEPLOYMENT.md).
+
 Use one persistent Node server with HTTPS and WebSocket support. F0 chat subscriptions, rate limits and pending concierge actions are process-local; do not run multiple replicas. The database persists messages and retry keys. A restart expires pending in-memory action drafts.
 
 ## Backend

@@ -1,0 +1,36 @@
+# Keep the repository root: the app uses npm workspaces and a shared lockfile.
+services:
+  - type: web
+    name: maidaan-api
+    runtime: node
+    plan: free
+    region: singapore
+    branch: main
+    buildCommand: npm ci --include=dev && npm --prefix backend run build
+    startCommand: npm --prefix backend start
+    healthCheckPath: /api/health
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_VERSION
+        value: 22.23.1
+      - key: NODE_ENV
+        value: production
+      - key: APP_DATA_MODE
+        value: production
+      - key: PAYMENT_MODE
+        value: disabled
+      - key: AI_PROVIDER
+        value: gemini
+      - key: AI_FALLBACK_PROVIDER
+        value: groq
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      # Set this to the final website origin, e.g. https://your-app.vercel.app.
+      - key: ALLOWED_ORIGINS
+        sync: false

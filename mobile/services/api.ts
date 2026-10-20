@@ -29,7 +29,7 @@ export const getDevHost = (): string | null => {
 };
 
 export const getBaseUrl = (): string => {
-  return resolveBackendUrl(process.env.EXPO_PUBLIC_API_URL, typeof window !== 'undefined' ? window.location : undefined, getDevHost());
+  return resolveBackendUrl(process.env.EXPO_PUBLIC_API_URL, typeof window !== 'undefined' ? window.location : undefined, getDevHost(), typeof __DEV__ !== 'undefined' && __DEV__);
 };
 
 class ApiClient {
@@ -84,7 +84,12 @@ class ApiClient {
     // Use AbortController timeout to guarantee requests never hang mobile UI indefinitely
     const controller = new AbortController();
     // Concierge can classify first, then try both coaching providers.
-    const timeoutMs = path.startsWith('/api/coach/') || path.startsWith('/api/agent/') ? 65000 : path.includes('/checkout') ? 70000 : path === '/api/hub/photos' || path === '/api/profile/player/photo' ? 25000 : 15000;
+    const defaultTimeoutMs = path.startsWith('/api/coach/') || path.startsWith('/api/agent/') ? 65000 : path.includes('/checkout') ? 70000 : path === '/api/hub/photos' || path === '/api/profile/player/photo' ? 25000 : 15000;
+    // A free hosted server can take longer to wake after being idle.
+    const configuredTimeoutMs = Number(process.env.EXPO_PUBLIC_API_TIMEOUT_MS);
+    const timeoutMs = Number.isFinite(configuredTimeoutMs) && configuredTimeoutMs >= 1000
+      ? Math.max(defaultTimeoutMs, Math.min(configuredTimeoutMs, 120000))
+      : defaultTimeoutMs;
     const timer = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
