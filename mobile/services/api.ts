@@ -37,7 +37,7 @@ class ApiClient {
     return getBaseUrl();
   }
 
-  private async getHeaders(customHeaders?: Record<string, string>): Promise<Record<string, string>> {
+  private async getHeaders(customHeaders?: Record<string, string>, expectedUserId?: string): Promise<Record<string, string>> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       Accept: 'application/json',
@@ -45,17 +45,22 @@ class ApiClient {
     };
 
     let token: string | null = null;
+    let sessionUserId: string | undefined;
     if (isSupabaseConfigured) {
       try {
         const { data } = await supabase.auth.getSession();
         if (data?.session?.access_token) {
           token = data.session.access_token;
+          sessionUserId = data.session.user?.id;
         }
       } catch {
         // ignore
       }
     }
 
+    if (expectedUserId && sessionUserId !== expectedUserId) {
+      throw new Error('Your account changed. Please reopen this conversation.');
+    }
     if (!token) {
       token = await AuthStorage.getToken();
     }
@@ -74,6 +79,7 @@ class ApiClient {
       body?: unknown;
       headers?: Record<string, string>;
       _isRetry?: boolean;
+      expectedUserId?: string;
     } = {}
   ): Promise<ApiResponse<T>> {
     const method = options.method || 'GET';
@@ -93,7 +99,7 @@ class ApiClient {
     const timer = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
-      const headers = await this.getHeaders(options.headers);
+      const headers = await this.getHeaders(options.headers, options.expectedUserId);
       const config: RequestInit = {
         method,
         headers,

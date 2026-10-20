@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, Pressable, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -20,6 +20,15 @@ export const CaptainConfirmationCard: React.FC<
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    const remaining = Date.parse(action.expiresAt) - Date.now();
+    const pending = ['DRAFT', 'AWAITING_CONFIRMATION'].includes(action.status);
+    setStatus(pending && remaining <= 0 ? 'EXPIRED' : action.status);
+    if (!pending || !Number.isFinite(remaining) || remaining <= 0) return;
+    const timeout = setTimeout(() => setStatus('EXPIRED'), remaining);
+    return () => clearTimeout(timeout);
+  }, [action.status, action.expiresAt]);
 
   const isPending = status === "AWAITING_CONFIRMATION";
   const isExecuted = status === "EXECUTED";

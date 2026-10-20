@@ -16,31 +16,12 @@ import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { ArenaBadge } from "../../components/ui/ArenaBadge";
 import { AmbientGlowOverlay } from "../../components/ui/AmbientCanvas";
 import { useAuthStore } from "../../store/useAuthStore";
-import { coachService } from "../../services/coachService";
-import { CoachSport, CoachConversationMessage } from "../../types";
+import { useStore } from "zustand";
+import { assistantHistory, useAssistantThread } from "../../store/useAssistantHistory";
+import type { CoachMessage } from "../../types/assistantHistory";
+import { CoachSport } from "../../types";
 
 type DrillCategory = "ALL" | "TECHNIQUE" | "TACTICS" | "DRILLS" | "PREP";
-
-interface CoachMessage {
-  id: string;
-  sender: "COACH" | "PLAYER";
-  sport: CoachSport;
-  text: string;
-  timestamp: string;
-  drillPlan?: {
-    title: string;
-    objective: string;
-    cues: string[];
-    routine: {
-      sets: string;
-      reps: string;
-      duration: string;
-      setup: string;
-    };
-    proTip: string;
-  };
-  disclaimer?: string;
-}
 
 interface SportPromptSuggestion {
   id: string;
@@ -364,27 +345,27 @@ export default function AICoachScreen() {
   const insets = useSafeAreaInsets();
   const { currentUser, playerProfile } = useAuthStore();
 
-  const [selectedSport, setSelectedSport] = useState<CoachSport>(() => {
-    if (
-      playerProfile?.preferredSports &&
-      playerProfile.preferredSports.length > 0
-    ) {
-      const pref = playerProfile.preferredSports[0] as CoachSport;
-      if (["cricket", "badminton", "padel", "football"].includes(pref)) {
-        return pref;
-      }
-    }
-    return "cricket";
-  });
-
+  const userId = currentUser?.id;
+  const preferredSport = playerProfile?.preferredSports?.[0];
+  const fallbackSport: CoachSport = preferredSport && ["cricket", "badminton", "padel", "football"].includes(preferredSport) ? preferredSport : "cricket";
+  const selectedSport = useStore(assistantHistory.store, state => userId ? state.sports[userId] || fallbackSport : fallbackSport);
+  const history = useAssistantThread(userId, "coach", selectedSport);
   const [activeCategory, setActiveCategory] = useState<DrillCategory>("ALL");
-  const [messages, setMessages] = useState<Record<CoachSport, CoachMessage[]>>(
-    INITIAL_COACH_MESSAGES,
-  );
-  const [inputText, setInputText] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
-  const [errorBanner, setErrorBanner] = useState<string | null>(null);
-  const [failedPrompt, setFailedPrompt] = useState<string | null>(null);
+  const inputText = history.draft;
+  const setInputText = (text: string) => { if (userId) assistantHistory.setDraft(userId, "coach", selectedSport, text); };
+  const isTyping = history.sending;
+  const isHistoryBusy = history.loading || history.clearing || !history.conversationId;
+  const errorBanner = history.error || (history.failedTurn ? "Your previous request did not finish. You can retry it." : null);
+  const failedPrompt = history.failedTurn?.text;
+  const currentSportMessages: CoachMessage[] = [
+    ...INITIAL_COACH_MESSAGES[selectedSport],
+    ...history.messages.filter(message => !message.details.error).map(message => ({
+      id: message.id, sender: message.role === "user" ? "PLAYER" as const : "COACH" as const,
+      sport: selectedSport, text: message.text,
+      timestamp: new Date(message.createdAt).toLocaleString([], {month: "short", day: "numeric", hour: "2-digit", minute: "2-digit"}),
+    })),
+  ];
+  useEffect(() => { if (userId) void assistantHistory.loadSport(userId, fallbackSport); }, [userId, fallbackSport]);
 
   const scrollViewRef = useRef<ScrollView>(null);
 
@@ -393,9 +374,8 @@ export default function AICoachScreen() {
       scrollViewRef.current?.scrollToEnd({ animated: true });
     }, 150);
     return () => clearTimeout(timer);
-  }, [messages, selectedSport, isTyping, errorBanner]);
+  }, [history.messages, selectedSport, isTyping, errorBanner]);
 
-  const currentSportMessages = messages[selectedSport] || [];
 
   const filteredPrompts = SUGGESTED_PROMPTS.filter((p) => {
     if (p.sport !== selectedSport) return false;
@@ -403,145 +383,18 @@ export default function AICoachScreen() {
     return p.category === activeCategory;
   });
 
-  const buildHistory = (msgs: CoachMessage[]): CoachConversationMessage[] => {
-    return msgs.slice(-10).map((m) => ({
-      role: m.sender === "PLAYER" ? ("user" as const) : ("assistant" as const),
-      content: m.text.slice(0, 1500),
-    }));
-  };
-
   const handleSelectSport = (sport: CoachSport) => {
-    setSelectedSport(sport);
+    if (userId) assistantHistory.setSport(userId, sport);
     setActiveCategory("ALL");
-    setErrorBanner(null);
-    setFailedPrompt(null);
   };
-
-  const handleSendPrompt = async (promptText: string) => {
-    const trimmed = promptText.trim();
-    if (!trimmed || isTyping) return;
-
-    if (trimmed.length > 1500) {
-      setErrorBanner(
-        "Prompt exceeds 1500 characters. Please shorten your question.",
-      );
-      return;
-    }
-
-    const userMsg: CoachMessage = {
-      id: `usr-${Date.now()}`,
-      sender: "PLAYER",
-      sport: selectedSport,
-      text: trimmed,
-      timestamp: "JUST NOW",
-    };
-
-    const previousMsgs = messages[selectedSport] || [];
-    const conversationHistory = buildHistory(previousMsgs);
-
-    setMessages((prev) => ({
-      ...prev,
-      [selectedSport]: [...(prev[selectedSport] || []), userMsg],
-    }));
-
-    setInputText("");
-    setErrorBanner(null);
-    setFailedPrompt(null);
-    setIsTyping(true);
-
-    try {
-      const response = await coachService.sendCoachMessage({
-        sport: selectedSport,
-        message: trimmed,
-        conversation: conversationHistory,
-      });
-
-      if (response.data?.message) {
-        const coachMsg: CoachMessage = {
-          id: `ai-${Date.now()}`,
-          sender: "COACH",
-          sport: selectedSport,
-          text: response.data.message,
-          timestamp: "JUST NOW",
-        };
-        setMessages((prev) => ({
-          ...prev,
-          [selectedSport]: [...(prev[selectedSport] || []), coachMsg],
-        }));
-        setFailedPrompt(null);
-        setErrorBanner(null);
-      } else {
-        const errMessage =
-          response.error ||
-          "Tactical Coach is temporarily unavailable. Please retry.";
-        setErrorBanner(errMessage);
-        setFailedPrompt(trimmed);
-      }
-    } catch (err: any) {
-      const errMessage =
-        err?.message ||
-        "Network error connecting to Maidaan Coach. Please retry.";
-      setErrorBanner(errMessage);
-      setFailedPrompt(trimmed);
-    } finally {
-      setIsTyping(false);
-    }
+  const handleSendPrompt = (promptText: string) => {
+    if (userId) void assistantHistory.send(userId, "coach", selectedSport, promptText);
   };
-
-  const handleRetry = async () => {
-    if (!failedPrompt || isTyping) return;
-
-    setErrorBanner(null);
-    setIsTyping(true);
-
-    try {
-      const currentMsgs = messages[selectedSport] || [];
-      const previousMsgs = currentMsgs.slice(0, -1);
-      const conversationHistory = buildHistory(previousMsgs);
-
-      const response = await coachService.sendCoachMessage({
-        sport: selectedSport,
-        message: failedPrompt,
-        conversation: conversationHistory,
-      });
-
-      if (response.data?.message) {
-        const coachMsg: CoachMessage = {
-          id: `ai-${Date.now()}`,
-          sender: "COACH",
-          sport: selectedSport,
-          text: response.data.message,
-          timestamp: "JUST NOW",
-        };
-        setMessages((prev) => ({
-          ...prev,
-          [selectedSport]: [...(prev[selectedSport] || []), coachMsg],
-        }));
-        setFailedPrompt(null);
-        setErrorBanner(null);
-      } else {
-        const errMessage =
-          response.error ||
-          "Tactical Coach is temporarily unavailable. Please retry.";
-        setErrorBanner(errMessage);
-      }
-    } catch (err: any) {
-      const errMessage =
-        err?.message ||
-        "Network error connecting to Maidaan Coach. Please retry.";
-      setErrorBanner(errMessage);
-    } finally {
-      setIsTyping(false);
-    }
+  const handleRetry = () => {
+    if (userId && history.failedTurn) void assistantHistory.send(userId, "coach", selectedSport, history.failedTurn.text, history.failedTurn.clientMessageId);
   };
-
   const handleResetSession = () => {
-    setMessages((prev) => ({
-      ...prev,
-      [selectedSport]: INITIAL_COACH_MESSAGES[selectedSport],
-    }));
-    setErrorBanner(null);
-    setFailedPrompt(null);
+    if (userId) void assistantHistory.reset(userId, "coach", selectedSport);
   };
 
   return (
@@ -604,6 +457,7 @@ export default function AICoachScreen() {
           {/* Reset Session Button (44x44px touch target) */}
           <Pressable
             onPress={handleResetSession}
+            disabled={isTyping || isHistoryBusy}
             accessibilityRole="button"
             accessibilityLabel="Reset Coaching Session"
             className="w-11 h-11 rounded-full bg-[#141518]/25 border border-white/[0.08] items-center justify-center active:bg-[#1B1D22]"
@@ -804,6 +658,12 @@ export default function AICoachScreen() {
             </ScrollView>
           </View>
 
+          {history.loading && <Text className="text-[#A0A5AD] text-xs mb-3">Syncing your coaching history...</Text>}
+          {history.nextBefore && (
+            <Pressable accessibilityRole="button" accessibilityLabel="Load earlier coaching messages" disabled={history.loading} onPress={() => { if (userId) void assistantHistory.load(userId, "coach", selectedSport, true); }} className="min-h-[44px] items-center justify-center mb-3">
+              <Text className="text-[#E85D26] text-xs font-bold">Load earlier messages</Text>
+            </Pressable>
+          )}
           {/* Conversation Stream */}
           {currentSportMessages.map((msg) => {
             const isCoach = msg.sender === "COACH";
@@ -1032,10 +892,10 @@ export default function AICoachScreen() {
                   {errorBanner}
                 </Text>
               </View>
-              {failedPrompt && (
+              {failedPrompt ? (
                 <Pressable
                   onPress={handleRetry}
-                  disabled={isTyping}
+                  disabled={isTyping || isHistoryBusy}
                   className="px-3 py-1.5 rounded-xl bg-[#EF4444] active:opacity-80"
                   accessibilityRole="button"
                   accessibilityLabel="Retry question"
@@ -1046,6 +906,10 @@ export default function AICoachScreen() {
                   >
                     Retry
                   </Text>
+                </Pressable>
+              ) : (
+                <Pressable accessibilityRole="button" accessibilityLabel="Retry Coach history sync" disabled={history.loading} onPress={() => { if (userId) void assistantHistory.load(userId, 'coach', selectedSport); }} className="min-h-[44px] px-3 justify-center">
+                  <Text className="text-[#E85D26] text-xs font-bold">Retry sync</Text>
                 </Pressable>
               )}
             </View>
@@ -1062,6 +926,7 @@ export default function AICoachScreen() {
           <View className="flex-1 flex-row items-center bg-[#141518]/25 rounded-2xl px-3.5 border border-white/[0.08] mr-2 min-h-[46px]">
             <TextInput
               value={inputText}
+              editable={!isHistoryBusy}
               onChangeText={setInputText}
               placeholder={`Ask Coach about ${SPORT_CONFIG[selectedSport].label.toLowerCase()} drills, tactics...`}
               placeholderTextColor="#5C616A"
@@ -1084,9 +949,9 @@ export default function AICoachScreen() {
 
           <Pressable
             onPress={() => handleSendPrompt(inputText)}
-            disabled={!inputText.trim() || isTyping}
+            disabled={!inputText.trim() || isTyping || isHistoryBusy}
             className={`w-11 h-11 rounded-2xl items-center justify-center ${
-              inputText.trim() && !isTyping
+              inputText.trim() && !isTyping && !isHistoryBusy
                 ? "bg-[#E85D26] active:bg-[#FF723A] shadow-md shadow-[#E85D26]/30"
                 : "bg-[#1B1D22]"
             }`}
@@ -1096,7 +961,7 @@ export default function AICoachScreen() {
             <Ionicons
               name="arrow-up"
               size={20}
-              color={inputText.trim() && !isTyping ? "#FFFFFF" : "#5C616A"}
+              color={inputText.trim() && !isTyping && !isHistoryBusy ? "#FFFFFF" : "#5C616A"}
             />
           </Pressable>
         </View>

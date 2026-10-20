@@ -1,6 +1,6 @@
 import { ArtworkScrollView as ThemedScroll } from "../components/ui/Artwork";
 import { ThemedScreen } from "../components/ui/ThemedScreen";
-import React, { useState, useRef, useEffect } from "react";
+import React, { useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -15,11 +15,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuthStore } from "../store/useAuthStore";
+import { assistantHistory, useAssistantThread } from "../store/useAssistantHistory";
+import type { ConciergeMessage } from "../types/assistantHistory";
 import {
-  agentService,
-  AgentIntent,
   CaptainActionSummary,
-  SourceMetadata,
   AgentMatchData,
   AgentHubData,
   AgentWeatherData,
@@ -31,17 +30,6 @@ import { WeatherResultCard } from "../components/concierge/WeatherResultCard";
 import { CaptainConfirmationCard } from "../components/concierge/CaptainConfirmationCard";
 import { CaptainRequestCard } from "../components/concierge/CaptainRequestCard";
 import { SourceChips } from "../components/concierge/SourceChips";
-
-interface ChatMessage {
-  id: string;
-  role: "user" | "assistant";
-  text: string;
-  intent?: AgentIntent;
-  toolResult?: Record<string, unknown> | null;
-  action?: CaptainActionSummary | null;
-  sources?: SourceMetadata[] | null;
-  timestamp: string;
-}
 
 const PLAYER_PROMPT_SUGGESTIONS = [
   "Find me a football match",
@@ -65,10 +53,18 @@ export default function ConciergeScreen() {
   const userRole = roles.includes(activeMode) ? activeMode : "PLAYER";
   const isCaptain = userRole === "TEAM_CAPTAIN";
 
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [inputText, setInputText] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [sessionError, setSessionError] = useState<string | null>(null);
+  const userId = currentUser?.id;
+  const history = useAssistantThread(userId, "concierge", "main");
+  const messages: ConciergeMessage[] = history.messages.map(message => ({
+    id: message.id, role: message.role, text: message.text,
+    intent: message.details.intent, toolResult: message.details.toolResult,
+    action: message.details.action, sources: message.details.sources,
+    timestamp: new Date(message.createdAt).toLocaleString([], {month: "short", day: "numeric", hour: "2-digit", minute: "2-digit"}),
+  }));
+  const inputText = history.draft;
+  const setInputText = (text: string) => { if (userId) assistantHistory.setDraft(userId, "concierge", "main", text); };
+  const isLoading = history.sending;
+  const isHistoryBusy = history.loading || history.clearing || !history.conversationId;
 
   const scrollViewRef = useRef<ScrollView>(null);
 
@@ -78,101 +74,17 @@ export default function ConciergeScreen() {
       scrollViewRef.current?.scrollToEnd({ animated: true });
     }, 150);
     return () => clearTimeout(timer);
-  }, [messages, isLoading]);
+  }, [history.messages, isLoading]);
 
   const promptSuggestions = isCaptain
     ? CAPTAIN_PROMPT_SUGGESTIONS
     : PLAYER_PROMPT_SUGGESTIONS;
 
-  const handleSendMessage = async (textToSend?: string) => {
-    const raw = textToSend !== undefined ? textToSend : inputText;
-    const message = raw.trim();
-    if (!message || isLoading) return;
-
-    setInputText("");
-    setSessionError(null);
-
-    const userMsgId = `usr_${Date.now()}`;
-    const userMsg: ChatMessage = {
-      id: userMsgId,
-      role: "user",
-      text: message,
-      timestamp: new Date().toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-    };
-
-    setMessages((prev) => [...prev, userMsg]);
-    setIsLoading(true);
-
-    try {
-      const response = await agentService.chat(message);
-
-      if (!response || response.status !== 200 || !response.data) {
-        let errorFallback = "Maidaan Concierge is temporarily unavailable.";
-        if (response?.status === 401) {
-          errorFallback =
-            "Authentication required. Please sign in to consult your Concierge.";
-        } else if (response?.status === 400) {
-          errorFallback =
-            "Invalid request. Please provide more detail about your match or game.";
-        } else if (response?.error) {
-          errorFallback = response.error;
-        }
-
-        const errorMsg: ChatMessage = {
-          id: `err_${Date.now()}`,
-          role: "assistant",
-          text: errorFallback,
-          timestamp: new Date().toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-        };
-        setMessages((prev) => [...prev, errorMsg]);
-        return;
-      }
-
-      const agentData = response.data;
-      const assistantMsg: ChatMessage = {
-        id: agentData.requestId || `ast_${Date.now()}`,
-        role: "assistant",
-        text: agentData.message,
-        intent: agentData.intent,
-        toolResult: agentData.data || agentData.toolResult,
-        action: agentData.action,
-        sources: agentData.sources,
-        timestamp: new Date().toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-      };
-
-      setMessages((prev) => [...prev, assistantMsg]);
-    } catch {
-      const fallbackMsg: ChatMessage = {
-        id: `err_${Date.now()}`,
-        role: "assistant",
-        text: "Maidaan Concierge is temporarily unavailable. Please check your connection and try again.",
-        timestamp: new Date().toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-      };
-      setMessages((prev) => [...prev, fallbackMsg]);
-    } finally {
-      setIsLoading(false);
-    }
+  const handleSendMessage = (textToSend?: string) => {
+    if (userId) void assistantHistory.send(userId, "concierge", "main", textToSend ?? inputText);
   };
-
-  const handleActionComplete = (
-    msgId: string,
-    updatedAction: CaptainActionSummary,
-  ) => {
-    setMessages((prev) =>
-      prev.map((m) => (m.id === msgId ? { ...m, action: updatedAction } : m)),
-    );
+  const handleActionComplete = (msgId: string, updatedAction: CaptainActionSummary) => {
+    if (userId) assistantHistory.updateAction(userId, msgId, updatedAction);
   };
 
   return (
@@ -230,6 +142,20 @@ export default function ConciergeScreen() {
           }}
           keyboardShouldPersistTaps="handled"
         >
+          {history.loading && <Text className="text-[#A0A5AD] text-xs mb-3">Syncing your Concierge history...</Text>}
+          {history.error && (
+            <View className="p-3 mb-3 rounded-xl bg-[#141518]/25 border border-[#E85D26]/30">
+              <Text className="text-[#A0A5AD] text-xs">{history.error}</Text>
+              <Pressable accessibilityRole="button" accessibilityLabel="Retry loading Concierge history" disabled={history.loading} onPress={() => { if (userId) void assistantHistory.load(userId, "concierge", "main"); }} className="min-h-[44px] justify-center">
+                <Text className="text-[#E85D26] text-xs font-bold">Retry sync</Text>
+              </Pressable>
+            </View>
+          )}
+          {history.nextBefore && (
+            <Pressable accessibilityRole="button" accessibilityLabel="Load earlier Concierge messages" disabled={history.loading} onPress={() => { if (userId) void assistantHistory.load(userId, "concierge", "main", true); }} className="min-h-[44px] items-center justify-center mb-3">
+              <Text className="text-[#E85D26] text-xs font-bold">Load earlier messages</Text>
+            </Pressable>
+          )}
           {/* Welcome / Empty State */}
           {messages.length === 0 ? (
             <View className="my-auto py-6">
@@ -386,6 +312,11 @@ export default function ConciergeScreen() {
             })
           )}
 
+          {history.failedTurn && (
+            <Pressable accessibilityRole="button" accessibilityLabel="Retry Concierge question" disabled={isLoading || isHistoryBusy} onPress={() => { if (userId && history.failedTurn) void assistantHistory.send(userId, "concierge", "main", history.failedTurn.text, history.failedTurn.clientMessageId); }} className="min-h-[44px] items-center justify-center mb-3">
+              <Text className="text-[#E85D26] text-xs font-bold">Retry last question</Text>
+            </Pressable>
+          )}
           {/* Loading Indicator */}
           {isLoading ? (
             <View className="flex-row items-center p-3 rounded-xl bg-[#141518]/25 border border-white/[0.08] max-w-[80%] mb-3">
@@ -407,17 +338,17 @@ export default function ConciergeScreen() {
               placeholderTextColor="#5C616A"
               returnKeyType="send"
               onSubmitEditing={() => handleSendMessage()}
-              editable={!isLoading}
+              editable={!isLoading && !isHistoryBusy}
               className="flex-1 min-h-[46px] px-4 rounded-xl bg-[#141518]/25 border border-white/[0.08] text-white text-sm focus:border-[#E85D26]"
             />
 
             <Pressable
               onPress={() => handleSendMessage()}
-              disabled={isLoading || !inputText.trim()}
+              disabled={isLoading || isHistoryBusy || !inputText.trim()}
               accessibilityRole="button"
               accessibilityLabel="Send message to Maidaan Concierge"
               className={`w-11 h-11 rounded-xl items-center justify-center ${
-                inputText.trim() && !isLoading
+                inputText.trim() && !isLoading && !isHistoryBusy
                   ? "bg-[#E85D26] active:bg-[#D04E1B]"
                   : "bg-[#141518]/25 border border-white/[0.08] opacity-50"
               }`}
@@ -425,7 +356,7 @@ export default function ConciergeScreen() {
               <Ionicons
                 name="send"
                 size={18}
-                color={inputText.trim() && !isLoading ? "#FFFFFF" : "#5C616A"}
+                color={inputText.trim() && !isLoading && !isHistoryBusy ? "#FFFFFF" : "#5C616A"}
               />
             </Pressable>
           </View>

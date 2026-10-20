@@ -4,6 +4,7 @@ import { invokeMaidaanAgent } from '../agents/graph.js';
 import { AgentChatResponse } from '../agents/types.js';
 import { executeCaptainAction } from '../agents/actions/captainActionTools.js';
 import { actionStore } from '../agents/actions/actionStore.js';
+import { HistoryError, runAssistantTurn, saveActionHistory } from '../services/assistantHistory.js';
 
 const MAX_MESSAGE_LENGTH = 1500;
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
@@ -71,43 +72,49 @@ export const AgentController = {
 
     // 4. Invoke LangGraph Execution Graph
     try {
-      const graphResult = await invokeMaidaanAgent({
-        userId,
-        role,
-        message: trimmedMessage,
-        requestId,
+      const response = await runAssistantTurn({
+        userId, assistant: 'concierge', topic: 'main', message: trimmedMessage,
+        clientMessageId: req.body.clientMessageId, conversationId: req.body.conversationId,
+      }, async () => {
+        const graphResult = await invokeMaidaanAgent({
+          userId,
+          role,
+          message: trimmedMessage,
+          requestId,
+        });
+
+        const durationMs = Date.now() - startTime;
+        const toolUsed = graphResult.toolResult ? graphResult.toolResult.tool : 'none';
+
+        // Structured logging (no sensitive user data logged)
+        console.log(
+          `[LangGraph Agent] requestId=${requestId} userId=${userId} intent=${graphResult.intent} tool=${toolUsed} duration=${durationMs}ms status=success`
+        );
+
+        const responsePayload: AgentChatResponse = {
+          intent: graphResult.intent,
+          synthesis: graphResult.synthesis,
+          message: graphResult.response,
+          toolUsed,
+          toolResult: graphResult.toolResult || null,
+          data: graphResult.toolResult || null,
+          action: graphResult.action || null,
+          sources: graphResult.sources || null,
+          requestId,
+          durationMs,
+        };
+
+        return responsePayload;
       });
-
-      const durationMs = Date.now() - startTime;
-      const toolUsed = graphResult.toolResult ? graphResult.toolResult.tool : 'none';
-
-      // Structured logging (no sensitive user data logged)
-      console.log(
-        `[LangGraph Agent] requestId=${requestId} userId=${userId} intent=${graphResult.intent} tool=${toolUsed} duration=${durationMs}ms status=success`
-      );
-
-      const responsePayload: AgentChatResponse = {
-        intent: graphResult.intent,
-        synthesis: graphResult.synthesis,
-        message: graphResult.response,
-        toolUsed,
-        toolResult: graphResult.toolResult || null,
-        data: graphResult.toolResult || null,
-        action: graphResult.action || null,
-        sources: graphResult.sources || null,
-        requestId,
-        durationMs,
-      };
-
-      res.status(200).json(responsePayload);
+      res.status(200).json(response);
     } catch (err: any) {
       const durationMs = Date.now() - startTime;
       console.error(
         `[LangGraph Agent Error] requestId=${requestId} userId=${userId} duration=${durationMs}ms error=${err.message}`
       );
 
-      res.status(500).json({
-        error: 'The Maidaan Agent encountered an error processing your request.',
+      res.status(err instanceof HistoryError ? err.status : 500).json({
+        error: err instanceof HistoryError ? err.message : 'The Maidaan Agent encountered an error processing your request.',
         requestId,
       });
     }
@@ -154,6 +161,7 @@ export const AgentController = {
       }
 
       const execResult = await executeCaptainAction(actionId, userId);
+      await saveActionHistory(userId, actionId);
       if (!execResult.success) {
         // Concurrency or domain check failed
         res.status(409).json({
@@ -207,6 +215,7 @@ export const AgentController = {
       return;
     }
 
+    await saveActionHistory(userId, actionId);
     res.status(200).json({
       success: true,
       actionId,

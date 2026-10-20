@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { CoachSport, ConversationMessage } from '../ai/types.js';
 import { getAIProvider } from '../ai/providerFactory.js';
+import { runAssistantTurn } from '../services/assistantHistory.js';
 
 const ALLOWED_SPORTS: Set<string> = new Set(['cricket', 'football', 'badminton', 'padel']);
 const MAX_MESSAGE_LENGTH = 1500;
@@ -127,45 +128,51 @@ export const CoachController = {
 
     // 4. Resolve provider and generate coaching response
     try {
-      if (process.env.NODE_ENV === 'test') {
-        const testScenario = req.headers['x-test-ai-scenario'];
-        if (testScenario === 'empty') {
-          const emptyError: any = new Error('AI Coach returned an empty response.');
-          emptyError.status = 502;
-          throw emptyError;
+      const response = await runAssistantTurn({
+        userId, assistant: 'coach', topic: validatedSport, message: trimmedMessage,
+        clientMessageId: req.body.clientMessageId, conversationId: req.body.conversationId,
+      }, async () => {
+        if (process.env.NODE_ENV === 'test') {
+          const testScenario = req.headers['x-test-ai-scenario'];
+          if (testScenario === 'empty') {
+            const emptyError: any = new Error('AI Coach returned an empty response.');
+            emptyError.status = 502;
+            throw emptyError;
+          }
+          if (testScenario === '429') {
+            const rateLimitError: any = new Error('AI Coach is receiving too many requests. Please try again shortly.');
+            rateLimitError.status = 429;
+            throw rateLimitError;
+          }
+          if (testScenario === 'failure') {
+            const failError: any = new Error('AI Coach is temporarily unavailable.');
+            failError.status = 502;
+            throw failError;
+          }
+          if (testScenario === 'timeout') {
+            const timeoutError: any = new Error('AI Coach took too long to respond. Please try again.');
+            timeoutError.status = 504;
+            throw timeoutError;
+          }
         }
-        if (testScenario === '429') {
-          const rateLimitError: any = new Error('AI Coach is receiving too many requests. Please try again shortly.');
-          rateLimitError.status = 429;
-          throw rateLimitError;
-        }
-        if (testScenario === 'failure') {
-          const failError: any = new Error('AI Coach is temporarily unavailable.');
-          failError.status = 502;
-          throw failError;
-        }
-        if (testScenario === 'timeout') {
-          const timeoutError: any = new Error('AI Coach took too long to respond. Please try again.');
-          timeoutError.status = 504;
-          throw timeoutError;
-        }
-      }
 
-      const provider = getAIProvider();
-      const result = await provider.generateCoachResponse({
-        sport: validatedSport,
-        message: trimmedMessage,
-        conversation: validatedConversation,
-      });
+        const provider = getAIProvider();
+        const result = await provider.generateCoachResponse({
+          sport: validatedSport,
+          message: trimmedMessage,
+          conversation: validatedConversation,
+        });
 
-      res.status(200).json({
-        message: result.message,
-        sport: result.sport,
-        provider: result.provider,
-        usedBackup: result.usedBackup ?? false,
-        isFallback: false,
-        requestId: result.requestId,
+        return {
+          message: result.message,
+          sport: result.sport,
+          provider: result.provider,
+          usedBackup: result.usedBackup ?? false,
+          isFallback: false,
+          requestId: result.requestId,
+        };
       });
+      res.status(200).json(response);
     } catch (err: any) {
       console.error('[CoachController.chat] Provider error:', err);
       const statusCode = err?.status || 502;

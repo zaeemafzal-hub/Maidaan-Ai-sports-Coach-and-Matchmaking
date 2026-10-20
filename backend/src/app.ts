@@ -14,6 +14,7 @@ import reportRoutes from './routes/reportRoutes.js';
 import coachRoutes from './routes/coachRoutes.js';
 import weatherRoutes from './routes/weatherRoutes.js';
 import agentRoutes from './routes/agentRoutes.js';
+import assistantHistoryRoutes from './routes/assistantHistoryRoutes.js';
 import { VenueController } from './controllers/venueController.js';
 import { authenticateSupabaseUser, authorizeRoles } from './middleware/auth.js';
 import {BookingController,bookingRoutes} from './controllers/bookingController.js';
@@ -50,6 +51,7 @@ app.get('/api/health', (_req, res) => {
 
 // Mount modular API routes
 app.use('/api/auth', authRoutes);
+app.use('/api/assistant-history', assistantHistoryRoutes);
 app.use('/api/profile', profileRoutes);
 app.get('/api/locations', (_req,res)=>res.json({cities:serviceCities.filter(city=>city.enabled)}));
 app.use('/api/matches', matchRoutes);
