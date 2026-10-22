@@ -88,7 +88,7 @@ class ApiClient {
     const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
     const baseUrl = this.getBaseUrl();
     const url = `${baseUrl}${path}`;
-    const loadingRoute = options._loadingRoute ?? useScreenLoadingStore.getState().route;
+    const loadingRoute = options._loadingRoute ?? useScreenLoadingStore.getState().currentRoute();
     const finishLoading = useScreenLoadingStore.getState().begin(loadingRoute);
 
     // Use AbortController timeout to guarantee requests never hang mobile UI indefinitely

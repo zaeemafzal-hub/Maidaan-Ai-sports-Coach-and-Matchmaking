@@ -43,7 +43,21 @@ test("an old screen request does not block a different route", () => {
   finish();
   assert.equal(Object.keys(store.getState().pending).length, 0);
 });
-function apiRuntime(store, fetch, refreshSession = async () => ({ error: "expired" })) {
+
+test("a focus fetch reads committed navigation before the layout fallback updates", () => {
+  const store = loading();
+  store.getState().setRoute("old-tab");
+  store.getState().setRouteReader(() => "new-tab");
+  const finish = store.getState().begin();
+  assert.deepEqual(Object.values(store.getState().pending), ["new-tab"]);
+  finish();
+  store.getState().setRouteReader(null);
+});
+function apiRuntime(
+  store,
+  fetch,
+  refreshSession = async () => ({ error: "expired" }),
+) {
   const exports = {};
   vm.runInNewContext(code("../mobile/services/api.ts"), {
     exports,
@@ -112,20 +126,38 @@ test("request stays busy while response data is being parsed", async () => {
 
 test("an authentication retry retains its original screen after navigation", async () => {
   const store = loading();
-  store.getState().setRoute('/coach');
+  store.getState().setRoute("/coach");
   let first, last;
-  let calls=0;
-  const api=apiRuntime(store, async()=>{
-    if(++calls===1)return await new Promise(resolve=>{first=resolve;});
-    return {ok:true,status:200,json:()=>new Promise(resolve=>{last=resolve;})};
-  },async()=>({data:{session:{access_token:'refreshed-fixture'}}}));
-  const request=api.get('/history');
-  await new Promise(resolve=>setImmediate(resolve));
-  store.getState().setRoute('/profile');
-  first({ok:false,status:401});
-  await new Promise(resolve=>setImmediate(resolve));
-  assert.equal(calls,2);
-  assert.equal(Object.values(store.getState().pending).includes('/profile'),false);
-  last({messages:[]});await request;
-  assert.equal(Object.keys(store.getState().pending).length,0);
+  let calls = 0;
+  const api = apiRuntime(
+    store,
+    async () => {
+      if (++calls === 1)
+        return await new Promise((resolve) => {
+          first = resolve;
+        });
+      return {
+        ok: true,
+        status: 200,
+        json: () =>
+          new Promise((resolve) => {
+            last = resolve;
+          }),
+      };
+    },
+    async () => ({ data: { session: { access_token: "refreshed-fixture" } } }),
+  );
+  const request = api.get("/history");
+  await new Promise((resolve) => setImmediate(resolve));
+  store.getState().setRoute("/profile");
+  first({ ok: false, status: 401 });
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(calls, 2);
+  assert.equal(
+    Object.values(store.getState().pending).includes("/profile"),
+    false,
+  );
+  last({ messages: [] });
+  await request;
+  assert.equal(Object.keys(store.getState().pending).length, 0);
 });

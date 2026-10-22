@@ -98,6 +98,7 @@ export function lightColor(
         "#3b82f6": "#1D4ED8",
         "#ff986b": "#A83C12",
         "#ffac83": "#A83C12",
+        "#e85d26": "#A83C12",
       };
       if (semantic[hex]) return rgba(semantic[hex], c.a);
     }

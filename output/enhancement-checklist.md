@@ -17,7 +17,7 @@ Mandatory email confirmation proves email ownership. It is distinct from a secon
 
 ## Regression evidence
 
-- Root tests: 35 passed across authentication, appearance, loading, maps, cloud configuration, speech safety and NativeWind warning handling.
+- Root tests: 37 passed across authentication, appearance, loading, maps, cloud configuration, speech safety and NativeWind warning handling.
 - Complete backend test command passed: provider fallback, weather, registration, security, reliability, venue/admin authorization, booking rules/SQL, location profiles, agent confirmations, role activation, captain/hub workflows, data isolation, realtime chat, F0 locking/RLS and private assistant history.
 - The role-activation test's hardcoded October 20 fixture had expired; it now schedules a future date. Production schedule validation was preserved.
 - TypeScript checks passed for mobile and backend.
@@ -26,6 +26,12 @@ Mandatory email confirmation proves email ownership. It is distinct from a secon
 
 ## Release status
 
-Changes are being prepared on the existing `deploy/public-hosting` branch. Hosted deployment, all-platform export and new installed-device acceptance are not yet marked complete in this report.
+The initial enhancement release is live on Vercel and Render from `deploy/public-hosting` commit `0863a9e`. Hosted checks passed for verified email login, first-use guide, Your Assistant, light appearance and OpenStreetMap light/dark synchronization. Mobile and desktop checks found no runtime exceptions or horizontal overflow.
+
+Web, Android and iOS exports passed. This does not replace installed-device acceptance or iOS signing.
+
+A subsequent hosted navigation check caught a loader timing gap on returning to a tab. Requests now read the navigator's committed route key synchronously, and authentication retries retain their original screen owner. A delayed focus-fetch browser check and the added regression tests passed. An obsolete Android build was cancelled; the corrected APK and hosted update are being prepared.
+
+EAS Doctor reported newer compatible patch versions for Expo and Expo Router (20/21 checks passed). The warning did not prevent native compilation. Dependencies were not broadly upgraded.
 
 Provider configuration references: [Supabase password security](https://supabase.com/docs/guides/auth/password-security), [Supabase email/password authentication](https://supabase.com/docs/guides/auth/passwords).

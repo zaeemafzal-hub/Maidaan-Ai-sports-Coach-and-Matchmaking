@@ -1,13 +1,28 @@
 import React, { useCallback, useLayoutEffect } from "react";
-import { useFocusEffect, usePathname } from "expo-router";
+import {
+  useFocusEffect,
+  usePathname,
+  useNavigationContainerRef,
+  useRootNavigationState,
+  useRoute,
+} from "expo-router";
 import { View, Text, ActivityIndicator } from "../theme/Primitives";
 import { useThemeColors } from "../theme/AppearanceControls";
 import { useScreenLoadingStore } from "../../store/useScreenLoadingStore";
 import { useAuthStore } from "../../store/useAuthStore";
 
+// Expo Router generates route names dynamically; only the stable route key is needed here.
+function focusedRouteKey(
+  navigation: ReturnType<typeof useNavigationContainerRef>,
+) {
+  const current = navigation.current?.getCurrentRoute() as
+    { key: string } | undefined;
+  return current?.key;
+}
+
 // Focus scoping prevents an off-screen form from blocking the next screen.
 export function useScreenBusy(busy: boolean) {
-  const route = usePathname();
+  const route = useRoute().key;
   useFocusEffect(
     useCallback(() => {
       if (!busy) return;
@@ -17,7 +32,11 @@ export function useScreenBusy(busy: boolean) {
 }
 
 export function ScreenLoading() {
-  const route = usePathname();
+  const navigation = useNavigationContainerRef();
+  // Subscribe to navigation commits; pathname alone can update after focus fetches start.
+  useRootNavigationState();
+  const pathname = usePathname();
+  const route = focusedRouteKey(navigation) || pathname;
   const colors = useThemeColors();
   const pending = useScreenLoadingStore((state) =>
     Object.values(state.pending).includes(route),
@@ -25,7 +44,13 @@ export function ScreenLoading() {
   const authBusy = useAuthStore(
     (state) => state.isLoading || state.isLoadingProfile,
   );
-  // Layout effects run before screens begin their data-fetching passive effects.
+  // Read the committed navigator synchronously when requests begin, including focus events.
+  useLayoutEffect(() => {
+    useScreenLoadingStore
+      .getState()
+      .setRouteReader(() => focusedRouteKey(navigation));
+    return () => useScreenLoadingStore.getState().setRouteReader(null);
+  }, [navigation]);
   useLayoutEffect(() => {
     useScreenLoadingStore.getState().setRoute(route);
   }, [route]);

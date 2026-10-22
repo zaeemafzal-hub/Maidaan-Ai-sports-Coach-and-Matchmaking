@@ -30,6 +30,7 @@ test("appearance adapts native neutral colors while retaining layout and brand c
   assert.equal(light.padding, 12);
   assert.equal(light.transform, original.transform);
   assert.equal(palette.lightColor("#E85D26", "backgroundColor"), "#E85D26");
+  assert.equal(palette.lightColor("#E85D26", "color"), "#A83C12");
   assert.equal(palette.lightColor("#FFFFFF", "color", true), "#FFFFFF");
   assert.equal(
     palette.lightColor("rgba(20,21,24,0.25)", "backgroundColor"),
