@@ -9,10 +9,10 @@ import {
   Image,
   ActivityIndicator,
   StyleSheet,
-} from "react-native";
+} from "../../components/theme/Primitives";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "../../components/theme/Icons";
 import { useAuthStore } from "../../store/useAuthStore";
 import { Sport, SkillLevel } from "../../types";
 import { profileService } from "../../services/profileService";

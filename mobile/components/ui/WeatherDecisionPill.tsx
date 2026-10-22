@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, Text } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View, Text } from '../theme/Primitives';
+import { Ionicons } from '../theme/Icons';
 
 interface WeatherDecisionPillProps {
   recommendation?: 'OUTDOOR_SUITABLE' | 'CAUTION' | 'INDOOR_PREFERRED' | string;

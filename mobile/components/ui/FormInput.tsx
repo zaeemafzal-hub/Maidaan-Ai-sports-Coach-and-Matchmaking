@@ -7,8 +7,8 @@ import {
   StyleSheet,
   Pressable,
   TextInputProps,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+} from '../theme/Primitives';
+import { Ionicons } from '../theme/Icons';
 
 interface FormInputProps {
   label: string;

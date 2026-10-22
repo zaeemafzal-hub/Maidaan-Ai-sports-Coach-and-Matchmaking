@@ -9,8 +9,8 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+} from "../theme/Primitives";
+import { SafeAreaView } from "../theme/Primitives";
 import * as ImagePicker from "expo-image-picker";
 import { ArenaHeader } from "../ui/ArenaHeader";
 import { venueService } from "../../services/venueService";

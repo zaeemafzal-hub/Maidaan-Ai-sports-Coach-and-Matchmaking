@@ -9,10 +9,10 @@ import {
   Pressable,
   KeyboardAvoidingView,
   Platform,
-} from "react-native";
+} from "../../components/theme/Primitives";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "../../components/theme/Icons";
 import { ArenaBadge } from "../../components/ui/ArenaBadge";
 import { AmbientGlowOverlay } from "../../components/ui/AmbientCanvas";
 import { useAuthStore } from "../../store/useAuthStore";
@@ -426,7 +426,7 @@ export default function AICoachScreen() {
           <Pressable
             onPress={() => router.push("/concierge")}
             accessibilityRole="button"
-            accessibilityLabel="Open Maidaan Sports Concierge"
+            accessibilityLabel="Open Your Assistant"
             className="min-h-[44px] px-3.5 py-2 rounded-full bg-[#E85D26]/15 border border-[#E85D26]/40 flex-row items-center active:bg-[#E85D26]/30 mr-2 shadow-sm"
           >
             <Ionicons name="sparkles" size={14} color="#E85D26" />
@@ -434,7 +434,7 @@ export default function AICoachScreen() {
               style={{ color: "#E85D26" }}
               className="text-[#E85D26] text-xs font-bold uppercase tracking-wider ml-1.5"
             >
-              Concierge
+              Assistant
             </Text>
           </Pressable>
 

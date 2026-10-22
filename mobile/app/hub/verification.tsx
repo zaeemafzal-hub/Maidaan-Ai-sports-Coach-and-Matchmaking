@@ -7,10 +7,10 @@ import {
   Pressable,
   ActivityIndicator,
   RefreshControl,
-} from "react-native";
+} from "../../components/theme/Primitives";
 
 import { router, useFocusEffect } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "../../components/theme/Icons";
 import { ArenaHeader } from "../../components/ui/ArenaHeader";
 import { PrimaryButton } from "../../components/ui/PrimaryButton";
 import { useAuthStore } from "../../store/useAuthStore";

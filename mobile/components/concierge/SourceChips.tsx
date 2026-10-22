@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, Text } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View, Text } from '../theme/Primitives';
+import { Ionicons } from '../theme/Icons';
 import { SourceMetadata } from '../../services/agentService';
 
 interface SourceChipsProps {

@@ -8,16 +8,17 @@ import {
   KeyboardAvoidingView,
   Platform,
   Image,
-} from "react-native";
+} from "../../components/theme/Primitives";
 
 import { router } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "../../components/theme/Icons";
 import { authService } from "../../services/authService";
 import { FormInput } from "../../components/ui/FormInput";
 import { PrimaryButton } from "../../components/ui/PrimaryButton";
 import { ArenaHeader } from "../../components/ui/ArenaHeader";
 import { IMAGES } from "../../constants/images";
 import { completeSignIn } from "../../services/completeSignIn";
+import {VerificationResend} from '../../components/ui/VerificationResend';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
@@ -167,6 +168,7 @@ export default function LoginScreen() {
                 </Text>
               </View>
             )}
+            {errors.general && /confirm|verify your email/i.test(errors.general) && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) ? <VerificationResend email={email} /> : null}
 
             <View className="space-y-4">
               <FormInput

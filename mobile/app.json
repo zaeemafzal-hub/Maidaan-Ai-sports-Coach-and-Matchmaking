@@ -6,7 +6,7 @@
     "scheme": "maidaan",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "dark",
+    "userInterfaceStyle": "automatic",
     "platforms": [
       "ios",
       "android",
@@ -20,7 +20,7 @@
       }
     },
     "android": {
-      "versionCode": 2,
+      "versionCode": 3,
       "adaptiveIcon": {
         "backgroundColor": "#050706",
         "foregroundImage": "./assets/android-icon-foreground.png",

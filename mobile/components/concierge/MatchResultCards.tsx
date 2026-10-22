@@ -1,7 +1,7 @@
 import React from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Text, Pressable } from '../theme/Primitives';
 import { router } from 'expo-router';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '../theme/Icons';
 import { AgentMatchData } from '../../services/agentService';
 
 interface MatchResultCardsProps {

@@ -10,10 +10,10 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-} from "react-native";
+} from "../components/theme/Primitives";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "../components/theme/Icons";
 import { useAuthStore } from "../store/useAuthStore";
 import { assistantHistory, useAssistantThread } from "../store/useAssistantHistory";
 import type { ConciergeMessage } from "../types/assistantHistory";
@@ -107,7 +107,7 @@ export default function ConciergeScreen() {
           <View className="flex-1">
             <View className="flex-row items-center">
               <Text className="text-white text-base font-black uppercase tracking-tight mr-1.5">
-                Maidaan Concierge
+                Your Assistant
               </Text>
               <View className="w-2 h-2 rounded-full bg-[#E85D26]" />
             </View>
@@ -142,17 +142,17 @@ export default function ConciergeScreen() {
           }}
           keyboardShouldPersistTaps="handled"
         >
-          {history.loading && <Text className="text-[#A0A5AD] text-xs mb-3">Syncing your Concierge history...</Text>}
+          {history.loading && <Text className="text-[#A0A5AD] text-xs mb-3">Syncing your Assistant history...</Text>}
           {history.error && (
             <View className="p-3 mb-3 rounded-xl bg-[#141518]/25 border border-[#E85D26]/30">
               <Text className="text-[#A0A5AD] text-xs">{history.error}</Text>
-              <Pressable accessibilityRole="button" accessibilityLabel="Retry loading Concierge history" disabled={history.loading} onPress={() => { if (userId) void assistantHistory.load(userId, "concierge", "main"); }} className="min-h-[44px] justify-center">
+              <Pressable accessibilityRole="button" accessibilityLabel="Retry loading Assistant history" disabled={history.loading} onPress={() => { if (userId) void assistantHistory.load(userId, "concierge", "main"); }} className="min-h-[44px] justify-center">
                 <Text className="text-[#E85D26] text-xs font-bold">Retry sync</Text>
               </Pressable>
             </View>
           )}
           {history.nextBefore && (
-            <Pressable accessibilityRole="button" accessibilityLabel="Load earlier Concierge messages" disabled={history.loading} onPress={() => { if (userId) void assistantHistory.load(userId, "concierge", "main", true); }} className="min-h-[44px] items-center justify-center mb-3">
+            <Pressable accessibilityRole="button" accessibilityLabel="Load earlier Assistant messages" disabled={history.loading} onPress={() => { if (userId) void assistantHistory.load(userId, "concierge", "main", true); }} className="min-h-[44px] items-center justify-center mb-3">
               <Text className="text-[#E85D26] text-xs font-bold">Load earlier messages</Text>
             </Pressable>
           )}
@@ -229,7 +229,7 @@ export default function ConciergeScreen() {
                         <View className="flex-row items-center">
                           <Ionicons name="sparkles" size={12} color="#E85D26" />
                           <Text className="text-[#E85D26] text-[10px] font-bold uppercase tracking-wider ml-1">
-                            Maidaan Concierge
+                            Your Assistant
                           </Text>
                         </View>
                         <Text className="text-[#5C616A] text-[10px] font-normal">
@@ -313,7 +313,7 @@ export default function ConciergeScreen() {
           )}
 
           {history.failedTurn && (
-            <Pressable accessibilityRole="button" accessibilityLabel="Retry Concierge question" disabled={isLoading || isHistoryBusy} onPress={() => { if (userId && history.failedTurn) void assistantHistory.send(userId, "concierge", "main", history.failedTurn.text, history.failedTurn.clientMessageId); }} className="min-h-[44px] items-center justify-center mb-3">
+            <Pressable accessibilityRole="button" accessibilityLabel="Retry Assistant question" disabled={isLoading || isHistoryBusy} onPress={() => { if (userId && history.failedTurn) void assistantHistory.send(userId, "concierge", "main", history.failedTurn.text, history.failedTurn.clientMessageId); }} className="min-h-[44px] items-center justify-center mb-3">
               <Text className="text-[#E85D26] text-xs font-bold">Retry last question</Text>
             </Pressable>
           )}
@@ -346,7 +346,7 @@ export default function ConciergeScreen() {
               onPress={() => handleSendMessage()}
               disabled={isLoading || isHistoryBusy || !inputText.trim()}
               accessibilityRole="button"
-              accessibilityLabel="Send message to Maidaan Concierge"
+              accessibilityLabel="Send message to Your Assistant"
               className={`w-11 h-11 rounded-xl items-center justify-center ${
                 inputText.trim() && !isLoading && !isHistoryBusy
                   ? "bg-[#E85D26] active:bg-[#D04E1B]"

@@ -1,6 +1,6 @@
 import { ArtworkHero } from "../ui/Artwork";
 import React, { useCallback, useState } from "react";
-import { Text, View, useWindowDimensions } from "react-native";
+import { Text, View, useWindowDimensions } from "../theme/Primitives";
 import { router, useFocusEffect } from "expo-router";
 import { useAuthStore } from "../../store/useAuthStore";
 import { FormInput } from "../ui/FormInput";

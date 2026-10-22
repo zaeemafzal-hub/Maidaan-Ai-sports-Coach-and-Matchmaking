@@ -32,6 +32,11 @@ test('public signup rejects short passwords and administrator accounts before co
   const short = response();
   await AuthController.register({ body: { name: 'Athlete', email: 'a@example.com', password: '1234567' } }, short.res);
   assert.equal(short.result.status, 400);
+  for (const password of ['password123','PASSWORD1!','Password12','Aa1!aaa']) {
+    const weak = response();
+    await AuthController.register({body:{name:'Athlete',email:'a@example.com',password}}, weak.res);
+    assert.equal(weak.result.status,400);
+  }
   const admin = response();
   await AuthController.register({ body: { name: 'Athlete', email: 'a@example.com', password: 'Password123!', role: 'ADMIN' } }, admin.res);
   assert.equal(admin.result.status, 403);

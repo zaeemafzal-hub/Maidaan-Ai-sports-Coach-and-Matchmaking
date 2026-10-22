@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { Text, Platform } from "react-native";
+import { Text, Platform } from "../../components/theme/Primitives";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import {

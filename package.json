@@ -15,6 +15,8 @@
     "test:auth": "node --test scripts/auth-flow.test.mjs",
     "test:maps": "node --test scripts/maps-bridge.test.mjs",
     "test:cloud": "node --test scripts/cloud-deployment.test.mjs",
+    "test:appearance": "node --test scripts/appearance.test.mjs",
+    "test:loading": "node --test scripts/screen-loading.test.mjs",
     "start": "npm --prefix mobile start",
     "android": "npm --prefix mobile run android",
     "ios": "npm --prefix mobile run ios",

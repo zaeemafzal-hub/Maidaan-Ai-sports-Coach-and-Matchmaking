@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { Platform, View } from "react-native";
+import { Platform, View } from "../theme/Primitives";
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import { VenueMapProps } from "./VenueMap.types";
 export default function VenueMap({

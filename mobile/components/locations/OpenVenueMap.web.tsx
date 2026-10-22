@@ -1,10 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text } from "react-native";
+import { View, Text } from "../theme/Primitives";
 import { getBaseUrl } from "../../services/api";
 import { VenueMapProps } from "./VenueMap.types";
 import { handleMapMessage, mapData } from "./mapMessages";
 import { styles } from "../venues/VenueUI";
+import {useAppearanceStore} from '../../store/useAppearanceStore';
 export default function OpenVenueMap(props: VenueMapProps) {
+  const theme=useAppearanceStore(state=>state.resolved);
   const frame = useRef<HTMLIFrameElement>(null),
     callbacks = useRef(props),
     [ready, setReady] = useState(false),
@@ -42,7 +44,7 @@ export default function OpenVenueMap(props: VenueMapProps) {
   useEffect(() => {
     if (ready)
       frame.current?.contentWindow?.postMessage(
-        mapData(props),
+        mapData(props,theme),
         new URL(url, window.location.href).origin,
       );
   }, [
@@ -52,6 +54,7 @@ export default function OpenVenueMap(props: VenueMapProps) {
     props.center?.longitude,
     !!props.onPick,
     url,
+    theme,
   ]);
   return (
     <View style={{ gap: 8 }}>

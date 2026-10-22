@@ -8,9 +8,11 @@ const source = fs.readFileSync(new URL('../mobile/services/authService.ts', impo
 const code = ts.transpileModule(source, { compilerOptions: {
   module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true,
 } }).outputText;
-const user = { id: 'test-user', email: 'athlete@example.com', created_at: '2026-10-17', user_metadata: { full_name: 'Test Athlete', role: 'ADMIN' } };
+const user = { id: 'test-user', email: 'athlete@example.com', email_confirmed_at: '2026-10-17', created_at: '2026-10-17', user_metadata: { full_name: 'Test Athlete', role: 'ADMIN' } };
 const session = { access_token: 'test-access', refresh_token: 'test-refresh' };
 const me = { user: { id: user.id, name: 'Test Athlete', roles: ['PLAYER'] }, roles: ['PLAYER'], onboarding: { player: false, captain: false, hubOwner: false } };
+const policy = {};
+vm.runInNewContext(ts.transpileModule(fs.readFileSync(new URL('../mobile/utils/passwordPolicy.ts', import.meta.url),'utf8'), {compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,{exports:policy});
 
 function runtime({ platform = 'web', expoGo = false, configured = true, auth = {}, get, post, browserResult } = {}) {
   const calls = { tokens: [], redirects: [], browser: [], init: [], signup: [], oauth: [], exchanges: [] };
@@ -39,6 +41,7 @@ function runtime({ platform = 'web', expoGo = false, configured = true, auth = {
       } };
       if (name === './storage') return { AuthStorage: { setToken: async (token) => calls.tokens.push(token), removeToken: async () => calls.tokens.push(null) } };
       if (name === '../lib/supabase') return { supabase: { auth: authMock }, isSupabaseConfigured: configured };
+      if (name === '../utils/passwordPolicy') return policy;
       throw new Error(`Unexpected import ${name}`);
     },
   });
@@ -64,13 +67,27 @@ test('missing configuration rejects login, signup and Google instead of syntheti
   await assert.rejects(service.signInWithGoogle(), /not configured/);
 });
 
-test('signup loads the server profile when the project returns an immediate session', async () => {
+test('client rejects weak signup and reset passwords before contacting authentication', async () => {
+  const {service,calls}=runtime();
+  for (const password of ['password123','PASSWORD1!','Password12','Aa1!aaa']) {
+    await assert.rejects(service.register({name:'Athlete',email:user.email,password}), /special character/);
+    await assert.rejects(service.updatePassword(password), /special character/);
+  }
+  assert.equal(calls.signup.length,0);
+});
+
+test('a session for an unverified email cannot load a profile or retain a token', async () => {
+  const {service,calls}=runtime({auth:{signInWithPassword:async()=>({data:{user:{...user,email_confirmed_at:null},session},error:null})}});
+  await assert.rejects(service.login({email:user.email,password:'Password123!'}),/verify your email/);
+  assert.equal(calls.init.length,0);
+  assert.deepEqual(calls.tokens,[null]);
+});
+
+test('signup rejects provider auto-confirmation instead of granting unverified access', async () => {
   const { service, calls } = runtime({ auth: { signUp: async () => ({ data: { user, session }, error: null }) } });
-  const result = await service.register({ name: 'Athlete', email: user.email, password: 'Password123!' });
-  assert.equal(result.needsEmailConfirmation, false);
-  assert.equal(result.token, session.access_token);
-  assert.equal(result.user.id, me.user.id);
-  assert.equal(calls.tokens[0], session.access_token);
+  await assert.rejects(service.register({ name: 'Athlete', email: user.email, password: 'Password123!' }), /verification must be enabled/);
+  assert.equal(calls.init.length, 0);
+  assert.equal(calls.tokens.at(-1), null);
 });
 
 test('signup and password errors propagate without a second registration attempt', async () => {
@@ -78,7 +95,7 @@ test('signup and password errors propagate without a second registration attempt
     signUp: async () => ({ data: {}, error: { message: 'Email rate limit exceeded' } }),
     signInWithPassword: async () => ({ data: {}, error: { message: 'Invalid login credentials' } }),
   } });
-  await assert.rejects(service.register({ name: 'Athlete', email: user.email, password: 'password123' }), /rate limit/);
+  await assert.rejects(service.register({ name: 'Athlete', email: user.email, password: 'Password123!' }), /rate limit/);
   await assert.rejects(service.login({ email: user.email, password: 'wrong' }), /Invalid login/);
 });
 

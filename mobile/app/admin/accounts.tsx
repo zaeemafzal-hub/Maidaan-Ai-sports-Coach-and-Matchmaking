@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from "react";
-import { Text, View } from "react-native";
+import { Text, View } from "../../components/theme/Primitives";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useAuthStore } from "../../store/useAuthStore";
 import {

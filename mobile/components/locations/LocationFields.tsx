@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Text, View, ScrollView } from "react-native";
+import { Text, View, ScrollView } from "../theme/Primitives";
 import { FormInput } from "../ui/FormInput";
 import { Action, Choices, styles } from "../venues/VenueUI";
 import { locationService, ServiceCity } from "../../services/locationService";

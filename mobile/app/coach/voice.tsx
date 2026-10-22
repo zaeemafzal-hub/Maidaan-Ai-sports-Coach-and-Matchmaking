@@ -1,10 +1,10 @@
 import { ArtworkScrollView as ThemedScroll } from "../../components/ui/Artwork";
 import { ThemedScreen } from "../../components/ui/ThemedScreen";
 import React, { useState, useEffect, useRef } from "react";
-import { View, Text, Pressable, ActivityIndicator } from "react-native";
+import { View, Text, Pressable, ActivityIndicator } from "../../components/theme/Primitives";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "../../components/theme/Icons";
 import * as Speech from "expo-speech";
 import { ArenaBadge } from "../../components/ui/ArenaBadge";
 import { useAuthStore } from "../../store/useAuthStore";

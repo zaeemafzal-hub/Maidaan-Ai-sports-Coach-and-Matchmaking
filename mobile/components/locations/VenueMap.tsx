@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text } from "react-native";
+import { View, Text } from "../theme/Primitives";
 import { styles } from "../venues/VenueUI";
 import { VenueMapProps } from "./VenueMap.types";
 import GoogleVenueMap from "./GoogleVenueMap";

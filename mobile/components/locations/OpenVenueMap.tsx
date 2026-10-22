@@ -1,11 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text } from "react-native";
+import { View, Text } from "../theme/Primitives";
 import { WebView } from "react-native-webview";
 import { getBaseUrl } from "../../services/api";
 import { VenueMapProps } from "./VenueMap.types";
 import { handleMapMessage, mapData } from "./mapMessages";
 import { styles } from "../venues/VenueUI";
+import {useAppearanceStore} from '../../store/useAppearanceStore';
 export default function OpenVenueMap(props: VenueMapProps) {
+  const theme=useAppearanceStore(state=>state.resolved);
   const ref = useRef<WebView>(null),
     [ready, setReady] = useState(false),
     [error, setError] = useState("");
@@ -22,7 +24,7 @@ export default function OpenVenueMap(props: VenueMapProps) {
   useEffect(() => {
     if (ready)
       ref.current?.injectJavaScript(
-        `window.maidaanMapUpdate&&window.maidaanMapUpdate(${JSON.stringify(mapData(props)).replace(/</g, "\\u003c")});true;`,
+        `window.maidaanMapUpdate&&window.maidaanMapUpdate(${JSON.stringify(mapData(props,theme)).replace(/</g, "\\u003c")});true;`,
       );
   }, [
     ready,
@@ -30,6 +32,7 @@ export default function OpenVenueMap(props: VenueMapProps) {
     props.center?.latitude,
     props.center?.longitude,
     !!props.onPick,
+    theme,
   ]);
   return (
     <View style={{ gap: 8 }}>

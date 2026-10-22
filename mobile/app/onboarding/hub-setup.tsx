@@ -10,10 +10,10 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-} from "react-native";
+} from "../../components/theme/Primitives";
 
 import { router, useLocalSearchParams } from "expo-router";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "../../components/theme/Icons";
 import { useAuthStore } from "../../store/useAuthStore";
 import { Sport } from "../../types";
 import { profileService } from "../../services/profileService";

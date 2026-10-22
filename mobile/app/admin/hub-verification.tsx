@@ -10,10 +10,10 @@ import {
   TextInput,
   ActivityIndicator,
   Alert,
-} from "react-native";
+} from "../../components/theme/Primitives";
 
 import { router, useFocusEffect } from "expo-router";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "../../components/theme/Icons";
 import { useAuthStore } from "../../store/useAuthStore";
 import { ArenaHeader } from "../../components/ui/ArenaHeader";
 import { ArenaBadge } from "../../components/ui/ArenaBadge";

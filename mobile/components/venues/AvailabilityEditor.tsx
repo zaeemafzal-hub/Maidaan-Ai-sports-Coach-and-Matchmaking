@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from "react";
-import { Text, View } from "react-native";
+import { Text, View } from "../theme/Primitives";
 import { useFocusEffect } from "expo-router";
 import { FormInput } from "../ui/FormInput";
 import { useAuthStore } from "../../store/useAuthStore";

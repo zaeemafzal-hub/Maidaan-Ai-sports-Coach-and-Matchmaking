@@ -56,7 +56,7 @@ export async function verifyAuthToken(token: string): Promise<AuthenticatedConte
       // Official Supabase server-side token verification
       const { data, error } = await (supabaseAdmin.auth as any).getUser(token);
 
-      if (error || !data?.user) {
+      if (error || !data?.user || !data.user.email || !data.user.email_confirmed_at) {
         return null;
       }
 

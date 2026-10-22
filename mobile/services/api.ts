@@ -2,6 +2,7 @@ import { resolveBackendUrl } from '../utils/backendUrl';
 import Constants from 'expo-constants';
 import { AuthStorage } from './storage';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { useScreenLoadingStore } from '../store/useScreenLoadingStore';
 
 export interface ApiResponse<T = unknown> {
   data?: T;
@@ -79,6 +80,7 @@ class ApiClient {
       body?: unknown;
       headers?: Record<string, string>;
       _isRetry?: boolean;
+      _loadingRoute?: string;
       expectedUserId?: string;
     } = {}
   ): Promise<ApiResponse<T>> {
@@ -86,6 +88,8 @@ class ApiClient {
     const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
     const baseUrl = this.getBaseUrl();
     const url = `${baseUrl}${path}`;
+    const loadingRoute = options._loadingRoute ?? useScreenLoadingStore.getState().route;
+    const finishLoading = useScreenLoadingStore.getState().begin(loadingRoute);
 
     // Use AbortController timeout to guarantee requests never hang mobile UI indefinitely
     const controller = new AbortController();
@@ -111,7 +115,6 @@ class ApiClient {
       }
 
       const res = await fetch(url, config);
-      clearTimeout(timer);
       const status = res.status;
 
       // Handle 401 with a single session refresh attempt if not already retried
@@ -122,6 +125,7 @@ class ApiClient {
             return await this.request<T>(endpoint, {
               ...options,
               _isRetry: true,
+              _loadingRoute: loadingRoute,
             });
           }
         } catch {
@@ -153,7 +157,6 @@ class ApiClient {
         data: json as T,
       };
     } catch (err: unknown) {
-      clearTimeout(timer);
       const isAbort = (err as any)?.name === 'AbortError';
       return {
         status: 0,
@@ -162,6 +165,9 @@ class ApiClient {
           : (err instanceof Error ? err.message : undefined) ||
             'Network connection error. Please verify your connection to the Maidaan backend.',
       };
+    } finally {
+      clearTimeout(timer);
+      finishLoading();
     }
   }
 

@@ -7,8 +7,9 @@ import {
   Text,
   View,
   useWindowDimensions,
-} from "react-native";
+} from "../theme/Primitives";
 import { ARTWORK, ArtworkKind } from "../../constants/artwork";
+import {useAppearanceStore} from '../../store/useAppearanceStore';
 
 export function ArtworkBackground({
   kind,
@@ -19,6 +20,8 @@ export function ArtworkBackground({
   dim?: number;
   zoom?: boolean;
 }) {
+  const light=useAppearanceStore(state=>state.resolved==='light');
+  const overlayDim=light?Math.max(dim,0.92):dim;
   return (
     <View
       pointerEvents="none"
@@ -38,7 +41,7 @@ export function ArtworkBackground({
       <View
         style={[
           StyleSheet.absoluteFill,
-          { backgroundColor: `rgba(12,13,14,${dim})` },
+          { backgroundColor: `rgba(12,13,14,${overlayDim})` },
         ]}
       />
     </View>

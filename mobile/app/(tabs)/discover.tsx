@@ -8,10 +8,10 @@ import {
   Pressable,
   StyleSheet,
   useWindowDimensions,
-} from "react-native";
+} from "../../components/theme/Primitives";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "../../components/theme/Icons";
 import { MatchFixtureCard } from "../../components/ui/MatchFixtureCard";
 import { VenueBrowseCard } from "../../components/venues/VenueBrowseCard";
 import { SkeletonCard } from "../../components/ui/SkeletonCard";
@@ -21,6 +21,8 @@ import { Sport } from "../../types";
 import { weatherService, WeatherOutlook } from "../../services/weatherService";
 import { WeatherCompactBar } from "../../components/ui/WeatherCompactBar";
 import { matchService } from "../../services/matchService";
+import {GuideButton} from '../../components/guide/AppGuide';
+import {AppearanceButton} from '../../components/theme/AppearanceControls';
 
 type SportFilter = "ALL" | "CRICKET" | "BADMINTON" | "PADEL" | "FOOTBALL";
 
@@ -172,6 +174,8 @@ export default function DiscoverScreen() {
             <Text style={ui.locationText}>Lahore, Pakistan</Text>
           </View>
           <View style={ui.actions}>
+            <AppearanceButton />
+            <GuideButton compact />
             <Pressable
               onPress={handleNotifications}
               accessibilityRole="button"
@@ -196,6 +200,19 @@ export default function DiscoverScreen() {
           title="Find your next great game."
           subtitle="Find your people. Get back to playing."
         />
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Open Your Assistant"
+          onPress={() => router.push("/concierge")}
+          style={[ui.concierge, { borderColor: "rgba(232,93,38,0.45)", padding: 18 }]}
+        >
+          <Ionicons name="sparkles" size={26} color="#E85D26" />
+          <View style={{ flex: 1, gap: 4 }}>
+            <Text style={[ui.conciergeTitle, { fontSize: 18 }]}>Your Assistant</Text>
+            <Text style={ui.caption}>Find a game, explore venues or ask for help.</Text>
+          </View>
+          <Ionicons name="arrow-forward" size={20} color="#E85D26" />
+        </Pressable>
         <View
           style={{
             flexDirection: wide ? "row" : "column",
@@ -303,19 +320,7 @@ export default function DiscoverScreen() {
               <Ionicons name="arrow-forward" size={16} color="#FF986B" />
             </Pressable>
             <WeatherCompactBar weather={weather} loading={weatherLoading} />
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Ask Maidaan Sports Concierge"
-              onPress={() => router.push("/concierge")}
-              style={ui.concierge}
-            >
-              <Ionicons name="sparkles-outline" size={22} color="#E85D26" />
-              <View style={{ flex: 1, gap: 4 }}>
-                <Text style={ui.conciergeTitle}>Need help planning?</Text>
-                <Text style={ui.caption}>Ask Maidaan Concierge</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={17} color="#E85D26" />
-            </Pressable>
+
           </View>
         </View>
       </ArtworkScrollView>

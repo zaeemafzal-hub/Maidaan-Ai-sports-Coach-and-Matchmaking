@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { View, Text, Pressable } from "react-native";
-import { MaterialCommunityIcons, Ionicons } from "@expo/vector-icons";
+import { View, Text, Pressable } from "../theme/Primitives";
+import { MaterialCommunityIcons, Ionicons } from "../theme/Icons";
 import { Sport } from "../../types";
 
 interface SportCardProps {

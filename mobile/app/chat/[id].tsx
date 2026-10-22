@@ -8,10 +8,10 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-} from "react-native";
+} from "../../components/theme/Primitives";
 
 import { useLocalSearchParams, router, useFocusEffect } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "../../components/theme/Icons";
 import { useAuthStore } from "../../store/useAuthStore";
 import { chatService, ChatMessage, ChatRoom } from "../../services/chatService";
 import { socketService } from "../../services/socketService";

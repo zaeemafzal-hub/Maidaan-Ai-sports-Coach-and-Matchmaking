@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Image, Text, View } from "react-native";
+import { Image, Text, View } from "../theme/Primitives";
 import * as ImagePicker from "expo-image-picker";
 import { api } from "../../services/api";
 import { responseData } from "../../services/venueService";

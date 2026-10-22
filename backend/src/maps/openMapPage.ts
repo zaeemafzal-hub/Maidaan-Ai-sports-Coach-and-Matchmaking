@@ -9,6 +9,7 @@ export function openMapPage() {
   const tile = JSON.stringify(tileUrl).replace(/</g, "\\u003c");
   return `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><meta name="referrer" content="strict-origin-when-cross-origin">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous">
+<style>.theme-light body,.theme-light #map{background:#f7f8f5}.theme-light #status{background:#fff;color:#17251d}.theme-light .leaflet-tile-pane{filter:none}.theme-light .leaflet-control-attribution{background:#fff!important;color:#526057}.theme-light .leaflet-control-attribution a{color:#a83c12}.theme-light .leaflet-bar a{background:#fff;color:#17251d}.theme-light .leaflet-bar a:hover{background:#ecefe8}</style>
 <style>html,body,#map{height:100%;width:100%;margin:0;background:#141518;font:13px system-ui}#status{position:absolute;z-index:1000;top:8px;left:45px;right:8px;background:#141518;color:#fff;padding:8px;border-radius:8px}.leaflet-tile-pane{filter:invert(100%) hue-rotate(180deg) brightness(.85) contrast(.9)}.leaflet-control-attribution{font-size:10px;background:#202126!important;color:#ddd}.leaflet-control-attribution a{color:#ffac83}.leaflet-bar a{background:#202126;color:#fff}.leaflet-bar a:hover{background:#35363b}</style></head><body><div id="map" aria-label="OpenStreetMap venues"></div><div id="status">Loading OpenStreetMap…</div>
 <script>
 function send(data){data.source='maidaan-open-map';if(window.ReactNativeWebView)window.ReactNativeWebView.postMessage(JSON.stringify(data));else if(window.parent!==window)window.parent.postMessage(data,'*');}
@@ -28,6 +29,7 @@ if(window.L){
   tiles.on('tileerror',function(){document.getElementById('status').textContent='Some map tiles could not load. Check your connection.';document.getElementById('status').style.display='block';});
   window.maidaanMapUpdate=function(data){
     if(!data||!Array.isArray(data.points))return;
+    document.documentElement.classList.toggle('theme-light',data.theme==='light');
     layers.clearLayers();canPick=!!data.canPick;
     var points=data.points.filter(function(p){return Number.isFinite(p.latitude)&&Number.isFinite(p.longitude)&&Math.abs(p.latitude)<=90&&Math.abs(p.longitude)<=180;});
     points.forEach(function(point){

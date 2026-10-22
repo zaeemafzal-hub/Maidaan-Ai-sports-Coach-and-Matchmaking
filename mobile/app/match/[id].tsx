@@ -8,10 +8,11 @@ import {
   Image,
   ActivityIndicator,
   StyleSheet,
-} from "react-native";
+  Platform,
+} from "../../components/theme/Primitives";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useLocalSearchParams, router } from "expo-router";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { useLocalSearchParams, router, Link } from "expo-router";
+import { Ionicons, MaterialCommunityIcons } from "../../components/theme/Icons";
 import { IMAGES } from "../../constants/images";
 import { MatchSlotItem } from "../../constants/matches";
 import { useAuthStore } from "../../store/useAuthStore";
@@ -23,6 +24,8 @@ import { matchService } from "../../services/matchService";
 import { joinRequestService } from "../../services/joinRequestService";
 import { chatService } from "../../services/chatService";
 import { AmbientGlowOverlay } from "../../components/ui/AmbientCanvas";
+import {MatchVenueCard} from '../../components/venues/MatchVenueCard';
+import {venueMapUrl} from '../../utils/venueLocation';
 
 const getSportPhoto = (sport: Sport) => {
   switch (sport) {
@@ -384,7 +387,9 @@ export default function MatchDetailsScreen() {
               >
                 •
               </Text>
-              <Ionicons name="location-outline" size={13} color="#A0A5AD" />
+              <Link href={venueMapUrl(match.groundName, match.area)} target="_blank" rel="noopener noreferrer" asChild>
+                <Pressable {...Platform.select({web:{hrefAttrs:{target:'_blank',rel:'noopener noreferrer'}},default:{}})} accessibilityRole="link" accessibilityLabel="View match location on map" className="flex-row items-center flex-1 min-h-[44px]">
+              <Ionicons name="location-outline" size={13} color="#E85D26" />
               <Text
                 numberOfLines={1}
                 style={{ color: "#A0A5AD" }}
@@ -392,6 +397,8 @@ export default function MatchDetailsScreen() {
               >
                 {match.area}
               </Text>
+                </Pressable>
+              </Link>
             </View>
           </View>
         </View>
@@ -425,8 +432,10 @@ export default function MatchDetailsScreen() {
 
         {/* Match Details & Context Cards */}
         <View className="px-5 pt-4 space-y-3.5">
+          <MatchVenueCard name={match.groundName} area={match.area} />
           {/* Weather Outlook Card */}
           <WeatherOutlookCard
+            compact
             weather={weather}
             loading={weatherLoading}
             timeContext={`${match.date} • ${match.time}`}

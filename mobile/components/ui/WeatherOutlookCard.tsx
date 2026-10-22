@@ -1,6 +1,6 @@
 import React from "react";
-import { View, Text, ActivityIndicator } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { View, Text, ActivityIndicator } from "../theme/Primitives";
+import { Ionicons } from "../theme/Icons";
 import { WeatherOutlook } from "../../services/weatherService";
 
 interface WeatherOutlookCardProps {
@@ -9,6 +9,7 @@ interface WeatherOutlookCardProps {
   timeContext?: string;
   sport?: string;
   className?: string;
+  compact?: boolean;
 }
 
 export const WeatherOutlookCard: React.FC<WeatherOutlookCardProps> = ({
@@ -17,7 +18,27 @@ export const WeatherOutlookCard: React.FC<WeatherOutlookCardProps> = ({
   timeContext,
   sport,
   className = "",
+  compact = false,
 }) => {
+  if (compact) {
+    const forecast = weather && !weather.isFallback && !/unavailable/i.test(weather.condition) ? weather : null;
+    const advisory = !forecast ? '' : forecast.recommendation === 'OUTDOOR_SUITABLE' ? 'Good for outdoor play' : forecast.recommendation === 'CAUTION' ? 'Check conditions before play' : 'Indoor play preferred';
+    return (
+      <View accessibilityRole="summary" accessibilityLabel={loading ? 'Loading match weather' : forecast ? `${timeContext || 'Match weather'}: ${forecast.temperatureC} degrees, ${forecast.condition}, rain ${forecast.rainProbability} percent. ${advisory}. ${forecast.reason}` : 'Match weather unavailable'} className={`rounded-xl border border-white/[0.08] bg-[#141518]/25 px-3.5 py-3 ${className}`}>
+        <View className="flex-row items-center gap-2">
+          <Ionicons name={forecast ? 'partly-sunny-outline' : 'cloud-offline-outline'} size={18} color="#E85D26" />
+          {loading ? <Text className="text-[#A0A5AD] text-xs">Checking match weather...</Text> : forecast ? (
+            <>
+              <Text className="text-white text-base font-bold">{forecast.temperatureC}°</Text>
+              <Text className="text-[#A0A5AD] text-xs flex-1" numberOfLines={1}>{forecast.condition}</Text>
+              <Text className="text-[#A0A5AD] text-xs">Rain {forecast.rainProbability}%</Text>
+            </>
+          ) : <Text className="text-[#A0A5AD] text-xs">Match weather unavailable</Text>}
+        </View>
+        {!loading && forecast ? <Text className="text-[#A0A5AD] text-[11px] mt-1.5">{advisory} · Forecast for match time</Text> : null}
+      </View>
+    );
+  }
   if (loading) {
     return (
       <View

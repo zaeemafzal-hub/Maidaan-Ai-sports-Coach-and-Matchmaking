@@ -1,9 +1,11 @@
 import React from "react";
 import { Tabs } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import { Platform, useWindowDimensions } from "react-native";
+import { Ionicons } from "../../components/theme/Icons";
+import { Platform, useWindowDimensions } from "../../components/theme/Primitives";
+import {useThemeColors} from '../../components/theme/AppearanceControls';
 
 export default function TabsLayout() {
+  const colors=useThemeColors();
   const { width } = useWindowDimensions();
   const sidebar = Platform.OS === "web" && width >= 1000;
   return (
@@ -21,8 +23,8 @@ export default function TabsLayout() {
           ? { height: 56, maxHeight: 56, marginVertical: 5, borderRadius: 12 }
           : undefined,
         tabBarStyle: {
-          backgroundColor: "#0C0D0E",
-          borderTopColor: "rgba(255, 255, 255, 0.08)",
+          backgroundColor: colors.canvas,
+          borderTopColor: colors.border,
           borderTopWidth: 1,
           height: sidebar ? undefined : Platform.OS === "ios" ? 88 : 72,
           width: sidebar ? 190 : undefined,
@@ -32,7 +34,7 @@ export default function TabsLayout() {
           paddingTop: sidebar ? 36 : 6,
         },
         tabBarActiveTintColor: "#E85D26",
-        tabBarInactiveTintColor: "#5C616A",
+        tabBarInactiveTintColor: colors.secondary,
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: "700",

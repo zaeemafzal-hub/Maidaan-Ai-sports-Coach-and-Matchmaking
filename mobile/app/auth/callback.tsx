@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Platform, Pressable, Text } from "react-native";
+import { ActivityIndicator, Platform, Pressable, Text } from "../../components/theme/Primitives";
 import * as Linking from "expo-linking";
 import { router } from "expo-router";
 import { authService } from "../../services/authService";

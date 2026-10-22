@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, Pressable, ActivityIndicator } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { View, Text, Pressable, ActivityIndicator } from "../theme/Primitives";
+import { Ionicons } from "../theme/Icons";
 import {
   CaptainActionSummary,
   agentService,
@@ -93,7 +93,7 @@ export const CaptainConfirmationCard: React.FC<
         });
       }
     } catch {
-      setErrorMessage("Maidaan Concierge is temporarily unavailable.");
+      setErrorMessage("Your Assistant is temporarily unavailable.");
     } finally {
       setIsLoading(false);
     }

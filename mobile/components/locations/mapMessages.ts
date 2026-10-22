@@ -1,5 +1,5 @@
 import { VenueMapProps } from "./VenueMap.types";
-export function mapData(props: VenueMapProps) {
+export function mapData(props: VenueMapProps, theme:'dark'|'light'='dark') {
   return {
     kind: "maidaan-map-update",
     points: props.points,
@@ -8,6 +8,7 @@ export function mapData(props: VenueMapProps) {
       longitude: props.center?.longitude ?? 74.3587,
     },
     canPick: !!props.onPick,
+    theme,
   };
 }
 export function handleMapMessage(

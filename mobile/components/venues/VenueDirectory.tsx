@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Text } from "react-native";
+import { Text } from "../theme/Primitives";
 import { router, useFocusEffect } from "expo-router";
 import { FormInput } from "../../components/ui/FormInput";
 import {
@@ -24,12 +24,14 @@ export default function VenueDirectory({
   sportFilter,
   initialSport,
   tabbed = false,
+  initialSearch = '',
 }: {
   embedded?: boolean;
   initialView?: string;
   sportFilter?: string;
   initialSport?: string;
   tabbed?: boolean;
+  initialSearch?: string;
 }) {
   const [areaQuery, setAreaQuery] = useState(""),
     [areaTerm, setAreaTerm] = useState("");
@@ -38,8 +40,8 @@ export default function VenueDirectory({
     [view, setView] = useState(initialView),
     [cities, setCities] = useState<ServiceCity[]>([]);
   const [hubs, setHubs] = useState<Venue[]>([]),
-    [search, setSearch] = useState(""),
-    [term, setTerm] = useState(""),
+    [search, setSearch] = useState(initialSearch),
+    [term, setTerm] = useState(initialSearch.trim()),
     [sport, setSport] = useState(
       initialSport && SPORTS.includes(initialSport as any)
         ? initialSport
@@ -49,6 +51,7 @@ export default function VenueDirectory({
     [error, setError] = useState<string | null>(null),
     [reload, setReload] = useState(0);
   const selectedSport = sportFilter ?? sport;
+  useEffect(() => {setSearch(initialSearch);setTerm(initialSearch.trim());}, [initialSearch]);
   useEffect(() => {
     setView(initialView);
   }, [initialView]);

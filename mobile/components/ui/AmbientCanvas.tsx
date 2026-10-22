@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, ViewStyle } from 'react-native';
+import { View, StyleSheet, ViewStyle } from '../theme/Primitives';
 
 interface AmbientCanvasProps {
   children?: React.ReactNode;

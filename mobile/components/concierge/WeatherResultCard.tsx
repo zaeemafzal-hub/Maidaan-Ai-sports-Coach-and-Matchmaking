@@ -1,6 +1,6 @@
 import React from "react";
-import { View, Text } from "react-native";
-import { Ionicons, Feather } from "@expo/vector-icons";
+import { View, Text } from "../theme/Primitives";
+import { Ionicons, Feather } from "../theme/Icons";
 import { AgentWeatherData } from "../../services/agentService";
 import { WeatherDecisionPill } from "../ui/WeatherDecisionPill";
 

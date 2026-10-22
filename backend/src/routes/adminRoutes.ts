@@ -8,6 +8,7 @@ const router = Router();
 
 // All Admin routes require authentication and trusted ADMIN role
 router.use(authenticateSupabaseUser, authorizeRoles('ADMIN'));
+router.use((_req,res,next)=>{res.setHeader('Cache-Control','no-store');next();});
 router.get('/booking-refunds',BookingController.refunds);
 router.post('/booking-refunds/:id/record',BookingController.refundRecorded);
 router.get('/accounts', AccountAdminController.list);

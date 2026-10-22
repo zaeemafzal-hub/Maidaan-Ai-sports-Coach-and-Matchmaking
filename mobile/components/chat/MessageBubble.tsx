@@ -1,6 +1,6 @@
 import React from "react";
-import { View, Text, Pressable, ActivityIndicator } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { View, Text, Pressable, ActivityIndicator } from "../theme/Primitives";
+import { Ionicons } from "../theme/Icons";
 import { ChatMessage } from "../../services/chatService";
 
 export interface OptimisticChatMessage extends ChatMessage {

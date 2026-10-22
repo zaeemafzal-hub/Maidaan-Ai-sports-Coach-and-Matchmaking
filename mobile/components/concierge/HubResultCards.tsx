@@ -1,7 +1,7 @@
 import React from "react";
-import { View, Text } from "react-native";
+import { View, Text } from "../theme/Primitives";
 import { router } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "../theme/Icons";
 import { AgentHubData } from "../../services/agentService";
 
 interface HubResultCardsProps {

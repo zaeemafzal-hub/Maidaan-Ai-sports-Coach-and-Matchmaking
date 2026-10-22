@@ -1,7 +1,9 @@
 import React from "react";
-import { View, Text, Pressable } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { View, Text, Pressable } from "../theme/Primitives";
+import { Ionicons } from "../theme/Icons";
 import { router } from "expo-router";
+import {GuideButton} from '../guide/AppGuide';
+import {AppearanceButton} from '../theme/AppearanceControls';
 
 interface ArenaHeaderProps {
   title?: string;
@@ -98,9 +100,7 @@ export const ArenaHeader: React.FC<ArenaHeaderProps> = ({
       </View>
 
       {/* Right Custom Action */}
-      {rightAction && (
-        <View className="flex-row items-center justify-end">{rightAction}</View>
-      )}
+      <View className="flex-row items-center justify-end"><AppearanceButton /><GuideButton compact />{rightAction}</View>
     </View>
   );
 };

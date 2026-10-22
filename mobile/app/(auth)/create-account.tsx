@@ -8,16 +8,19 @@ import {
   KeyboardAvoidingView,
   Platform,
   Image,
-} from "react-native";
+} from "../../components/theme/Primitives";
 
 import { router } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "../../components/theme/Icons";
 import { completeSignIn } from "../../services/completeSignIn";
 import { authService } from "../../services/authService";
 import { FormInput } from "../../components/ui/FormInput";
 import { PrimaryButton } from "../../components/ui/PrimaryButton";
 import { ArenaHeader } from "../../components/ui/ArenaHeader";
 import { IMAGES } from "../../constants/images";
+import {isStrongPassword, PASSWORD_HELP} from '../../utils/passwordPolicy';
+import {PasswordRequirements} from '../../components/ui/PasswordRequirements';
+import {VerificationResend} from '../../components/ui/VerificationResend';
 
 export default function CreateAccountScreen() {
   const [fullName, setFullName] = useState("");
@@ -56,8 +59,8 @@ export default function CreateAccountScreen() {
 
     if (!password) {
       nextErrors.password = "Password is required";
-    } else if (password.length < 8) {
-      nextErrors.password = "Password must be at least 8 characters";
+    } else if (!isStrongPassword(password)) {
+      nextErrors.password = PASSWORD_HELP;
     }
 
     if (!acceptedTerms) {
@@ -155,6 +158,7 @@ export default function CreateAccountScreen() {
             to complete your profile setup.
           </Text>
           <View className="w-full max-w-xs">
+            <VerificationResend email={email} />
             <PrimaryButton
               title="Proceed to Sign In"
               onPress={handleLogin}
@@ -264,7 +268,7 @@ export default function CreateAccountScreen() {
                   if (errors.password)
                     setErrors((prev) => ({ ...prev, password: undefined }));
                 }}
-                placeholder="At least 8 characters"
+                placeholder="Choose a strong password"
                 secureTextEntry={!showPassword}
                 error={errors.password}
                 testID="signup-password-input"
@@ -285,6 +289,7 @@ export default function CreateAccountScreen() {
                   </Pressable>
                 }
               />
+              <PasswordRequirements password={password} />
             </View>
 
             {/* Terms and Conditions Checkbox */}

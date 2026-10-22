@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from "react";
-import { Text, Linking } from "react-native";
+import { Text, Linking } from "../../components/theme/Primitives";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import {
   Page,

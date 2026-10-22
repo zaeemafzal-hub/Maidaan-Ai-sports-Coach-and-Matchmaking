@@ -5,8 +5,8 @@ import {
   Pressable,
   ActivityIndicator,
   Text,
-} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+} from "../theme/Primitives";
+import { Ionicons } from "../theme/Icons";
 
 interface ChatComposerProps {
   value: string;

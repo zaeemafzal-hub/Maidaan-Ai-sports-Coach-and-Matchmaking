@@ -9,10 +9,10 @@ import {
   Image,
   ActivityIndicator,
   Modal,
-} from "react-native";
+} from "../../components/theme/Primitives";
 
 import { router, useFocusEffect } from "expo-router";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "../../components/theme/Icons";
 import { useAuthStore } from "../../store/useAuthStore";
 import { MatchSlotItem } from "../../constants/matches";
 import { IMAGES } from "../../constants/images";

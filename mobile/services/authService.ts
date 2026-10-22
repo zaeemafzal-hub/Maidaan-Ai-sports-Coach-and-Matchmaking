@@ -6,6 +6,7 @@ import { api } from './api';
 import { AuthStorage } from './storage';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { User, Role, PlayerProfile, CaptainProfile, HubOwnerProfile } from '../types';
+import {isStrongPassword, PASSWORD_HELP} from '../utils/passwordPolicy';
 
 export interface RegisterParams {
   name: string;
@@ -64,7 +65,7 @@ export const authService = {
     requireConfiguration();
     if (params.role === 'ADMIN') throw new Error('Administrator accounts cannot be created via public registration.');
     if (params.name.trim().length < 2) throw new Error('Full name must be at least 2 characters.');
-    if (params.password.length < 8) throw new Error('Password must be at least 8 characters.');
+    if (!isStrongPassword(params.password)) throw new Error(PASSWORD_HELP);
     const email = params.email.trim().toLowerCase();
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -83,9 +84,10 @@ export const authService = {
         needsEmailConfirmation: true,
       };
     }
-    await AuthStorage.setToken(data.session.access_token);
-    const me = await this.me();
-    return { user: me.user, token: data.session.access_token, needsEmailConfirmation: false };
+    // Registration must never silently grant access if provider confirmation is disabled.
+    await supabase.auth.signOut({scope: 'local'});
+    await AuthStorage.removeToken();
+    throw new Error('Email verification must be enabled for signup. Please contact support.');
   },
 
   async login(params: LoginParams): Promise<LoginResult> {
@@ -96,6 +98,11 @@ export const authService = {
     });
     if (error) throw new Error(error.message || 'Invalid email or password.');
     if (!data.session) throw new Error('No active session returned after sign in.');
+    if (!data.user?.email_confirmed_at) {
+      await supabase.auth.signOut({scope: 'local'});
+      await AuthStorage.removeToken();
+      throw new Error('Please verify your email before signing in. Check your inbox or resend the verification email.');
+    }
     await AuthStorage.setToken(data.session.access_token);
     const me = await this.me();
     return {
@@ -176,9 +183,15 @@ export const authService = {
     if (error) throw new Error(error.message || 'Failed to send password recovery email.');
   },
 
+  async resendVerificationEmail(email: string): Promise<void> {
+    requireConfiguration();
+    const {error} = await supabase.auth.resend({type: 'signup', email: email.trim().toLowerCase(), options: {emailRedirectTo: getAuthRedirectUrl()}});
+    if (error) throw new Error(error.message || 'Unable to resend verification email. Please try again later.');
+  },
+
   async updatePassword(newPassword: string): Promise<void> {
     requireConfiguration();
-    if (newPassword.length < 8) throw new Error('Password must be at least 8 characters long.');
+    if (!isStrongPassword(newPassword)) throw new Error(PASSWORD_HELP);
     const { error } = await supabase.auth.updateUser({ password: newPassword });
     if (error) throw new Error(error.message || 'Failed to update password.');
   },

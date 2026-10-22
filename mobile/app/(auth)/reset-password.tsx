@@ -7,14 +7,16 @@ import {
   Pressable,
   KeyboardAvoidingView,
   Platform,
-} from "react-native";
+} from "../../components/theme/Primitives";
 
 import { router } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "../../components/theme/Icons";
 import { FormInput } from "../../components/ui/FormInput";
 import { PrimaryButton } from "../../components/ui/PrimaryButton";
 import { ArenaHeader } from "../../components/ui/ArenaHeader";
 import { authService } from "../../services/authService";
+import {isStrongPassword, PASSWORD_HELP} from '../../utils/passwordPolicy';
+import {PasswordRequirements} from '../../components/ui/PasswordRequirements';
 
 export default function ResetPasswordScreen() {
   const [newPassword, setNewPassword] = useState("");
@@ -30,8 +32,8 @@ export default function ResetPasswordScreen() {
       return false;
     }
 
-    if (newPassword.length < 8) {
-      setError("Password must be at least 8 characters long");
+    if (!isStrongPassword(newPassword)) {
+      setError(PASSWORD_HELP);
       return false;
     }
 
@@ -127,8 +129,7 @@ export default function ResetPasswordScreen() {
                   Create New Password
                 </Text>
                 <Text className="text-[#A0A5AD] text-sm mt-2 leading-relaxed">
-                  Enter your new password below. It must be at least 8
-                  characters long.
+                  {PASSWORD_HELP}
                 </Text>
               </View>
 
@@ -148,7 +149,7 @@ export default function ResetPasswordScreen() {
                     setNewPassword(text);
                     if (error) setError(undefined);
                   }}
-                  placeholder="At least 8 characters"
+                  placeholder="Choose a strong password"
                   secureTextEntry={!showPassword}
                   testID="reset-new-password-input"
                   rightElement={
@@ -169,6 +170,7 @@ export default function ResetPasswordScreen() {
                   }
                 />
 
+                <PasswordRequirements password={newPassword} />
                 <FormInput
                   label="Confirm Password"
                   value={confirmPassword}

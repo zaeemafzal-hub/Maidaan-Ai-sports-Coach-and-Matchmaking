@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, Text, Pressable } from 'react-native';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { View, Text, Pressable } from '../theme/Primitives';
+import { Ionicons, MaterialCommunityIcons } from '../theme/Icons';
 
 interface MatchFixtureCardProps {
   title: string;

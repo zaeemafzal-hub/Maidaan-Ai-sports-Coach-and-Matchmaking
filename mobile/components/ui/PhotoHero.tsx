@@ -6,7 +6,7 @@ import {
   ImageSourcePropType,
   StyleSheet,
   useWindowDimensions,
-} from "react-native";
+} from "../theme/Primitives";
 
 interface PhotoHeroProps {
   imageSource: ImageSourcePropType;

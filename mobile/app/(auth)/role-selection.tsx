@@ -1,10 +1,10 @@
 import { ArtworkScrollView as ThemedScroll } from "../../components/ui/Artwork";
 import { ThemedScreen } from "../../components/ui/ThemedScreen";
 import React, { useEffect, useState } from "react";
-import { View, Text } from "react-native";
+import { View, Text } from "../../components/theme/Primitives";
 
 import { router } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "../../components/theme/Icons";
 import { useAuthStore } from "../../store/useAuthStore";
 import { Role } from "../../types";
 import { RoleCard } from "../../components/ui/RoleCard";

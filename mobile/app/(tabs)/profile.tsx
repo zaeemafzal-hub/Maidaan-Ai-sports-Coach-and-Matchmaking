@@ -4,13 +4,15 @@ import {
   ArtworkScrollView,
 } from "../../components/ui/Artwork";
 import React, { useState } from "react";
-import { View, Text, Pressable, Image } from "react-native";
+import { View, Text, Pressable, Image } from "../../components/theme/Primitives";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "../../components/theme/Icons";
 import { useAuthStore } from "../../store/useAuthStore";
 import { ArenaBadge } from "../../components/ui/ArenaBadge";
 import { PrimaryButton } from "../../components/ui/PrimaryButton";
+import {GuideButton} from '../../components/guide/AppGuide';
+import {AppearanceSettings} from '../../components/theme/AppearanceControls';
 import { AmbientGlowOverlay } from "../../components/ui/AmbientCanvas";
 import { Sport, SkillLevel, Role, AppMode } from "../../types";
 
@@ -287,6 +289,8 @@ export default function ProfileScreen() {
         }}
         className="flex-1"
       >
+        <GuideButton />
+        <AppearanceSettings />
         {/* Subtle Ambient Stadium Bloom */}
         <View style={{ height: 170, marginBottom: -30, overflow: "hidden" }}>
           <ArtworkBackground kind="profile" dim={0.2} />

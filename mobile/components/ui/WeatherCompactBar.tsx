@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, Text, ActivityIndicator } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View, Text, ActivityIndicator } from '../theme/Primitives';
+import { Ionicons } from '../theme/Icons';
 import { WeatherOutlook } from '../../services/weatherService';
 
 interface WeatherCompactBarProps {

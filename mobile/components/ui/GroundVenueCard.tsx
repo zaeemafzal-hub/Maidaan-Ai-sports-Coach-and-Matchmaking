@@ -5,8 +5,8 @@ import {
   Pressable,
   Image,
   ImageSourcePropType,
-} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+} from "../theme/Primitives";
+import { Ionicons } from "../theme/Icons";
 
 interface GroundVenueCardProps {
   name: string;

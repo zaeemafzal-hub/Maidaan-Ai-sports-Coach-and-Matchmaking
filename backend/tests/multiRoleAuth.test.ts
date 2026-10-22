@@ -139,7 +139,7 @@ async function runMultiRoleAuthTests() {
         body: {
           title: 'Unauthorized Match',
           sport: 'cricket',
-          date: '2026-10-20',
+          date: new Date(Date.now() + 86400000).toISOString().slice(0, 10),
           startTime: '18:00',
           venueName: 'Gaddafi Stadium',
           area: 'Gulberg',
@@ -165,7 +165,7 @@ async function runMultiRoleAuthTests() {
         body: {
           title: 'Spoofed Match',
           sport: 'cricket',
-          date: '2026-10-20',
+          date: new Date(Date.now() + 86400000).toISOString().slice(0, 10),
           startTime: '18:00',
           venueName: 'Gaddafi Stadium',
           area: 'Gulberg',
@@ -216,7 +216,7 @@ async function runMultiRoleAuthTests() {
         body: {
           title: 'Strikers Friendly Match',
           sport: 'cricket',
-          date: '2026-10-20',
+          date: new Date(Date.now() + 86400000).toISOString().slice(0, 10),
           startTime: '18:00',
           venueName: 'Model Town Ground',
           area: 'Model Town, Lahore',

@@ -1,6 +1,6 @@
 import "../global.css";
 import React, { useEffect } from "react";
-import { AppState, Platform } from "react-native";
+import { AppState, Platform, View } from "../components/theme/Primitives";
 import { Stack, router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -9,11 +9,15 @@ import * as Linking from "expo-linking";
 import { useAuthStore } from "../store/useAuthStore";
 import { authService } from "../services/authService";
 import { supabase } from "../lib/supabase";
+import {AppGuide} from '../components/guide/AppGuide';
+import {AppearanceSync,useThemeColors} from '../components/theme/AppearanceControls';
+import {ScreenLoading} from '../components/ui/ScreenLoading';
 
 // Disable experimental native screen transitions in Expo Go to avoid makeMutable crash
 enableScreens(false);
 
 export default function RootLayout() {
+  const colors=useThemeColors();
   const { initializeAuth } = useAuthStore();
 
   useEffect(() => {
@@ -68,15 +72,20 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <StatusBar style="light" />
+      <AppearanceSync />
+      <StatusBar style={colors.canvas==='#0C0D0E'?'light':'dark'} />
+      <View style={{flex:1}}>
       <Stack
         screenOptions={{
           headerShown: false,
-          contentStyle: { backgroundColor: "#0C0D0E" },
+          contentStyle: { backgroundColor: colors.canvas },
           animation: "none",
           gestureEnabled: false,
         }}
       />
+      <AppGuide />
+      <ScreenLoading />
+      </View>
     </SafeAreaProvider>
   );
 }

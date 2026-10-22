@@ -7,8 +7,8 @@ import {
   Text,
   View,
   useWindowDimensions,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+} from "../theme/Primitives";
+import { SafeAreaView } from "../theme/Primitives";
 import { router, useFocusEffect } from "expo-router";
 import Animated, {
   cancelAnimation,
@@ -20,6 +20,8 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { ARTWORK } from "../../constants/artwork";
+import {GuideButton} from '../guide/AppGuide';
+import {AppearanceButton} from '../theme/AppearanceControls';
 
 export default function WelcomeScene() {
   const [pressedAction, setPressedAction] = React.useState<'start' | 'login' | null>(null);
@@ -70,7 +72,7 @@ export default function WelcomeScene() {
             <Text style={s.brand}>
               Ma<Text style={s.orange}>i</Text>daan
             </Text>
-            <Text style={s.label}>PLAY. CONNECT. GROW.</Text>
+            <View style={{flexDirection:'row',alignItems:'center',gap:8}}><AppearanceButton /><Text style={s.label}>PLAY. CONNECT. GROW.</Text></View>
           </View>
           <View
             style={[
@@ -136,6 +138,7 @@ export default function WelcomeScene() {
               <Text style={s.sports}>
                 Cricket · Football · Padel · Badminton
               </Text>
+              <GuideButton />
             </View>
             {wide && art}
           </View>

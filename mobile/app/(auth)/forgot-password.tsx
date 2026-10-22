@@ -7,10 +7,10 @@ import {
   Pressable,
   KeyboardAvoidingView,
   Platform,
-} from "react-native";
+} from "../../components/theme/Primitives";
 
 import { router } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "../../components/theme/Icons";
 import { FormInput } from "../../components/ui/FormInput";
 import { PrimaryButton } from "../../components/ui/PrimaryButton";
 import { ArenaHeader } from "../../components/ui/ArenaHeader";

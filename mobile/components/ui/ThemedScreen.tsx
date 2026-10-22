@@ -1,5 +1,5 @@
 import React from "react";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView } from "../theme/Primitives";
 import { usePathname } from "expo-router";
 import { ArtworkBackground } from "./Artwork";
 import { ArtworkKind } from "../../constants/artwork";

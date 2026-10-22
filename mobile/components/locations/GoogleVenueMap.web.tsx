@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Text, View } from "react-native";
+import { Text, View } from "../theme/Primitives";
 import { styles } from "../venues/VenueUI";
 import { VenueMapProps } from "./VenueMap.types";
 let mapsReady: Promise<void> | undefined;

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { ThemedScreen } from "../components/ui/ThemedScreen";
-import { View, Text, Pressable, ActivityIndicator } from "react-native";
+import { View, Text, Pressable, ActivityIndicator } from "../components/theme/Primitives";
 import { router } from "expo-router";
 import { useAuthStore } from "../store/useAuthStore";
 

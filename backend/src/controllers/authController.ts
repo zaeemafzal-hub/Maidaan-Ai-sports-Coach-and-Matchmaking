@@ -4,6 +4,7 @@ import { isServerSupabaseConfigured } from '../lib/supabase.js';
 import { createClient } from '@supabase/supabase-js';
 import { isTest } from '../config/runtime.js';
 import { SupabaseRepo, Role } from '../models/supabaseRepo.js';
+import {isStrongPassword, PASSWORD_HELP} from '../services/passwordPolicy.js';
 
 const ALLOWED_PUBLIC_ROLES: Role[] = ['PLAYER', 'TEAM_CAPTAIN', 'HUB_OWNER'];
 
@@ -27,8 +28,8 @@ export const AuthController = {
         return;
       }
 
-      if (!password || typeof password !== 'string' || password.length < 8) {
-        res.status(400).json({ error: 'Password must be at least 8 characters long.' });
+      if (!isStrongPassword(password)) {
+        res.status(400).json({ error: PASSWORD_HELP });
         return;
       }
 
@@ -64,6 +65,11 @@ export const AuthController = {
         if (error || !data.user) {
           res.status(error?.code === 'user_already_exists' ? 409 : 400)
             .json({ error: error?.message || 'Registration failed.' });
+          return;
+        }
+        if (data.session) {
+          await auth.auth.signOut({scope: 'local'});
+          res.status(503).json({error: 'Email verification must be enabled for signup. Please contact support.'});
           return;
         }
         res.status(201).json({

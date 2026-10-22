@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Pressable, Text, ActivityIndicator, GestureResponderEvent, View } from 'react-native';
+import { Pressable, Text, ActivityIndicator, GestureResponderEvent, View } from '../theme/Primitives';
+import {useScreenBusy} from './ScreenLoading';
 
 export interface PrimaryButtonProps {
   title: string;
@@ -25,6 +26,7 @@ export const PrimaryButton: React.FC<PrimaryButtonProps> = ({
   icon,
 }) => {
   const [isPressed, setIsPressed] = useState(false);
+  useScreenBusy(loading);
 
   // Variant Styles
   let containerStyle = 'bg-[#E85D26] shadow-lg shadow-[#E85D26]/35';
