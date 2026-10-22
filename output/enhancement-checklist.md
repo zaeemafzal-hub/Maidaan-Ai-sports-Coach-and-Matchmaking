@@ -26,13 +26,19 @@ Mandatory email confirmation proves email ownership. It is distinct from a secon
 
 ## Release status
 
-The enhancement release is live at https://maidaan-sports.vercel.app from `deploy/public-hosting` commit `6c3e814` (Vercel deployment `dpl_EQkc6tgRekYP31z34NXVnNHB5E6Y`). The backend is hosted at https://maidaan-api-7fs8.onrender.com. Hosted checks passed for verified email login, first-use guide, Your Assistant, light appearance and OpenStreetMap light/dark synchronization. Mobile and desktop checks found no runtime exceptions or horizontal overflow.
+The enhancement release is live at https://maidaan-sports.vercel.app from `deploy/public-hosting` commit `6c3e814` (Vercel deployment `dpl_EQkc6tgRekYP31z34NXVnNHB5E6Y`). The backend is hosted at https://maidaan-api-7fs8.onrender.com; commit `f96e879` also updates the assistant's help content and passed the RAG retrieval benchmark. Hosted checks passed for verified email login, first-use guide, Your Assistant, light appearance and OpenStreetMap light/dark synchronization. Mobile and desktop checks found no runtime exceptions or horizontal overflow. Live match details also passed compact-weather and venue-link checks.
 
 Web, Android and iOS exports passed. This does not replace installed-device acceptance or iOS signing.
 
 Requests read the navigator's committed route key synchronously, and authentication retries retain their original screen owner. A delayed focus-fetch check passed on the corrected production website. A live Your Assistant question returned HTTP 200, and both the question and reply remained after reload.
 
-Android build `b43e62bd-cf9e-47af-9810-f3e47ec7b663` targets this commit with standalone preview distribution and versionCode 3. It is still compiling; no phone is currently attached for installed-device acceptance.
+Android build `b43e62bd-cf9e-47af-9810-f3e47ec7b663` finished successfully. It targets client commit `6c3e814`, standalone preview distribution and versionCode 3: [download APK](https://expo.dev/artifacts/eas/7ET3Ei0C9kKojrnsRYiAi0pGU9hpREv1E7XKJMNwcKs.apk).
+
+The 117,431,775-byte APK passed ZIP integrity checks, contains its embedded release bundle and the public HTTPS backend address, and includes the enhancement UI strings. Android's APK verifier validates its signature for Android 15. The signing certificate matches the previous build (`be9a1ebc61bae64863e002a54c8f5e0b391ac6407f31ddf7083908fa2e3acefc`). APK SHA-256: `36e3c1296e077a0aba6d372cde5eba5d267517449637cbc97ec4deabb6b0bc06`.
+
+No phone is currently attached for installed-device acceptance. The new APK still needs the user's phone check, including light/dark appearance, the guide, login and full-screen loading. iOS export success does not imply a signed iPhone app is distributed.
+
+The disposable enhancement account and its history were removed after verification. A read-only follow-up confirmed no enhancement test accounts remain. The temporary preview server and test browser were closed.
 
 EAS Doctor reported newer compatible patch versions for Expo and Expo Router (20/21 checks passed). The warning did not prevent native compilation. Dependencies were not broadly upgraded.
 
