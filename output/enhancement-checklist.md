@@ -26,12 +26,16 @@ Mandatory email confirmation proves email ownership. It is distinct from a secon
 
 ## Release status
 
-The initial enhancement release is live on Vercel and Render from `deploy/public-hosting` commit `0863a9e`. Hosted checks passed for verified email login, first-use guide, Your Assistant, light appearance and OpenStreetMap light/dark synchronization. Mobile and desktop checks found no runtime exceptions or horizontal overflow.
+The enhancement release is live at https://maidaan-sports.vercel.app from `deploy/public-hosting` commit `6c3e814` (Vercel deployment `dpl_EQkc6tgRekYP31z34NXVnNHB5E6Y`). The backend is hosted at https://maidaan-api-7fs8.onrender.com. Hosted checks passed for verified email login, first-use guide, Your Assistant, light appearance and OpenStreetMap light/dark synchronization. Mobile and desktop checks found no runtime exceptions or horizontal overflow.
 
 Web, Android and iOS exports passed. This does not replace installed-device acceptance or iOS signing.
 
-A subsequent hosted navigation check caught a loader timing gap on returning to a tab. Requests now read the navigator's committed route key synchronously, and authentication retries retain their original screen owner. A delayed focus-fetch browser check and the added regression tests passed. An obsolete Android build was cancelled; the corrected APK and hosted update are being prepared.
+Requests read the navigator's committed route key synchronously, and authentication retries retain their original screen owner. A delayed focus-fetch check passed on the corrected production website. A live Your Assistant question returned HTTP 200, and both the question and reply remained after reload.
+
+Android build `b43e62bd-cf9e-47af-9810-f3e47ec7b663` targets this commit with standalone preview distribution and versionCode 3. It is still compiling; no phone is currently attached for installed-device acceptance.
 
 EAS Doctor reported newer compatible patch versions for Expo and Expo Router (20/21 checks passed). The warning did not prevent native compilation. Dependencies were not broadly upgraded.
+
+The cloud install also reports 32 dependency advisory findings (10 moderate, 22 high). This change does not claim to remediate the entire dependency audit.
 
 Provider configuration references: [Supabase password security](https://supabase.com/docs/guides/auth/password-security), [Supabase email/password authentication](https://supabase.com/docs/guides/auth/passwords).
